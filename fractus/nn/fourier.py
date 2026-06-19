@@ -67,7 +67,3 @@ class MandelbrotFourierBasis:
     def matrix(self) -> torch.Tensor:
         """Retourne la matrice précalculée (vocab_size, 2·n_frequencies)."""
         return self._matrix
-
-    def dim_output(self) -> int:
-        """Dimension de sortie (nombre de colonnes de la matrice)."""
-        return 2 * self.n_frequencies

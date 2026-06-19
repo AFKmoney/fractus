@@ -47,7 +47,7 @@ def test_char_features_batch_consistency():
 # ---------------------------------------------------------------------------
 
 def test_fourier_basis_shape():
-    """Pour vocab 128 et 32 fréquences : matrice (vocab, n_freq) en entrée du calcul."""
+    """Pour vocab 128 et 32 fréquences : matrice (vocab, 2·n_freq) (sin+cos)."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     basis = MandelbrotFourierBasis(vocab_size=128, n_frequencies=32)
     M = basis.matrix()  # (vocab, 2*n_freq)
@@ -103,11 +103,16 @@ def test_fractal_embedding_is_finite():
 
 
 def test_fractal_embedding_backward_propagates():
-    """CRITIQUE : backward() doit propager des gradients finis à tous les params.
+    """CRITIQUE : backward() doit propager un gradient fini ET non-nul à CHAQUE paramètre.
 
     C'est exactement le test que FNN v5.0 échouait (training.rs:399 utilisait du
     bruit aléatoire au lieu d'un gradient). Ici, la projection Linear est dans
     le graphe autodiff, donc les gradients doivent être non-nuls et finis.
+
+    On vérifie CHAQUE paramètre individuellement (et pas juste « au moins un »),
+    parce qu'un paramètre mort (gradient nul) dans le MLP vortex par exemple
+    indiquerait un autodiff cassé silencieusement — exactement le défaut que
+    cette refonte doit éliminer.
     """
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=128, d_model=64, n_frequencies=16)
@@ -116,14 +121,17 @@ def test_fractal_embedding_backward_propagates():
     loss = out.pow(2).sum()
     loss.backward()
 
-    has_param_with_grad = False
-    for name, p in emb.named_parameters():
+    params = list(emb.named_parameters())
+    assert len(params) > 0, "Le modèle n'a aucun paramètre entraînable"
+    for name, p in params:
         assert p.requires_grad, f"{name} devrait requires_grad=True"
-        if p.grad is not None:
-            assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-            if p.grad.abs().sum().item() > 0:
-                has_param_with_grad = True
-    assert has_param_with_grad, "Aucun paramètre n'a reçu de gradient non-nul"
+        assert p.grad is not None, f"{name} n'a reçu aucun gradient (paramètre mort)"
+        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini (NaN/Inf)"
+        grad_l1 = p.grad.abs().sum().item()
+        assert grad_l1 > 0, (
+            f"{name} a reçu un gradient nul — l'autodiff ne propage pas "
+            f"jusqu'à ce paramètre (grad L1 = {grad_l1})"
+        )
 
 
 def test_fractal_embedding_respects_vocab_bounds():

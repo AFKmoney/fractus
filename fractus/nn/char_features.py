@@ -46,15 +46,15 @@ class CharClassFeatures:
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel
-        is_vowel = float(as_byte in CharClassFeatures.VOWELS)
-        f[0] = is_vowel
+        is_vowel_bool = as_byte in CharClassFeatures.VOWELS
+        f[0] = float(is_vowel_bool)
 
         # 1: is_consonant (lettre alphabétique non voyelle)
         is_alpha = (
             (0x41 <= as_byte <= 0x5A) or  # A-Z
             (0x61 <= as_byte <= 0x7A)     # a-z
         )
-        f[1] = float(is_alpha and is_vowel < 0.5)
+        f[1] = float(is_alpha and not is_vowel_bool)
 
         # 2: is_digit
         is_digit = 0x30 <= as_byte <= 0x39
@@ -119,14 +119,3 @@ class CharClassFeatures:
         f[15] = float((token_id % 2) == 0)
 
         return f
-
-    @staticmethod
-    def extract_batch(token_ids: torch.Tensor) -> torch.Tensor:
-        """Version vectorisée : token_ids de forme (N,) → features (N, 16).
-
-        Comme le calcul est déterministe et indépendant par token, on peut
-        précalculer une lookup table une fois pour toute la taille du vocab.
-        """
-        ids_list = token_ids.tolist()
-        rows = [CharClassFeatures.extract(int(i)) for i in ids_list]
-        return torch.stack(rows, dim=0)

@@ -5,8 +5,6 @@ correctes. Ces tests ne font PAS de mathématique avancée (ça, c'est en Rust) 
 ils valident juste le pont PyO3.
 """
 
-import pytest
-
 
 def test_collatz_hash_is_deterministic():
     """Même entrée → même sortie (propriété requise pour le conditionnement)."""
