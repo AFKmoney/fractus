@@ -79,9 +79,13 @@ class TorusSirenWeight(nn.Module):
 
     @staticmethod
     def _build_grid(h: int, w: int) -> torch.Tensor:
-        """Grille de coords (u,v) ∈ [0,1)² sur le tore, shape (h·w, 2)."""
-        u = torch.linspace(0, 1, h, dtype=torch.float32)
-        v = torch.linspace(0, 1, w, dtype=torch.float32)
+        """Grille de coords (u,v) ∈ [0,1)² sur le tore, shape (h·w, 2).
+
+        endpoint=False : sur le tore T²=[0,1)², le point 1 ≡ 0 (identification).
+        On exclut donc l'extrémité 1 pour éviter la duplication du bord.
+        """
+        u = torch.linspace(0, 1, h, dtype=torch.float32, endpoint=False)
+        v = torch.linspace(0, 1, w, dtype=torch.float32, endpoint=False)
         grid = torch.stack(torch.meshgrid(u, v, indexing="ij"), dim=-1)  # (h, w, 2)
         return grid.reshape(-1, 2)  # (h·w, 2)
 

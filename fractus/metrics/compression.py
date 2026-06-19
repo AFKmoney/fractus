@@ -40,6 +40,11 @@ def measure_compression_ratio(model: nn.Module) -> float:
         ratio > 0. Ratio = 1.0 si le modèle est 100% dense.
         Ratio > 1 si le modèle contient des SirenLinear (compression effective).
         Ratio < 1 est possible mais rare (SIREN plus grosse que la matrice).
+
+    LIMITE CONNUE : ne gère que SirenLinear, nn.Linear, nn.LayerNorm, nn.Embedding.
+    Tout autre module (Conv, BatchNorm, RNN, etc.) est ignoré silencieusement —
+    le ratio serait alors sous-estimé. Pour usage général, étendre la liste ou
+    ajouter un warn. Suffisant pour la démo L3 (MLP) et le transformer fractus.
     """
     total_dense_equivalent = 0
     total_actual_params = 0
