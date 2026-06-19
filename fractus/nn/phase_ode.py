@@ -4,16 +4,18 @@ Porté depuis FNN v5.0 (src/phase_ode.rs) en PyTorch pur.
 
 Mathématique (forme bas-rang K = UΛUᵀ, intégration RK4) :
 
-    dθ_i/dt = ω_i − damping·θ_i + K_strength·Σ_j K_ij sin(θ_j − θ_i)
+    dθ_i/dt = ω_i − damping·θ_i + Σ_j K_ij sin(θ_j − θ_i)
 
     Réécrit en exploitant K = UΛUᵀ (O(N·r) au lieu de O(N²)) :
         p = Uᵀ sin(θ) ∈ R^r
         q = Uᵀ cos(θ) ∈ R^r
         u_p = U (Λ ⊙ p)  ∈ R^N
         u_q = U (Λ ⊙ q)  ∈ R^N
-        dθ_i = ω_i − damping·θ_i + K_strength·(cos(θ_i)·u_p[i] − sin(θ_i)·u_q[i])
+        dθ_i = ω_i − damping·θ_i + cos(θ_i)·u_p[i] − sin(θ_i)·u_q[i]
 
-    RK4 standard (4 sous-steps), puis wrap θ_i mod 2π → [0, 2π).
+    (coupling_strength = 1.0, comme FNN integrate_with_config.)
+
+    RK4 standard (4 sous-steps), puis wrap θ_i mod 2π → [0, 2π) après CHAQUE step.
 
 STATELESS : pas d'état persistant entre forwards. Les phases initiales sont
 dérivées des hidden states à chaque appel (encode_from_hidden). U, Λ, ω sont
@@ -110,7 +112,12 @@ class KuramotoLayer(nn.Module):
         return self._rk4_integrate(theta)
 
     def phase_loss(self, phases: torch.Tensor) -> torch.Tensor:
-        """L = -(1/N²)·[cosθᵀK·cosθ + sinθᵀK·sinθ] (bas-rang)."""
+        """L = -(1/N²)·[cosθᵀK·cosθ + sinθᵀK·sinθ] (bas-rang), moyennée par token.
+
+        Normalisation : on divise par (B·L·N/N) = B·L (un scalaire par token,
+        pas la formule 1/N² stricte de FNN qui supposait un seul token). C'est
+        cohérent avec l'usage batché.
+        """
         cos_t = torch.cos(phases)
         sin_t = torch.sin(phases)
         uc = torch.einsum("bln,nr->blr", cos_t, self.coupling_u)
@@ -122,7 +129,12 @@ class KuramotoLayer(nn.Module):
         return -(term_cos + term_sin) / scale
 
     def decode_to_bias(self, phases: torch.Tensor, d_model: int) -> torch.Tensor:
-        """Encodage positionnel sinusoïdal depuis les phases. (B,L,N) → (B,L,d_model)."""
+        """Encodage positionnel sinusoïdal depuis les phases. (B,L,N) → (B,L,d_model).
+
+        Non câblée dans FractalBlockFull.forward (L2b) — méthode utilitaire
+        exposée pour usage futur (ex. injecter un biais positionnel Kuramoto
+        dans une couche donnée). Testée séparément.
+        """
         B, L, N = phases.shape
         idx = torch.arange(d_model, device=phases.device) % N
         phases_used = phases[..., idx]
