@@ -1,20 +1,22 @@
-"""FractalBlock : bloc transformer fractal minimal (L2a).
+"""FractalBlock : bloc transformer fractal (L2a minimal + L2b complet).
 
-Architecture (L2a, sans Kuramoto/MoE — ceux-ci viennent en L2b) :
-
+L2a (FractalBlock minimal) :
     x → LayerNorm → FractalLinearAttention → Dropout → + x (résiduelle)
 
-C'est le pré-bloc : on aura un transformer fonctionnel après L2a. En L2b on
-étendra ce bloc pour intégrer PhaseSoliton, KuramotoODE et PhaseRoutedMoE.
+L2b (FractalBlockFull) :
+    x → LN → FractalLinearAttention → + x (résiduelle 1)
+        → LN → KuramotoLayer → phases
+        → LN → PhaseRoutedMoE(hidden, phases) → + x (résiduelle 2)
 
-La connexion résiduelle (output = x + attn(LN(x))) garantit la stabilité et
-permet l'empilement de plusieurs blocs.
+La connexion résiduelle garantit la stabilité et permet l'empilement.
 """
 
 import torch
 import torch.nn as nn
 
 from .attention import FractalLinearAttention
+from .phase_ode import KuramotoLayer
+from .moe import PhaseRoutedMoE
 
 
 class FractalBlock(nn.Module):
@@ -47,3 +49,54 @@ class FractalBlock(nn.Module):
         Connexion résiduelle : out = x + dropout(attn(norm(x))).
         """
         return x + self.dropout(self.attn(self.norm(x)))
+
+
+class FractalBlockFull(nn.Module):
+    """Bloc transformer fractal complet (L2b) : intègre Kuramoto + MoE.
+
+    Architecture :
+        x → LN → FractalLinearAttention → + x (résiduelle 1)
+              → LN → KuramotoLayer → phases
+              → LN → PhaseRoutedMoE(hidden, phases) → + x (résiduelle 2)
+
+    Retourne (output, loss_aux) où loss_aux est la load_balance_loss du MoE
+    (à ajouter à la loss principale par le caller).
+    """
+
+    def __init__(
+        self,
+        d_model: int,
+        n_heads: int,
+        d_head: int,
+        n_levels: int,
+        n_oscillators: int,
+        coupling_rank: int,
+        n_experts: int,
+        top_k: int,
+        kappa: float = 4.0,
+        kuramoto_steps: int = 4,
+        kuramoto_dt: float = 0.1,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        # Sous-bloc attention.
+        self.norm1 = nn.LayerNorm(d_model)
+        self.attn = FractalLinearAttention(d_model, n_heads, d_head, n_levels)
+        # Kuramoto + MoE.
+        self.norm_kur = nn.LayerNorm(d_model)
+        self.kuramoto = KuramotoLayer(d_model, n_oscillators, coupling_rank,
+                                      n_steps=kuramoto_steps, dt=kuramoto_dt)
+        self.norm_moe = nn.LayerNorm(d_model)
+        self.moe = PhaseRoutedMoE(d_model, n_experts, top_k, kappa=kappa)
+        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
+
+    def forward(self, x: torch.Tensor):
+        """x : (B, L, d_model) → (output (B, L, d_model), loss_aux scalaire)."""
+        # Résiduelle 1 : attention.
+        x = x + self.dropout(self.attn(self.norm1(x)))
+        # Kuramoto : phases depuis hidden normalisé.
+        phases = self.kuramoto(self.norm_kur(x))  # (B, L, N)
+        # MoE : routing par phases.
+        moe_out, lb_loss = self.moe(self.norm_moe(x), phases)
+        x = x + self.dropout(moe_out)
+        return x, lb_loss

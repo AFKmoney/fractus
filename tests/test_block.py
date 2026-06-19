@@ -60,3 +60,41 @@ def test_block_backward_every_param():
             f"{name} a reçu un gradient nul — l'autodiff ne propage pas "
             f"jusqu'à ce paramètre (grad L1 = {grad_l1})"
         )
+
+
+def test_block_full_shape_and_finite():
+    from fractus.nn.block import FractalBlockFull
+    block = FractalBlockFull(
+        d_model=32, n_heads=4, d_head=8, n_levels=2,
+        n_oscillators=8, coupling_rank=4,
+        n_experts=4, top_k=2, kappa=4.0,
+    )
+    x = torch.randn(2, 8, 32)
+    out, lb_loss = block(x)
+    assert out.shape == (2, 8, 32)
+    assert torch.isfinite(out).all()
+    assert torch.isfinite(lb_loss)
+
+
+def test_block_full_backward_every_param():
+    """CRITÈRE L2b : FractalBlockFull (attn + Kuramoto + MoE) doit propager un
+    gradient fini ET non-nul à CHAQUE paramètre. La preuve ultime que tout
+    le pipeline fractal est différentiable de bout en bout."""
+    from fractus.nn.block import FractalBlockFull
+    block = FractalBlockFull(
+        d_model=32, n_heads=4, d_head=8, n_levels=2,
+        n_oscillators=8, coupling_rank=4,
+        n_experts=4, top_k=2, kappa=4.0,
+    )
+    x = torch.randn(2, 8, 32)
+    out, lb_loss = block(x)
+    loss = out.pow(2).sum() + 0.1 * lb_loss
+    loss.backward()
+
+    params = list(block.named_parameters())
+    assert len(params) > 0
+    for name, p in params:
+        assert p.requires_grad, f"{name} devrait requires_grad=True"
+        assert p.grad is not None, f"{name} n'a reçu aucun gradient"
+        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
+        assert p.grad.abs().sum().item() > 0, f"{name} a reçu un gradient nul"

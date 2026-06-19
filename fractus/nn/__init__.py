@@ -2,6 +2,7 @@
 
 L1 : embedding fractal (FractalEmbedding).
 L2a : attention linéaire causale (FractalLinearAttention) + bloc minimal (FractalBlock).
+L2b : Kuramoto (KuramotoLayer) + MoE von Mises/Farey (PhaseRoutedMoE) + bloc complet (FractalBlockFull).
 """
 
 from .char_features import CharClassFeatures
@@ -9,7 +10,10 @@ from .fourier import MandelbrotFourierBasis
 from .embedding import FractalEmbedding
 from .stats import elu_plus_one, stable_softmax
 from .attention import FractalLinearAttention
-from .block import FractalBlock
+from .farey import farey_sequence, expert_phases
+from .phase_ode import KuramotoLayer
+from .moe import PhaseRoutedMoE
+from .block import FractalBlock, FractalBlockFull
 
 __all__ = [
     "CharClassFeatures",
@@ -18,5 +22,10 @@ __all__ = [
     "elu_plus_one",
     "stable_softmax",
     "FractalLinearAttention",
+    "farey_sequence",
+    "expert_phases",
+    "KuramotoLayer",
+    "PhaseRoutedMoE",
     "FractalBlock",
+    "FractalBlockFull",
 ]
