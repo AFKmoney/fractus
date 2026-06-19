@@ -19,6 +19,11 @@ pub fn valuation_2(x: u64) -> u32 {
 }
 
 /// Valuation 3-adique v_3(x) = max{k : 3^k divise x}.
+///
+/// Non utilisée en L0 (aucun appelant de production). Conservée car le spec L1
+/// (cascade duale 2^n·3^k) en aura besoin ; marquée `allow(dead_code)` pour
+/// éviter le warning.
+#[allow(dead_code)]
 pub fn valuation_3(x: u64) -> u32 {
     if x == 0 {
         return 0; // convention : v_3(0) = infini, on borne à 0 pour u64
@@ -50,13 +55,15 @@ pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
 
 /// Distance ultramétrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
 ///
-/// CORRECTION d'un bug d'OMNI-FRACTAL : le code original utilisait
-/// `2^{+v_2(a ⊕ b)}` (exposant positif), ce qui est l'INVERSE de la vraie norme
-/// p-adique. Le test tautologique d'OMNI (`assert!(d1 <= d2.max(d1))`, toujours
-/// vrai pour toute entrée) ne l'a jamais détecté. Avec la formule correcte, la
-/// propriété ultramétrique forte `d(x,z) <= max(d(x,y), d(y,z))` est vérifiée.
+/// À comparer avec le module source OMNI-FRACTAL d'origine
+/// (rust/src/vortex.rs, fonction `distance`), qui utilisait `2^{+v_2(a ⊕ b)}`
+/// — l'inverse de la norme p-adique canonique `|x|_2 = 2^{-v_2(x)}`. Ici on
+/// applique la formule canonique. Le test `test_ultrametric_strong_triangle_inequality`
+/// (qui contient le triplet (7, 56, 13)) discrimine les deux formules : il
+/// échouerait avec la version `+v_2` d'OMNI, tandis que le test équivalent dans
+/// OMNI (`assert!(d1 <= d2.max(d1))`, tautologie) ne détectait rien.
 ///
-/// Retourne un f64 (la distance est dans (0, 1] pour a != b).
+/// Retourne un f64 dans [0, 1] (0 si a == b).
 pub fn ultrametric_distance(a: u64, b: u64) -> f64 {
     let diff = a ^ b;
     if diff == 0 {
@@ -156,8 +163,9 @@ mod tests {
     }
 
     #[test]
-    fn test_norm_2adic_fuzz_in_unit_interval() {
-        // Sur données pseudo-aléatoires, la norme doit être <= 1 pour x != 0.
+    fn test_norm_2adic_in_unit_interval() {
+        // Sur entrées fixes (pas du fuzz, juste un échantillon), la norme
+        // p-adique ||x||_2 = 2^{-v_2(x)} doit être dans (0, 1] pour x != 0.
         for x in [1u64, 3, 5, 7, 9, 11, 42, 137, 1023, 65535] {
             let n = norm_2adic(x);
             assert!(n > 0.0 && n <= 1.0, "norm_2adic({}) = {} hors [0,1]", x, n);

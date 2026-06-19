@@ -32,11 +32,12 @@ pip install -r requirements-dev.txt
 # 3. Construire et installer le module natif Rust dans le venv
 maturin develop --release
 
-# 4. Lancer les tests
-pytest tests/ -v
+# 4. Lancer les tests (Rust + Python)
+cargo test -p fractus-core   # 9 tests : valuation, Collatz, ultramétrie
+pytest tests/ -v             # 5 tests fume : torch, numpy, pont Python↔Rust
 ```
 
-Les 4 commandes `cargo build`, `maturin develop`, `import torch; import fractus`,
+Les 4 vérifications `cargo build`, `maturin develop`, `import torch; import fractus`,
 `pytest` doivent toutes réussir.
 
 ## Layout
