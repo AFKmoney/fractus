@@ -1,0 +1,70 @@
+"""SelfConsistencyCheck : débat interne par bruit et vote.
+
+Porté depuis FNN v5.0 (src/reasoning.rs:194-279) en PyTorch pur.
+
+Algorithme :
+    generate_candidates(h, n, noise_scale) : produit n versions bruitées de h.
+        Bruit uniforme U(-noise_scale, +noise_scale) (FNN dit "Gaussian-like"
+        mais utilise uniforme — on est fidèle à l'implémentation).
+    score_candidates(cands, ref) : pour chaque candidat, moyenne de la similarité
+        cosinus avec la référence sur tous les (batch, position).
+    select_best : argmax des scores.
+"""
+
+from typing import List
+
+import torch
+import torch.nn as nn
+
+from ..math.stats import cosine_similarity
+
+
+class SelfConsistencyCheck(nn.Module):
+    """Débat interne : génère des candidats bruités et vote le plus cohérent.
+
+    Args:
+        n_candidates : nombre de candidats bruités.
+        noise_scale  : amplitude du bruit uniforme.
+    """
+
+    def __init__(self, n_candidates: int = 5, noise_scale: float = 0.1):
+        super().__init__()
+        self.n_candidates = n_candidates
+        self.noise_scale = noise_scale
+
+    def generate_candidates(self, h: torch.Tensor) -> List[torch.Tensor]:
+        """Produit n_candidates versions bruitées de h.
+
+        Bruit uniforme U(-noise_scale, +noise_scale), comme FNN reasoning.rs:211-220.
+        """
+        candidates = []
+        for _ in range(self.n_candidates):
+            noise = (torch.rand_like(h) - 0.5) * 2.0 * self.noise_scale
+            candidates.append(h + noise)
+        return candidates
+
+    def score_candidates(
+        self, candidates: List[torch.Tensor], reference: torch.Tensor
+    ) -> List[float]:
+        """Score = moyenne de cosine_similarity(cand, ref) sur (batch, position)."""
+        B, L, _D = reference.shape
+        scores = []
+        for c in candidates:
+            total_sim = 0.0
+            count = 0
+            for b in range(B):
+                for t in range(L):
+                    total_sim += float(cosine_similarity(reference[b, t], c[b, t]).item())
+                    count += 1
+            scores.append(total_sim / count if count > 0 else 0.0)
+        return scores
+
+    def select_best(
+        self, candidates: List[torch.Tensor], reference: torch.Tensor
+    ) -> tuple[int, float]:
+        """Retourne (best_idx, best_score)."""
+        if not candidates:
+            return 0, 0.0
+        scores = self.score_candidates(candidates, reference)
+        best_idx = max(range(len(scores)), key=lambda i: scores[i])
+        return best_idx, scores[best_idx]
