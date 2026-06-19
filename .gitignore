@@ -26,3 +26,10 @@ Thumbs.db
 # Logs / checkpoints
 *.log
 checkpoints/
+
+# Windows reserved names accidentally created (e.g. by shell redirects)
+nul
+NUL
+CON
+PRN
+AUX
