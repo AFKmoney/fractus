@@ -1,13 +1,17 @@
-"""do_intervention : vrai do-calculus de Pearl.
+"""do_intervention : primitive d'intervention atomique (opérateur do de Pearl).
 
 CORRECTION DU FAUX DO-CALCULUS D'OMNI :
 - OMNI (rkhs_causal.py:21-25) faisait 'intervened[:, do_mask] = 0.0' — juste
-  mettre la colonne à 0. Ce n'est PAS do-calculus.
-- Ici : do(X_i = v) fixe X_i à v pour tous les échantillons (intervention
-  Pearl), ce qui permet de comparer P(Y | do(X=v)) vs P(Y | X=v).
+  mettre la colonne à 0. Ce n'est même pas une intervention atomique correcte.
+- Ici : do(X_i = v) fixe X_i à v pour tous les échantillons.
 
-Différentiable (pour estimer l'effet causal par gradient quand le modèle
-est différentiable).
+HONNÊTETÉ SUR LE SCOPE :
+Ceci est la PRIMITIVE d'intervention atomique (la brique de base de Pearl).
+Le "do-calculus" complet de Pearl (règles d'identification backdoor/front-door,
+P(Y | do(X)) à partir de P observationnel) nécessite en plus un graphe causal
+connu et des règles d'identification — non implémenté ici. Pour estimer
+P(Y | do(X=v)) en pratique, on applique do_intervention puis un passage forward
+dans un modèle entraîné (voir démo L4).
 """
 
 import torch
@@ -28,3 +32,4 @@ def do_intervention(
     x_intervened = x.clone()
     x_intervened[:, var_idx] = value
     return x_intervened
+

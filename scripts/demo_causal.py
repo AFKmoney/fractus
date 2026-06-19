@@ -1,5 +1,12 @@
 """Démo L4 : NOTEARS récupère un DAG synthétique connu.
 
+AVERTISSEMENT D'HONNÊTETÉ : cette démo utilise un SCM LINÉAIRE et triangulaire
+supérieur (ordre topologique trivial). C'est le cas-jouet idéal pour NOTEARS —
+il a été conçu exactement pour ce réglage. SHD=0 ici prouve que le PIPELINE
+tourne (les modules communiquent, NOTEARS s'optimise, la pénalité fonctionne),
+PAS que NOTEARS est compétent sur données réelles. Un SCM non-linéaire avec
+ordre topologique inconnu serait nettement plus dur (future work).
+
 Étapes :
     1. Génère un SCM linéaire à 5 variables (DAG connu W_true + données X).
     2. Initialise W_pred aléatoire (entraînable).
@@ -8,7 +15,7 @@
        La pénalité NOTEARS force W_pred à être acyclique.
     4. Mesure le SHD entre W_pred et W_true.
 
-Critère honnête : SHD <= 3 sur 5 variables (au plus 3 erreurs sur 25 entrées).
+Critère : SHD <= 3 sur 5 variables (cas jouet idéal — doit passer).
 
 Run :
     python scripts/demo_causal.py
@@ -71,10 +78,12 @@ def main():
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
     print(f"\nSHD = {shd} (sur {n_vars*n_vars} entrées)")
     print(f"  0 = récupération parfaite, plus c'est bas mieux c'est.")
+    print(f"  (Note : cas-jouet idéal — SCM linéaire + triangulaire. Ne prouve")
+    print(f"   pas la compétence sur données réelles, juste que le pipeline tourne.)")
     if shd <= 3:
-        print(f"\nOK : NOTEARS récupère le DAG (SHD <= 3).")
+        print(f"\nOK : le pipeline causal tourne (SHD <= 3 sur cas jouet).")
     else:
-        print(f"\n~ : SHD > 3, récupération partielle.")
+        print(f"\n~ : SHD > 3, le pipeline a un souci même sur cas jouet.")
 
 
 if __name__ == "__main__":
