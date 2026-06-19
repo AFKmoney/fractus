@@ -14,6 +14,8 @@ from .farey import farey_sequence, expert_phases
 from .phase_ode import KuramotoLayer
 from .moe import PhaseRoutedMoE
 from .block import FractalBlock, FractalBlockFull
+from .siren import TorusSirenWeight
+from .siren_linear import SirenLinear
 
 __all__ = [
     "CharClassFeatures",
@@ -28,4 +30,6 @@ __all__ = [
     "PhaseRoutedMoE",
     "FractalBlock",
     "FractalBlockFull",
+    "TorusSirenWeight",
+    "SirenLinear",
 ]
