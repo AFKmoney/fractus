@@ -1,0 +1,11 @@
+[package]
+name = "fractus-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fractus_core"
+path = "src/lib.rs"
+
+[dependencies]
+# Aucune dépendance en L0. nalgebra/serde/etc. ajoutés quand un module en a besoin.
