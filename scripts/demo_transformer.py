@@ -5,7 +5,7 @@ sur une toy séquence de texte (prédiction du prochain token). C'est la premiè
 démonstration end-to-end : le modèle apprend vraiment, la loss baisse.
 
 On utilise un tout petit setup (CPU-only) :
-    vocab  = 64 (sous-ensemble ASCII)
+    vocab  = 128 (ASCII imprimable : ord(c)-32 ∈ [0,95] ⊂ [0,128))
     d_model = 32
     n_blocks = 2
     seq_len  = 16

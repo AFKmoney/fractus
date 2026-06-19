@@ -71,14 +71,16 @@ class FractalLinearAttention(nn.Module):
         d_qkv = n_heads * d_head  # = d_model
 
         # Poids Q, K, V concaténés (comme FNN attention.rs:30-32).
-        # Init Xavier uniforme : U(-scale, scale), scale = sqrt(2/(fan_in+fan_out)).
+        # Init de type Glorot : U(-scale, scale), scale = sqrt(2/(fan_in+fan_out)).
+        # (Note : le vrai Xavier/Glorot uniforme est sqrt(6/(fan_in+fan_out)) ;
+        #  FNN utilisait sqrt(2/(...)), on conserve pour fidélité.)
         scale = math.sqrt(2.0 / (d_model + d_qkv))
         self.w_qkv = nn.Parameter(
             torch.empty(3, d_model, d_qkv).uniform_(-scale, scale)
         )
         self.b_qkv = nn.Parameter(torch.zeros(3, d_qkv))
 
-        # Projection de sortie.
+        # Projection de sortie (même style d'init que Q/K/V).
         scale_out = math.sqrt(2.0 / (d_qkv + d_model))
         self.w_out = nn.Parameter(
             torch.empty(d_qkv, d_model).uniform_(-scale_out, scale_out)
@@ -97,7 +99,9 @@ class FractalLinearAttention(nn.Module):
 
         x : (..., d_head). L'offset ω_level est un scalaire ajouté à tout x.
         """
-        offset = self.level_offsets[level] if level < self.n_levels else 0.0
+        # Invariant : level est toujours dans [0, n_levels) (venu de forward).
+        assert 0 <= level < self.n_levels, f"level {level} hors [0, {self.n_levels})"
+        offset = self.level_offsets[level]
         return elu_plus_one(x + offset, alpha=1.0)
 
     def _linear_attention_causal_one_head(
