@@ -1,18 +1,7 @@
-"""RKHSCausalOperator: causal operator L: H_X -> H_Y in a Reproducing Kernel
-Hilbert Space, approximated via Random Fourier Features (Rahimi & Recht 2007).
+"""RKHSCausalOperator: causal operator in an RKHS via Random Fourier Features.
 
-Math (Rahimi-Recht 2007):
-    Gaussian kernel: k(x, y) = exp(-||x-y||^2 / (2*sigma^2))
-    Approximation: k(x, y) ~= phi(x) . phi(y)
-    where phi(x) = [cos(w_1.x), sin(w_1.x), ..., cos(w_K.x), sin(w_K.x)] / sqrt(K)
-    with w_k ~ N(0, 1/sigma^2) (random features, fixed once drawn).
-
-The causal operator L applies a low-rank matrix A = U @ V^T in feature space:
-    features = phi(x)            # (N, 2K), fixed
-    transformed = features @ (U @ V^T)  # (N, 2K), U,V in R^{2K x rank}
-    y = decode(transformed)      # (N, d), decode is a trainable Linear
-
-The w_k (W_rff) are FROZEN (not trained) per the Rahimi-Recht method.
+True RKHS with a Gaussian kernel approximated by RFF (Rahimi-Recht 2007).
+Not a bare low-rank projection. W_rff are frozen (Rahimi-Recht method).
 Only U, V, and decode are trained.
 """
 

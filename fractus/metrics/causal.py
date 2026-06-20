@@ -1,9 +1,6 @@
-"""Metriques causales honestetes : Structural Hamming Distance, causal accuracy.
+"""Honest causal metrics: Structural Hamming Distance, causal accuracy.
 
-CORRECTION DU MENSONGE D'the original :
-- the original (benchmarks.py:43-46) computationait 'causal_acc = max(0, 1 - pehe/2)' then
-  'min(causal_acc, 0.98)' — plafonnait artificiellement a 0.98. Rigged.
-- Ici : SHD and causal_accuracy MESUREES on a true DAG, without clamp.
+SHD and causal_accuracy are MEASURED on a true DAG, with no clamp.
 """
 
 import torch

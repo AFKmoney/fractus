@@ -1,6 +1,6 @@
-"""Utilitaires : sigmoid, cosine_similarity.
+"""Utilities: sigmoid, cosine_similarity.
 
-Portes depuis the original architecture (src/math/stats.rs). PyTorch pur.
+Ported from the original architecture (src/math/stats.rs). Pure PyTorch.
 """
 
 import torch

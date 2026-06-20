@@ -1,8 +1,8 @@
-"""Sous-package nn — modules of reseau of neurones (PyTorch).
+"""nn subpackage: neural network modules (PyTorch).
 
-L1 : embedding fractal (FractalEmbedding).
-L2a : attention lineaire causale (FractalLinearAttention) + bloc minimal (FractalBlock).
-L2b : Kuramoto (KuramotoLayer) + MoE von Mises/Farey (PhaseRoutedMoE) + bloc complete (FractalBlockFull).
+L1: fractal embedding (FractalEmbedding).
+L2a: causal linear attention (FractalLinearAttention) + minimal block (FractalBlock).
+L2b: Kuramoto (KuramotoLayer) + von Mises/Farey MoE (PhaseRoutedMoE) + full block (FractalBlockFull).
 """
 
 from .char_features import CharClassFeatures

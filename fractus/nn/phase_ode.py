@@ -1,31 +1,13 @@
-"""KuramotoLayer : Kuramoto oscillators couples bas-rang, STATELESS.
+"""KuramotoLayer: low-rank coupled Kuramoto oscillators, STATELESS.
 
-Porte depuis the original architecture (src/phase_ode.rs) en PyTorch pur.
+Ported from the original architecture (src/phase_ode.rs) in pure PyTorch.
 
-Mathematique (shape bas-rang K = UΛUT, integration RK4) :
+Math (low-rank form K = U*Lambda*U^T, RK4 integration):
+    d_theta_i/dt = omega_i - damping*theta_i + sum_j K_ij sin(theta_j - theta_i)
+    Standard RK4 (4 sub-steps), then wrap theta_i mod 2*pi after each step.
 
-    dθ_i/dt = ω_i − damping·θ_i + Σ_j K_ij sin(θ_j − θ_i)
-
-    Reecrit en exploitant K = UΛUT (O(N·r) instead of O(N2)) :
-        p = UT sin(θ) ∈ R^r
-        q = UT cos(θ) ∈ R^r
-        u_p = U (Λ ⊙ p)  ∈ R^N
-        u_q = U (Λ ⊙ q)  ∈ R^N
-        dθ_i = ω_i − damping·θ_i + cos(θ_i)·u_p[i] − sin(θ_i)·u_q[i]
-
-    (coupling_strength = 1.0, comme the original integrate_with_config.)
-
-    RK4 standard (4 under-steps), then wrap θ_i mod 2π → [0, 2π) after CHAQUE step.
-
-STATELESS : not d'etat persistant between forwards. Les phases initiales sont
-derivees hidden states a each appel (encode_from_hidden). U, Λ, ω sont
-des nn.Parameter (le courange s'apprend).
-
-Corrections vs the original :
-- the original gardait a etat `phases` mutable → ici STATELESS for reproductibilite
-  and testabilite.
-- Le terme `-damping·θ_i` est conserve tel quel (non-standard Kuramoto but
-  faithful a the original).
+STATELESS: no persistent state between forwards. Initial phases are derived from
+hidden states at each call. U, Lambda, omega are nn.Parameter (coupling is learned).
 """
 
 import math

@@ -1,15 +1,7 @@
-"""NOTEARS acyclicity penalty: h(W) = tr(e^{W⊙W}) − n.
+"""NOTEARS acyclicity penalty: h(W) = tr(e^{W*W}) - n.
 
-Ported faithfully from the original architecture (src/causal.rs) in pure PyTorch.
-
-Math (Zheng et al. 2018, "DAGs with NO TEARS"):
-    h(W) = tr(expm(W ⊙ W)) − n
-    where expm is the matrix exponential and ⊙ is the Hadamard product.
-
-    Property: h(W) = 0 if and only if W is acyclic (a DAG).
-    h(W) > 0 if W contains a cycle.
-    Differentiable: we can optimize it via gradient descent.
-
+Ported from the original architecture (src/causal.rs) in pure PyTorch.
+h(W) = 0 iff W is acyclic (DAG). h(W) > 0 if W contains a cycle. Differentiable.
 Approximation: expm via Taylor series with 20 terms.
 """
 

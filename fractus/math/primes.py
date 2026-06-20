@@ -1,7 +1,7 @@
-"""Crible d'Eratosthene for verification of primalite.
+"""Sieve of Eratosthenes for primality verification.
 
-Porte depuis the original architecture (src/math/primes.rs). Le crible est precomputatione a fois
-jusqu'a a limite, then verify_prime(n) est O(1) for n <= limite.
+Ported from the original architecture (src/math/primes.rs). Precomputed once
+up to a limit, then verify_prime(n) is O(1) for n <= limit.
 """
 
 from typing import List

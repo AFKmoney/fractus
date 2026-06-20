@@ -1,6 +1,6 @@
-"""Sous-package reasoning : proofs, conjectures, ACT, self-consistency.
+"""Reasoning subpackage: proofs, conjectures, ACT, self-consistency.
 
-L5 : raisonnement mathematical with verification exact (soundness guaranteed).
+L5: mathematical reasoning with exact verification (guaranteed soundness).
 """
 
 from .proof import (

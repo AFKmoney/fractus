@@ -1,27 +1,8 @@
-"""TorusSirenWeight : vraie SIREN sin(ω0·) for representer a matrix of poids.
+"""TorusSirenWeight: a true SIREN sin(omega0*x) to represent a weight matrix.
 
-CORRECTION DU MENSONGE D'the original design :
-- the original utilisait nn.SiLU (torus_siren.py:15,17) → ici on utilise torch.sin(ω0·(Wx+b)),
-  the VRAIE non-linearite SIREN (Sitzmann and al. 2020).
-- the original utilisait ω0=56 non justifie → ici ω0=30.0 (value empirique papier SIREN,
-  which montre that ω0≈30 est optimal for the representation of functions continues).
-- the original commentait "Simple reconstruction: sum of harmonics (real implementation uses
-  Fourier)" (torus_siren.py:39) → ici the reconstruction est REELLE (forward SIREN
-  on grille 2D).
-
-POSITION SCIENTIFIQUE HONNETE :
-Une SIREN represente well functions lisses (images, champs scalars).
-Les poids d'un reseau entraine are essentiellement bruit structure dense.
-On s'attend therefore a a ratio of compression FAIBLE (~1× a 3×), PAS 20.4×.
-The ratio is MEASURED (metrics/compression.py), never hardcoded.
-
-Math (Sitzmann 2020) :
-    Non-linearite : sin(ω0 · (Wx + b)) for each couche cachee.
-    Couche of sortie : lineaire (pas of sin).
-    Init : premiere couche U(-1/ω0, 1/ω0) ; suivantes U(-√(6/(ω02·fan_in)), ...).
-
-La SIREN prend en entree coords (u,v) ∈ [0,1)2 on the tore T2 and produit
-un scalar W[u,v]. Evaluee on a grille h×w, elle regenerated the matrix W.
+Uses torch.sin(omega0*(Wx+b)) as nonlinearity (Sitzmann et al. 2020), omega0=30.
+Not SiLU, not ReLU. Init follows Sitzmann section 3.2.
+Compression ratio is MEASURED, never hardcoded.
 """
 
 import math

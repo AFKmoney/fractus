@@ -1,23 +1,7 @@
-"""KuramotoLyapunov : function of Lyapunov under-system Kuramoto.
+"""KuramotoLyapunov: Lyapunov function of the Kuramoto subsystem.
 
-CORRECTION DU FAUX LYAPUNOV D'the original :
-- the original (lyapunov_shield.py) trackait ||y||2 (norme of sortie reseau) et
-  l'appelait "Lyapunov Shield". Mais il n'y avait AUCUN system dynamique defini
-  — a transformer n'est not naturellement a system dynamique.
-  Donc V = ||y||2 n'est PAS a function of Lyapunov au sens mathematical.
-- Ici : VRAIE function of Lyapunov on the under-system Kuramoto, which EST un
-  true system dynamique (dθ/dt = f(θ)).
-
-Math : a function of Lyapunov V(x) for a system dx/dt = f(x) must satisfaire :
-    1. V(0) = 0, V(x) > 0 for x != 0  (definie positive)
-    2. dV/dt = ∇V · f(x) <= 0 the long trajectoires  (non-croissante)
-
-Pour Kuramoto : V(θ) = 1⁄2·Σi (θi − θ*)2 with θ* = phase synchronisee target.
-dV/dt = Σi (θi − θ*) · dθi/dt, or dθi/dt vient of the derivee Kuramoto.
-Pour Kuramoto with courange attractif (Λ > 0), V decroit toward the synchronisation.
-
-On SIMULE a trajectoire Kuramoto and we measure V(t) — must etre monotone
-decroissante si the system est stable (courange attractif).
+TRUE Lyapunov function V(theta) = 0.5 * sum(theta_i - theta*)^2 on the Kuramoto
+subsystem (the only true dynamical system in the model). Not ||y||^2.
 """
 
 import math

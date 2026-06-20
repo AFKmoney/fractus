@@ -1,6 +1,6 @@
-"""Suite of Fibonacci precomputationee + formula of Binet for grands n.
+"""Precomputed Fibonacci sequence + Binet's formula for large n.
 
-Porte depuis the original architecture (src/math/fibonacci.rs).
+Ported from the original architecture (src/math/fibonacci.rs).
 """
 
 from typing import List

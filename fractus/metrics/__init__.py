@@ -1,8 +1,8 @@
-"""Sous-package metrics : mesures honestetes (compression, causal, perplexite).
+"""Metrics subpackage: honest measurements (compression, causal, perplexity).
 
-L3 : compression (mesure real, not of hardcode).
-L4 : causal (SHD, causal accuracy, not of clamp).
-L6 : perplexity (vraie exp(val_loss), not proxy norme-embedding).
+L3: compression (real measurement, no hardcoding).
+L4: causal (SHD, causal accuracy, no clamp).
+L6: perplexity (true exp(val_loss), not a proxy).
 """
 
 from .compression import measure_compression_ratio

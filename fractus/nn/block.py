@@ -1,14 +1,7 @@
-"""FractalBlock : bloc transformer fractal (L2a minimal + L2b complete).
+"""FractalBlock: fractal transformer block (minimal L2a + full L2b).
 
-L2a (FractalBlock minimal) :
-    x → LayerNorm → FractalLinearAttention → Dropout → + x (residuelle)
-
-L2b (FractalBlockFull) :
-    x → LN → FractalLinearAttention → + x (residuelle 1)
-        → LN → KuramotoLayer → phases
-        → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
-
-La connexion residuelle guaranteedt the stabilite and permet l'empilement.
+L2a: x -> LayerNorm -> FractalLinearAttention -> Dropout -> + x (residual)
+L2b: x -> LN -> attn -> +x -> LN -> Kuramoto -> phases -> LN -> MoE -> +x
 """
 
 import torch

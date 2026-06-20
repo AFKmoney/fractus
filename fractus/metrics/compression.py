@@ -1,23 +1,7 @@
-"""Mesure HONNETE ratio of compression d'un modele.
+"""HONEST measurement of a model's compression ratio.
 
-CORRECTION DU MENSONGE D'the original design :
-- the original hardcodait "compression_ratio": 20.4 in training_loop.py:52.
-- Ici, the ratio est MESURE : on compte the parameters reallement utilises et
-  on the compare a the taille qu'auraient the matrixs si elles etaient denses.
-
-Definition ratio :
-    ratio = (somme tailles denses equivalentes SirenLinear) /
-            (somme params SIREN + params denses restants)
-
-Pour a SirenLinear(in, out, hidden=h) :
-    - taille dense equivalente = in·out (la matrix qu'elle remplace)
-    - params SIREN = 2·h + h·h + h·1 + biases ≈ h2 + 3h
-    Le ratio of CETTE couche = in·out / params_SIREN.
-
-Pour a modele mixte (SirenLinear + nn.Linear), the ratio global est :
-    (Σ tailles denses equivalentes) / (Σ params totaux).
-
-On not pretend PAS 20.4×. On mesure. La demo L3 montrera the true chiffre.
+The ratio is MEASURED: we count the parameters actually used and compare them
+to the size the matrices would have if they were dense. No hardcoded values.
 """
 
 import torch

@@ -1,10 +1,7 @@
-"""honest_perplexity : vraie perplexite = exp(loss of validation).
+"""honest_perplexity: true perplexity = exp(validation loss).
 
-CORRECTION DE LA PERPLEXITE FICTIVE D'the original/the original :
-- the original (model.rs:537-546) retournait a PROXY base on the norme of l'embedding,
-  not a vraie perplexite. Le commentaire admettait :
-  "Real perplexity requires a full forward pass".
-- Ici : vraie perplexite = exp(cross-entropy moyenne on a dataset of validation).
+True perplexity = exp(average cross-entropy on a validation dataset).
+Not a proxy based on embedding norms.
 """
 
 import math

@@ -1,30 +1,9 @@
-"""PhaseRoutedMoE : mixture-of-experts a routing of phase von Mises.
+"""PhaseRoutedMoE: mixture-of-experts with von Mises phase routing.
 
-Porte depuis the original architecture (src/moe.rs + farey.rs) en PyTorch pur.
+Ported from the original architecture (src/moe.rs + farey.rs) in pure PyTorch.
 
-Mathematique :
-    Phases experts : E angles ∈ [0, 2π) issus of the Farey sequence F_{2E}.
-
-    Phase moyenne token : θ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))
-    (moyenne circulaire on the n_phases token).
-
-    Gate von Mises (non normalise) :
-        κ_eff = κ / temperature
-        g_e = exp(κ_eff · cos(θ − θ_e))      for e = 0..E-1
-
-    Normalisation : g_e /= Σ_e g_e (uniforme 1/E si Σ < 1e-10).
-
-    Top-k routing : on selectionne the K meilleurs experts (gates max),
-    on renormalise the gates retenues on 1.
-
-    Expert : MLP GeLU gelu(x·W1 + b1)·W2 + b2.
-
-    Load-balance loss (auxiliaire) :
-        P_e = moyenne gates of l'expert e on all the tokens
-        L_balance = E · Σ_e (P_e − 1/E)2
-
-Differentiable end-to-end (poids W1/W2 experts are entrainables).
-Les phases expert are en buffer (precomputation Farey, hors-graphe).
+Expert phases drawn from Farey sequence. Von Mises gate with top-k routing.
+Load-balance loss as auxiliary. End-to-end differentiable.
 """
 
 import math

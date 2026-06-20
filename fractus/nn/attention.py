@@ -1,27 +1,14 @@
-"""FractalLinearAttention : attention lineaire causale multi-niveaux.
+"""FractalLinearAttention: causal, multi-level linear attention.
 
-Portee faithfully depuis the original architecture (src/attention.rs) en PyTorch pur.
+Faithfully ported from the original architecture (src/attention.rs) in pure PyTorch.
 
-Mathematique (Katharopoulos 2020, shape causale normalisee) :
-
-    Feature map : φ(x; level) = elu_plus_one(x + ω_level, α=1)
-        with ω_level = (φ2)^{-level}, φ2 = ((1+√5)/2)2 ≈ 2.618
-        (offset Mandelbrot-decroissant, renomme honestetement).
-
-    Recurrence causale (INCLUSIVE : a l'instant t, S and z are mis a jour
-    with k_t, v_t AVANT of computationer y_t) :
-        S_t = Σ_{i≤t} φ(k_i) ⊗ v_i   ∈ R^{d_head × d_head}
-        z_t = Σ_{i≤t} φ(k_i)          ∈ R^{d_head}
-        y_t = (φ(q_t)T S_t) / (φ(q_t)T z_t)
-        (sortie 0 si |denom| < 1e-10)
-
-    Agregation multi-niveaux : output = Σ_level w_level · attn_level(x)
-        with w = softmax(level_logits) (init uniforme 1/n_levels).
-
-Complexite : O(L · d_head2) by tete by niveau, vs O(L2 · d_head) for
-l'attention softmax classique. This is l'interet.
-
-Differentiable end-to-end (all the poids are nn.Parameter).
+Math (Katharopoulos 2020, normalized causal form):
+    Feature map: phi(x; level) = elu_plus_one(x + omega_level, alpha=1)
+        with omega_level = (phi^2)^{-level}, phi^2 = ((1+sqrt(5)/2)^2 ~= 2.618
+    Causal recurrence (INCLUSIVE: at step t, S and z are updated before computing y_t).
+    Multi-level aggregation: output = sum of softmax(level_logits) * attn_level(x).
+    Complexity: O(L * d_head^2) per head per level.
+    End-to-end differentiable.
 """
 
 import math
