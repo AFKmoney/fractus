@@ -18,7 +18,7 @@ def honest_perplexity(
 
     Args:
         model      : a modele which prend input_ids and returns logits.
-        input_ids  : (B, L) tenseur d'ids d'entree.
+        input_ids  : (B, L) tenseur d'ids d'input.
         target_ids : (B, L) tenseur d'ids targets (typiquement input decale of 1).
     Returns:
         ppl : float >= 1.0. ppl = 1.0 = prediction parfaite.

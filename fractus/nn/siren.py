@@ -11,7 +11,7 @@ import torch.nn as nn
 
 
 class TorusSirenWeight(nn.Module):
-    """SIREN which represente a matrix of poids W[out_h, out_w] comme a champ
+    """SIREN which represente a matrix of poids W[out_h, out_w] as a champ
     scalar on the tore T2 = [0,1)2.
 
     Args:
@@ -35,7 +35,7 @@ class TorusSirenWeight(nn.Module):
         self.hidden = hidden
         self.omega0 = omega0
 
-        # Trois couches (comme SIREN papier for champs scalars).
+        # Trois couches (as SIREN papier for champs scalars).
         self.fc1 = nn.Linear(2, hidden)
         self.fc2 = nn.Linear(hidden, hidden)
         self.fc3 = nn.Linear(hidden, 1)

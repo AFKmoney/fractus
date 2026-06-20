@@ -7,7 +7,7 @@
 //! Port depuis the original design (rust/src/vortex.rs), with corrections :
 
 
-//! - L'import `HashMap` inutilise a ete retire.
+//! - L'import `HashMap` inuse a ete retire.
 
 
 //! - Le test tautological `assert!(d1 <= d2.max(d1))` a ete remplace by a true
@@ -48,7 +48,7 @@ pub fn valuation_2(x: u64) -> u32 {
 ///
 
 
-/// Non utilisee en L0 (no appelant of production). Conservee because the spec L1
+/// Non usee en L0 (no appelant of production). Conservee because the spec L1
 
 
 /// (cascade duale 2^n·3^k) en aura besoin ; marquee `allow(dead_code)` for
@@ -71,7 +71,7 @@ pub fn valuation_3(x: u64) -> u32 {
     val
 }
 
-/// Hash Collatz d'un integer. Utilise comme hachage d'etat deterministic.
+/// Hash Collatz d'un integer. Utilise as hachage d'etat deterministic.
 
 
 /// Note : "ergodicite of Collatz" non demontree — on l'appelle juste "hash".
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_collatz_hash_deterministic() {
-        // Meme entree → same sortie (deterministic).
+        // Meme input → same sortie (deterministic).
 
 
         assert_eq!(collatz_hash(7, 10), collatz_hash(7, 10));
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn test_norm_2adic_in_unit_interval() {
-        // Sur entrees fixes (pas fuzz, juste a echantillon), the norme
+        // Sur inputs fixes (pas fuzz, juste a echantillon), the norme
 
 
         // p-adique ||x||_2 = 2^{-v_2(x)} must be in (0, 1] for x != 0.

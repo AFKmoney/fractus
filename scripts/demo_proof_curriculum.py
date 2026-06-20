@@ -3,7 +3,7 @@
 CORRECTION DU VERDICT L5 : REINFORCE pur did not learn parce that the tache
 was too dure d'emblee (targets ±5, error 1.7, reward ecrase a 0).
 
-Cette demo utilise ProofTrainer with :
+Cette demo use ProofTrainer with :
     - reward shaping continu (-log(1+err), gradient non-nul parall)
     - baseline subtraction (reduit the variance REINFORCE)
     - curriculum (targets ±0.1 → ±5 progressivement)

@@ -1,7 +1,7 @@
 """Demo L2b : transformer fractal COMPLET (with Kuramoto + MoE).
 
 Assembler FractalEmbedding + N×FractalBlockFull + projection logit, et
-l'entrainer on a toy sequence of texte. FractalBlockFull integre :
+l'trainsr on a toy sequence of texte. FractalBlockFull integre :
   - attention lineaire causale multi-niveaux (L2a)
   - Kuramoto oscillators couples bas-rang RK4 (L2b)
   - mixture-of-experts a routing von Mises/Farey (L2b)
@@ -10,7 +10,7 @@ Corrige the error centrale of the original architecture (training.rs:399 = bruit
 recoit of vrais gradients on TOUT the pipeline (y compris U/Λ Kuramoto et
 W1/W2 experts) and the loss baisse.
 
-On utilise a all small setup (CPU-only) :
+On use a all small setup (CPU-only) :
     vocab  = 128 (ASCII imprimable : ord(c)-32 ∈ [0,95] ⊂ [0,128))
     d_model = 32
     n_blocks = 2

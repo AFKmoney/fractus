@@ -74,7 +74,7 @@ def test_prime_generator_learns_reinforce():
                 n_valid += 1
     valid_rate = n_valid / 200
     assert valid_rate > 0.5, \
-        f"valid_rate after entrainement should etre > 50%, eu {valid_rate:.1%}"
+        f"valid_rate after trainsment should etre > 50%, eu {valid_rate:.1%}"
 
 
 def test_prime_generator_soundness():

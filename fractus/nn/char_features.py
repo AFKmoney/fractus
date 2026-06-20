@@ -1,7 +1,7 @@
 """16 morphological features deterministic by token.
 
 Ported from the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
-interprete comme a codepoint Unicode ; for the ids < 128 this are des
+interprete as a codepoint Unicode ; for the ids < 128 this are des
 caracteres ASCII, au-dela on derive the features of the value numerique.
 
 Ces features n'ont AUCUN parameter trainable — elles are computationees
@@ -27,7 +27,7 @@ class CharClassFeatures:
         9  : is_whitespace     (espace, tab, newline)
         10 : is_control        (codepoint < 32 or == 127)
         11 : digit_value       (0-9, or 0 si not a chiffre)
-        12 : char_category     (categorie Unicode simplifiee comme float)
+        12 : char_category     (categorie Unicode simplifiee as float)
         13 : position_in_alphabet (0-25, or -1 si not a lettre ; on encode -1→0)
         14 : is_ascii          (codepoint < 128)
         15 : parity            (token id pair = 1, impair = 0)
@@ -42,7 +42,7 @@ class CharClassFeatures:
         """Retourne a tenseur float32 of shape (16,)."""
         f = torch.zeros(CharClassFeatures.N_FEATURES, dtype=torch.float32)
 
-        # On interprete l'octet of poids weak comme a caractere potentiel.
+        # On interprete l'octet of poids weak as a caractere potentiel.
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel

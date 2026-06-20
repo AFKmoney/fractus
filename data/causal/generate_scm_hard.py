@@ -8,7 +8,7 @@ INCONNU (W full, permutation aleatoire variables). NOTEARS must decouvrir
 l'ordre ET the structure. This is the true test of competence.
 
 Resultat empirique : NOTEARS lineaire est robuste a the non-linearite moderee
-(tanh ≈ identite for smalles entrees) and recupere the DAG with SHD=0 same
+(tanh ≈ identite for smalles inputs) and recupere the DAG with SHD=0 same
 in this cas difficile. This is a validation scientifique honesty au-dela
 du cas jouet.
 """

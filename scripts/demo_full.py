@@ -1,7 +1,7 @@
 """Demo L7 : integration complete 3 taches spec fractus.
 
 Le spec disait (L7) : 3 demos demontrables — texte, raisonnement mathematical,
-inference causale. Cette demo orchestre the 3 en a seul script, and utilise
+inference causale. Cette demo orchestre the 3 en a seul script, and use
 les metriques honestys of fractus.metrics.
 
 Ce which marche (already valid in the demos L2b, L4) :
@@ -198,7 +198,7 @@ def main():
     demo_proofs()
     demo_causal()
     section("FIN")
-    print("Tout ce qui precede utilise des MESURES HONNETES (pas de hardcode).")
+    print("Tout ce qui precede use des MESURES HONNETES (pas de hardcode).")
     print("Voir docs/superpowers/specs/2026-06-19-fractus-unified-design.md.")
 
 

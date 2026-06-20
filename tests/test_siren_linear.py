@@ -1,10 +1,10 @@
-"""Tests of SirenLinear : se comportedd comme nn.Linear but W = SIREN(grid)."""
+"""Tests of SirenLinear : se comportedd as nn.Linear but W = SIREN(grid)."""
 
 import torch
 
 
 def test_siren_linear_shape():
-    """SirenLinear(in, out) se comportedd comme nn.Linear : (B, in) → (B, out)."""
+    """SirenLinear(in, out) se comportedd as nn.Linear : (B, in) → (B, out)."""
     from fractus.nn.siren_linear import SirenLinear
     layer = SirenLinear(in_features=16, out_features=16, hidden=32)
     x = torch.randn(4, 16)

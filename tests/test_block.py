@@ -26,7 +26,7 @@ def test_block_is_finite():
 
 def test_block_residual_connection():
     """Le bloc a a connexion residuelle : with a bon init, the sortie est
-    proche of l'entree (pas d'explosion)."""
+    proche of l'input (pas d'explosion)."""
     from fractus.nn.block import FractalBlock
     torch.manual_seed(0)
     block = FractalBlock(d_model=32, n_heads=4, d_head=8, n_levels=2)

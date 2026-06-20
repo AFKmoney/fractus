@@ -1,4 +1,4 @@
-"""ProofTrainer : entraine ProofGenerator by REINFORCE with curriculum.
+"""ProofTrainer : trains ProofGenerator by REINFORCE with curriculum.
 
 CORRECTION DU VERDICT L5 (REINFORCE pur n'apprend pas) :
 
@@ -16,7 +16,7 @@ Solution (3 ingredients combines) :
    reduire the variance of REINFORCE. ∇J = E[(R - b) · ∇log π], b = EMA(R).
    Sans baseline, REINFORCE a a variance elevee which empeche l'learning.
 
-3. CURRICULUM : on entraine by paliers of difficulte croissante.
+3. CURRICULUM : on trains by paliers of difficulte croissante.
    Palier 0 : targets ±0.1 (generateur reussit already a ~10% without training).
    Palier 1 : ±0.5, Palier 2 : ±1, Palier 3 : ±2, Palier 4 : ±5.
    On passe au palier superieur when the taux of validity > threshold (ex: 30%).
@@ -94,7 +94,7 @@ class ProofTrainer:
     """Entraine ProofGenerator by REINFORCE + baseline + curriculum.
 
     Args:
-        generator   : the ProofGenerator a entrainer.
+        generator   : the ProofGenerator a trainsr.
         verify    : the ProofVerifier (sound).
         base_reward : ProofReward of the original (for efficiency + diversity).
         curriculum  : liste of CurriculumLevel (par defaut DEFAULT_CURRICULUM).
@@ -182,7 +182,7 @@ class ProofTrainer:
         initial_error = self._evaluate_median_error(5.0)
         initial_valid = self._evaluate_valid_rate(5.0)
         if verbose:
-            print(f"Avant entrainement : err_med(±5) = {initial_error:.4f}, "
+            print(f"Avant trainsment : err_med(±5) = {initial_error:.4f}, "
                   f"valid_rate(±5) = {initial_valid:.1%}")
 
         levels_reached = 0
@@ -211,7 +211,7 @@ class ProofTrainer:
         final_error = self._evaluate_median_error(5.0)
         final_valid = self._evaluate_valid_rate(5.0)
         if verbose:
-            print(f"\nApres entrainement : err_med(±5) = {final_error:.4f}, "
+            print(f"\nApres trainsment : err_med(±5) = {final_error:.4f}, "
                   f"valid_rate(±5) = {final_valid:.1%}")
             baisse = (1 - final_error / max(initial_error, 1e-9)) * 100
             print(f"Baisse error : {baisse:.1f}%")

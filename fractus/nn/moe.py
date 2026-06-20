@@ -14,7 +14,7 @@ from .farey import expert_phases
 
 
 def _gelu(x: torch.Tensor) -> torch.Tensor:
-    """GeLU approximation tanh (comme moe.rs:14-17)."""
+    """GeLU approximation tanh (as moe.rs:14-17)."""
     return 0.5 * x * (1.0 + torch.tanh(
         math.sqrt(2.0 / math.pi) * (x + 0.044715 * x ** 3)
     ))
@@ -24,12 +24,12 @@ class PhaseRoutedMoE(nn.Module):
     """Mixture-of-experts a routing of phase von Mises on phases Farey.
 
     Args:
-        d_model     : dimension d'entree/sortie.
+        d_model     : dimension d'input/sortie.
         n_experts   : number d'experts E.
         top_k       : number d'experts actives by token (<= E).
         kappa       : concentration von Mises.
         temperature : temperature gate (κ_eff = κ/temperature).
-        d_ff        : dimension cachee experts (64 by defaut comme the original).
+        d_ff        : dimension cachee experts (64 by defaut as the original).
     """
 
     def __init__(

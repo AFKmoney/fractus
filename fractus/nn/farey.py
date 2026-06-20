@@ -16,9 +16,9 @@ from typing import List, Tuple
 
 
 def farey_sequence(n: int) -> List[Tuple[int, int]]:
-    """Genere the Farey sequence F_n comme liste of (p, q) triee croissante.
+    """Genere the Farey sequence F_n as liste of (p, q) triee croissante.
 
-    Algorithme by mediante (comme farey.rs:18-49).
+    Algorithme by mediante (as farey.rs:18-49).
     F_n contient exactment 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
     """
     if n < 1:

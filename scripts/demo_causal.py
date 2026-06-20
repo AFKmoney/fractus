@@ -1,6 +1,6 @@
 """Demo L4 : NOTEARS recupere a DAG synthetique connu.
 
-AVERTISSEMENT D'HONNETETE : cette demo utilise a SCM LINEAIRE and triangulaire
+AVERTISSEMENT D'HONNETETE : cette demo use a SCM LINEAIRE and triangulaire
 superieur (topological order trivial). This is the cas-jouet ideal for NOTEARS —
 il a ete concu exactment for this reglage. SHD=0 here prouve that the PIPELINE
 tourne (les modules communiquent, NOTEARS s'optimise, the penalty functionne),
@@ -76,7 +76,7 @@ def main():
     print((W_true.abs() > 0.3).float())
 
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
-    print(f"\nSHD = {shd} (sur {n_vars*n_vars} entrees)")
+    print(f"\nSHD = {shd} (sur {n_vars*n_vars} inputs)")
     print(f"  0 = recuperation parfaite, plus c'est bas mieux c'est.")
     print(f"  (Note : cas-jouet ideal — SCM lineaire + triangulaire. Ne prouve")
     print(f"   pas la competence sur donnees reelles, juste que le pipeline tourne.)")

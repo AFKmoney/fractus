@@ -30,7 +30,7 @@ fn add(a: i64, b: i64) -> i64 {
 /// Hash Collatz d'un token id. Wrapper for fractus_core::vortex::collatz_hash.
 
 
-/// Utilise comme conditionnement deterministic (outside the autodiff graph) for
+/// Utilise as conditionnement deterministic (outside the autodiff graph) for
 
 
 /// l'embedding fractal (option B spec L1).
@@ -66,7 +66,7 @@ fn norm_2adic(x: u64) -> f64 {
 ///
 
 
-/// Signature pyo3 0.29 : the module est recu comme `&Bound<'_, PyModule>`.
+/// Signature pyo3 0.29 : the module est recu as `&Bound<'_, PyModule>`.
 
 
 /// Les methodes `.add_function(...)` viennent trait `PyModuleMethods`

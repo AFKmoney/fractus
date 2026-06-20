@@ -143,7 +143,7 @@ def load_text_dataset(
 ) -> tuple[str, dict]:
     """Charge a dataset and returns (texte_complete, vocab_char_to_id).
 
-    Niveau caractere (comme tinyshakespeare).
+    Niveau caractere (as tinyshakespeare).
     """
     # tinyshakespeare local (already telecharge).
     if dataset_name == "tinyshakespeare":
@@ -314,7 +314,7 @@ def train(args):
         print("\n" + "=" * 70)
         print("⚠️  AVERTISSEMENT CRITIQUE")
         print("=" * 70)
-        print("Vous tentez d'entrainer un modele ~1B parameters sur CPU.")
+        print("Vous tentez d'trainsr un modele ~1B parameters sur CPU.")
         print("C'est IMPOSSIBLE en pratique :")
         print("  - Memoire : ~16 GB minimum requis, vous avez probablement < 16 GB RAM.")
         print("  - Temps : semaines a mois par epoch.")

@@ -19,7 +19,7 @@ class KuramotoLayer(nn.Module):
     """Couche d'Kuramoto oscillators bas-rang, STATELESS.
 
     Args:
-        d_model       : dimension d'entree (hidden).
+        d_model       : dimension d'input (hidden).
         n_oscillators : number d'oscillateurs N.
         rank          : rang r courange bas-rang K = UΛUT.
         n_steps       : number of not RK4 by forward.
@@ -47,7 +47,7 @@ class KuramotoLayer(nn.Module):
         self.damping = damping
         self.TWO_PI = 2.0 * math.pi
 
-        # Paramevery trainables (init comme the original phase_ode.rs:38-57).
+        # Paramevery trainables (init as the original phase_ode.rs:38-57).
         self.omega = nn.Parameter(torch.empty(n_oscillators).uniform_(-0.05, 0.05))
         self.coupling_u = nn.Parameter(torch.empty(n_oscillators, rank).uniform_(-1.0, 1.0))
         self.coupling_lambda = nn.Parameter(torch.empty(rank).uniform_(0.01, 0.51))

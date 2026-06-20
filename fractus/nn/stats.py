@@ -1,11 +1,11 @@
 """Utilitaires numeriques for fractus.
 
-Portes depuis the original architecture (src/math/stats.rs) en PyTorch pur, differentiables.
+Ported from the original architecture (src/math/stats.rs) in pure PyTorch, differentiable.
 
-elu_more_one : feature map strictement positive for linear attention.
+elu_more_one : feature map strictly positive for linear attention.
     φ(x, α) = x + 1              si x > 0
             = α(e^x - 1) + 1     otherwise
-    Avec α=1 (defaut), φ est strictement positive (min e^x > 0 for x→-∞,
+    Avec α=1 (defaut), φ est strictly positive (min e^x > 0 for x→-∞,
     = 1 en x=0). Cette positifast guaranteedt that the denominateur of l'attention
     lineaire causale reste well defini.
 
@@ -16,15 +16,15 @@ import torch
 
 
 def elu_plus_one(x: torch.Tensor, alpha: float = 1.0) -> torch.Tensor:
-    """Feature map ELU+1 strictement positive, differentiable.
+    """Feature map ELU+1 strictly positive, differentiable.
 
     Args:
         x : tenseur of shape arbitraire.
-        alpha : coefficient ELU (1.0 by defaut, comme the original).
+        alpha : coefficient ELU (1.0 by defaut, as the original).
     Returns:
-        tenseur of same shape, strictement positif.
+        tenseur of same shape, strictly positif.
     """
-    # On utilise the formula directe ( differentiable via torch.where ) :
+    # We use the direct formula ( differentiable via torch.where ) :
     # branche positive : x + 1 ; branche negative : alpha * (exp(x) - 1) + 1.
     pos = x + 1.0
     neg = alpha * (torch.exp(x) - 1.0) + 1.0

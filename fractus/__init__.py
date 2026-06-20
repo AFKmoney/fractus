@@ -18,7 +18,7 @@ def __getattr__(name):
     # Ne se declenche that si quelqu'un does `from fractus import _core`
     # or `fractus._core`. Les imports `import fractus.nn` not passent not ici.
     #
-    # On utilise importlib.import_module and non `from fractus import _core`,
+    # On use importlib.import_module and non `from fractus import _core`,
     # because cette derniere shape re-declencherait __getattr__ → recursion infinie.
     if name == "_core":
         import importlib

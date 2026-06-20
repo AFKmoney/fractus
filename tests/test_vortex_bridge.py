@@ -7,7 +7,7 @@ ils validnt juste the pont PyO3.
 
 
 def test_collatz_hash_is_deterministic():
-    """Meme entree → same sortie (property requise for the conditionnement)."""
+    """Meme input → same sortie (property requise for the conditionnement)."""
     from fractus import _core
     h1 = _core.collatz_hash(7, 10)
     h2 = _core.collatz_hash(7, 10)

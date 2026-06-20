@@ -34,7 +34,7 @@ class PrimeGenerator(nn.Module):
 
     Args:
         max_n    : the integers predits are in [2, max_n].
-        context_dim : dimension vector of contexte (entree).
+        context_dim : dimension vector of contexte (input).
         hidden   : width MLP.
     """
 

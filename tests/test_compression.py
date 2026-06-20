@@ -12,7 +12,7 @@ def test_compression_no_hardcoded_204():
     import re
     from fractus.metrics import compression
     src = inspect.getsource(compression)
-    # On retire commentaires/docstrings before of chercher.
+    # On retire asntaires/docstrings before of chercher.
     code_lines = []
     in_docstring = False
     for line in src.split('\n'):

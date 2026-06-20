@@ -1,11 +1,11 @@
 """SelfConsistencyCheck : debat interne by bruit and vote.
 
-Ported from the original architecture (src/reasoning.rs:194-279) en PyTorch pur.
+Ported from the original architecture (src/reasoning.rs:194-279) in pure PyTorch.
 
 Algorithme :
     generate_candidates(h, n, noise_scale) : produit n versions bruitees of h.
         Bruit uniforme U(-noise_scale, +noise_scale) (the original dit "Galsoan-like"
-        but utilise uniforme — on est faithful a l'implementation).
+        but use uniforme — on est faithful a l'implementation).
     score_candidates(cands, ref) : for each candidat, moyenne of the similarite
         cosinus with the reference on all the (batch, position).
     select_best : argmax scores.
@@ -35,7 +35,7 @@ class SelfConsistencyCheck(nn.Module):
     def generate_candidates(self, h: torch.Tensor) -> List[torch.Tensor]:
         """Produit n_candidates versions bruitees of h.
 
-        Bruit uniforme U(-noise_scale, +noise_scale), comme the original reasoning.rs:211-220.
+        Bruit uniforme U(-noise_scale, +noise_scale), as the original reasoning.rs:211-220.
         """
         candidates = []
         for _ in range(self.n_candidates):

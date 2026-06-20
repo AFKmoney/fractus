@@ -5,7 +5,7 @@ import torch
 
 
 def test_kuramoto_output_shape():
-    """Sortie phases (B, L, N_osc) for entree (B, L, d_model)."""
+    """Sortie phases (B, L, N_osc) for input (B, L, d_model)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)

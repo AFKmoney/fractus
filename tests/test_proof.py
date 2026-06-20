@@ -110,7 +110,7 @@ def test_verify_accepts_valid_proof():
     """Une proof dont the conclusion atteint the target must be acceptedde.
 
     Note : the threshold 1e-3 est strict (<, not <=), therefore |conclusion - target| must
-    be STRICTEMENT inferieur a 0.001. On utilise 0.0005 for be sur.
+    be STRICTEMENT inferieur a 0.001. On use 0.0005 for be sur.
     """
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()

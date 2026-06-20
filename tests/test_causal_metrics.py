@@ -60,7 +60,7 @@ def test_shd_no_clamp_to_098():
     (le falsehood d'the original benchmarks.py:43-46 : min(causal_acc, 0.98)).
 
     On tolere '0.98' in the docstrings (qui expliquent the falsehood correctede),
-    but on l'interdit in the expressions Python hors-commentaires."""
+    but on l'interdit in the expressions Python hors-asntaires."""
     import ast
     from fractus.metrics import causal as causal_mod
 

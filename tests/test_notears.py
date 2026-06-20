@@ -57,7 +57,7 @@ def test_notears_larger_cycle_detected():
 
     Note : NOTEARS est sensible a l'AMPLITUDE poids cycle (h mesure
     l'intensite, not juste the presence). Avec poids 1.0, h ≈ 0.17 ; with
-    poids 2.0, h ≈ 49. On utilise therefore poids 1.5 and threshold > 0.1.
+    poids 2.0, h ≈ 49. On use therefore poids 1.5 and threshold > 0.1.
     """
     from fractus.causal.notears import notears_penalty
     W = torch.zeros(4, 4)

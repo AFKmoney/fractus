@@ -29,7 +29,7 @@ def test_perplexity_returns_float_ge_one():
 
 
 def test_perplexity_uniform_init_close_to_vocab():
-    """Un modele non-entraine (logits ~ uniforme) → ppl ≈ vocab."""
+    """Un modele non-trains (logits ~ uniforme) → ppl ≈ vocab."""
     from fractus.metrics.perplexity import honest_perplexity
     # Avec init embedding aleatoire smalle, logits ~ uniforme → CE ≈ log(vocab).
     torch.manual_seed(0)
@@ -66,5 +66,5 @@ def test_perplexity_not_just_embedding_norm():
     import inspect
     from fractus.metrics import perplexity as ppl_mod
     src = inspect.getsource(ppl_mod)
-    assert "cross_entropy" in src, "Doit utiliser cross_entropy (pas un proxy)"
+    assert "cross_entropy" in src, "Doit user cross_entropy (pas un proxy)"
     assert "model(input_ids)" in src or "model(" in src, "Doit faire un true forward"

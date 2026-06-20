@@ -150,7 +150,7 @@ def main():
     if final_ppl < initial_ppl * 0.7:
         print(f"\nOK : le transformer fractal apprend sur tinyshakespeare real "
               f"(ppl {initial_ppl:.1f} -> {final_ppl:.1f}, ÷{initial_ppl/final_ppl:.1f}).")
-        print(f"  Note : entrainement court (200 batches). Convergence complete")
+        print(f"  Note : trainsment court (200 batches). Convergence complete")
         print(f"  necessiterait GPU ou vectorisation Kuramoto (future work).")
     else:
         print(f"\n~ : ppl baisse peu. Plus de batches / modele plus gros aiderait.")

@@ -16,7 +16,7 @@ def test_elu_plus_one_at_zero():
 
 
 def test_elu_plus_one_strictly_positive():
-    """elu_more_one est strictement positif (exigeant for linear attention)."""
+    """elu_more_one est strictly positif (exigeant for linear attention)."""
     from fractus.nn.stats import elu_plus_one
     xs = torch.linspace(-10, 10, 100)
     out = elu_plus_one(xs)

@@ -2,7 +2,7 @@
 par a SIREN.
 
 CORRECTION vs the original : in the original, the matrix decompressee W was computationee then
-JETEE (training_loop.py:30-37 appliquait mirror a W then tournait on l'entree
+JETEE (training_loop.py:30-37 appliquait mirror a W then tournait on l'input
 brute). Ici, the SIREN EST the matrix : on evalue the SIREN a each forward for
 obtenir W, then on does y = x @ W + b. Tout est in the graphe autodiff.
 
@@ -22,7 +22,7 @@ class SirenLinear(nn.Module):
     """Couche lineaire dont the matrix W = SIREN(grid).
 
     Args:
-        in_features, out_features : dimensions (comme nn.Linear).
+        in_features, out_features : dimensions (as nn.Linear).
         hidden : width of the SIREN which produit W.
         omega0 : frequence SIREN.
         bias   : si True, ajoute a biais trainable.

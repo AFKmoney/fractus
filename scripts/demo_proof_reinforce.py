@@ -54,7 +54,7 @@ def reinforce_update(
     reward = reward_fn.compute_reward(proof, is_valid)
 
     # REINFORCE : on veut maximiser E[reward]. reward est scalar non-diff.
-    # On utilise reward comme poids on the log-probs regles choisies.
+    # On use reward as poids on the log-probs regles choisies.
     loss = torch.tensor(0.0, requires_grad=True)
     for logits, selected_idx in zip(info["logits_per_step"], info["selected_indices"]):
         log_probs = torch.log_softmax(logits, dim=-1)

@@ -35,7 +35,7 @@ class FractalLinearAttention(nn.Module):
     """Attention lineaire causale multi-niveaux.
 
     Args:
-        d_model  : dimension modele (entree/sortie).
+        d_model  : dimension modele (input/sortie).
         n_heads  : number of tetes d'attention.
         d_head   : dimension per head. Must satisfy n_heads · d_head == d_model.
         n_levels : number of niveaux fractals (offsets Mandelbrot distincts).
@@ -57,7 +57,7 @@ class FractalLinearAttention(nn.Module):
         self.n_levels = n_levels
         d_qkv = n_heads * d_head  # = d_model
 
-        # Poids Q, K, V concatenes (comme the original attention.rs:30-32).
+        # Poids Q, K, V concatenes (as the original attention.rs:30-32).
         # Init of type Glorot : U(-scale, scale), scale = sqrt(2/(fan_in+fan_out)).
         # (Note : the true Xavier/Glorot uniform is sqrt(6/(fan_in+fan_out)) ;
         #  the original utilisait sqrt(2/(...)), on conserve for fidelite.)
@@ -114,7 +114,7 @@ class FractalLinearAttention(nn.Module):
             kt = k[:, t, :]  # (B, D)
             vt = v[:, t, :]  # (B, D)
             # Mise a jour INCLUSIVE before computation of y_t (causalite stricte
-            # incluant the present token, comme the original attention.rs:173-208).
+            # incluant the present token, as the original attention.rs:173-208).
             S = S + kt.unsqueeze(2) * vt.unsqueeze(1)  # outer product (B, D, D)
             z = z + kt  # (B, D)
             qt = q[:, t, :]  # (B, D)
@@ -166,7 +166,7 @@ class FractalLinearAttention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x : (B, L, d_model) → sortie (B, L, d_model)."""
         B, L, _ = x.shape
-        # Projeter Q, K, V (einsum direct, differentiable).
+        # Project Q, K, V (direct einsum, differentiable).
         q_all = torch.einsum("bld,de->ble", x, self.w_qkv[0]) + self.b_qkv[0]
         k_all = torch.einsum("bld,de->ble", x, self.w_qkv[1]) + self.b_qkv[1]
         v_all = torch.einsum("bld,de->ble", x, self.w_qkv[2]) + self.b_qkv[2]

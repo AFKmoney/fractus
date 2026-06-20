@@ -1,6 +1,6 @@
 """Decopene of conjectures : neural propose, Popperian falsification dispose.
 
-Ported from the original architecture (src/conjecture.rs) en PyTorch pur.
+Ported from the original architecture (src/conjecture.rs) in pure PyTorch.
 
 Architecture :
     ConjectureGenerator : MLP qui, depuis a etat of connaissance, propose un
@@ -208,7 +208,7 @@ class ConjectureGenerator(nn.Module):
     """MLP which propose a conjecture depuis a etat of connaissance.
 
     Args:
-        state_dim   : dimension of l'etat d'entree (32 by defaut).
+        state_dim   : dimension of l'etat d'input (32 by defaut).
         n_templates : number of templates (10).
         max_params  : number max of parameters generateds (4, constant the original).
     """
@@ -237,7 +237,7 @@ class ConjectureGenerator(nn.Module):
 
         params_logits = knowledge_state @ self.w_params  # (max_params,)
         # detach() : on not retooropage not in the parameters generateds (ils
-        # servent d'entree au tester, which n'est not differentiable).
+        # serve d'input au tester, which n'est not differentiable).
         parameters = [abs(float(p.detach())) * 100.0 + 2.0 for p in params_logits]
 
         novelty = abs(float((knowledge_state @ self.w_novelty).detach().item()))

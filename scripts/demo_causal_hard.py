@@ -51,7 +51,7 @@ def main():
     n_correct = int(((W_true.abs() > 0.3) & (W_pred.detach().abs() > 0.3)).sum())
 
     print()
-    print(f"SHD = {shd} (sur {n_vars*n_vars} entrees)")
+    print(f"SHD = {shd} (sur {n_vars*n_vars} inputs)")
     print(f"Aretes : vraies={n_edges}, predites={n_pred}, correctes={n_correct}")
     print(f"W_pred appris :")
     print((W_pred.detach().abs() > 0.3).int())
@@ -61,7 +61,7 @@ def main():
         print(f"OK : NOTEARS recupere le DAG non-lineaire a ordre inconnu (SHD <= 2).")
         print(f"  Validation au-dela du cas jouet L4 : NOTEARS est competent.")
         print(f"  Note : NOTEARS lineaire est robuste a la non-linearite moderee")
-        print(f"  (tanh ≈ identite for petites entrees). Pour une non-linearite")
+        print(f"  (tanh ≈ identite for petites inputs). Pour une non-linearite")
         print(f"  forte, il faudrait NOTEARS non-lineaire (future work).")
     else:
         print(f"~ : SHD = {shd} > 2. NOTEARS lineaire a du mal sur ces donnees.")

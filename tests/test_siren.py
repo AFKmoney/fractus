@@ -5,7 +5,7 @@ import torch
 
 
 def test_siren_uses_sin_not_silu():
-    """CRITERE L3 : the SIREN must utiliser torch.sin comme non-linearite,
+    """CRITERE L3 : the SIREN must user torch.sin as non-linearite,
     PAS nn.SiLU. This is exactment the falsehood d'the original (torus_siren.py:15,17).
 
     On verifiesss via l'inspection REELLE modules code source (AST),
@@ -16,10 +16,10 @@ def test_siren_uses_sin_not_silu():
 
     # 1. torch.sin must be appele in the forward.
     src = inspect.getsource(siren_mod)
-    assert 'torch.sin(' in src, "La SIREN must utiliser torch.sin(ω₀·)"
+    assert 'torch.sin(' in src, "La SIREN must user torch.sin(ω₀·)"
 
     # 2. Parser the source and verify qu'no Attribute dont attr='SiLU'
-    #    n'est utilise comme appel (nn.SiLU()).
+    #    n'est use as appel (nn.SiLU()).
     tree = ast.parse(src)
     silu_calls = []
     for node in ast.walk(tree):

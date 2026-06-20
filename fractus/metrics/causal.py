@@ -31,7 +31,7 @@ def causal_accuracy(
     pred_W: torch.Tensor,
     threshold: float = 0.3,
 ) -> float:
-    """Fraction d'entrees correctement predites. PAS of clamp (a the difference
+    """Fraction d'inputs correctement predites. PAS of clamp (a the difference
     d'the original which plafonnait a 0.98).
 
     Args:

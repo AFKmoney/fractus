@@ -86,7 +86,7 @@ def test_fourier_matrix_is_deterministic():
 # ---------------------------------------------------------------------------
 
 def test_fractal_embedding_shape():
-    """Sortie (N, d_model) for entree (N,) d'ids."""
+    """Sortie (N, d_model) for input (N,) d'ids."""
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=128, d_model=64, n_frequencies=16)
     ids = torch.tensor([0, 1, 2, 65, 97])  # mix

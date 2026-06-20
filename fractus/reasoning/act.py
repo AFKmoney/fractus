@@ -1,6 +1,6 @@
 """RecursiveReasoner : Adaptive Computation Time (Graves 2016).
 
-Ported from the original architecture (src/reasoning.rs:15-187) en PyTorch pur.
+Ported from the original architecture (src/reasoning.rs:15-187) in pure PyTorch.
 
 ACT : the modele "reflechit" a number variable of steps by position. A each
 step, a probabilite d'arret p_t est computationee. L'output est a moyenne ponderee

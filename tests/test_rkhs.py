@@ -52,7 +52,7 @@ def test_rkhs_not_just_linear_projection():
     """VRAI RKHS : the sortie must passer by a feature map non-lineaire (cos/sin),
     not be a projection lineaire simple x@W (le false RKHS d'the original).
 
-    On verifiesss that the forward NE PEUT PAS s'ecrire comme a simple Linear :
+    On verifiesss that the forward NE PEUT PAS s'ecrire as a simple Linear :
     si on remplace φ(x) = [cos,sin] by φ(x) = x (lineaire), the sortie change.
     Concretement : on compare the true forward a a forward or on short-circuite
     the features by l'identite (en clippant temporairement the cos/sin via
@@ -61,7 +61,7 @@ def test_rkhs_not_just_linear_projection():
     from fractus.causal.rkhs import RKHSCausalOperator
     torch.manual_seed(0)
     op = RKHSCausalOperator(dim=4, rank=2, n_rff=64)
-    # Petite entree autour of 0 : a x≈0, cos(ω·x+b)≈cos(b), sin(ω·x+b)≈sin(b)+ω·x·cos(b).
+    # Petite input autour of 0 : a x≈0, cos(ω·x+b)≈cos(b), sin(ω·x+b)≈sin(b)+ω·x·cos(b).
     # Donc the RKHS est approximativement lineaire en x for small x, but pas
     # exactment. Pour x large, the non-linearite est manifeste.
     x_small = torch.randn(8, 4) * 0.01  # small
