@@ -1,8 +1,8 @@
 # fractus
 
-**Un transformer fractal entraînable, avec compression SIREN, raisonnement causal NOTEARS, et génération de preuves vérifiées.**
+**Un transformer fractal entrainable, with compression SIREN, raisonnement causal NOTEARS, et generation de preuves verifiees.**
 
-Fractus est une réfonte honnête de deux systèmes précédents (**FNN v5.0** et **OMNI-FRACTAL** de Philippe-Antoine Robert) qui corrige leurs erreurs tout en préservant tous les concepts. Le résultat : un transformer fractal qui **apprend pour de vrai** (autodiff natif, pas de bruit aléatoire), avec des **maths fidèles** (vérifiées par reviewers indépendants), des **tests honnêtes** (156 tests, pas tautologiques), et des **chiffres mesurés** (pas hardcodés).
+Fractus est une refonte honnete de deux systems precedents (**the original architecture** et **the original design** de the original author) qui corrige leurs errors tout en preservant all les concepts. Le result : un transformer fractal qui **apprend for de true** (autodiff natif, pas de bruit aleatoire), with des **maths fideles** (verifiees par reviewers independants), des **tests honnetes** (156 tests, pas tautologiques), et des **chiffres mesures** (pas hardcodes).
 
 > CPU-only friendly · Python 3.10+ · PyTorch 2.2+ · Rust 1.70+
 
@@ -10,34 +10,34 @@ Fractus est une réfonte honnête de deux systèmes précédents (**FNN v5.0** e
 
 ## Pourquoi fractus ?
 
-Les systèmes originaux (FNN + OMNI) avaient **9 mensonges/erreurs** majeurs :
+Les systems originaux (FNN + OMNI) avaient **9 mensonges/errors** majeurs :
 - FNN n'apprenait pas (`training.rs:399` utilisait `rand::random()*0.01` au lieu d'un gradient)
-- La SIREN d'OMNI était fausse (`nn.SiLU` au lieu de `sin(ω₀·)`)
-- La compression 20.4× était hardcodée (réelle : 1.51×)
+- La SIREN d'OMNI was fausse (`nn.SiLU` au lieu de `sin(ω₀·)`)
+- La compression 20.4× was hardcodee (real : 1.51×)
 - Le RKHS n'avait pas de noyau · Le do-calculus zerorait des colonnes · etc.
 
-**Fractus corrige tout ça.** Voir `docs/CORRECTIONS.md` pour la liste complète avec traçabilité `file:line`.
+**Fractus corrige tout ca.** Voir `docs/CORRECTIONS.md` for la liste complete with tracabilite `file:line`.
 
 ---
 
-## Concepts (tous présents, tous fonctionnels)
+## Concepts (all presents, all fonctionnels)
 
-| Concept | Module | Validé par |
+| Concept | Module | Valide par |
 |---|---|---|
-| Vortex 2-adique (valuation, ultramétrique) | `fractus-core/src/vortex.rs` (Rust) | Bug OMNI corrigé : `2^{+v₂}` → `2^{-v₂}` |
+| Vortex 2-adique (valuation, ultrametrique) | `fractus-core/src/vortex.rs` (Rust) | Bug OMNI corrige : `2^{+v₂}` → `2^{-v₂}` |
 | Embedding fractal (Fourier Mandelbrot + char features) | `fractus/nn/embedding.py` | backward CHAQUE param |
-| Attention linéaire causale multi-niveaux | `fractus/nn/attention.py` | vectorisée 17× + causalité testée |
+| Attention lineaire causale multi-niveaux | `fractus/nn/attention.py` | vectorisee 17× + causalite testee |
 | Oscillateurs Kuramoto RK4 bas-rang | `fractus/nn/phase_ode.py` | RK4 + stateless |
-| MoE à routing von Mises / Farey | `fractus/nn/moe.py` | load-balance + top-k |
-| Compression SIREN `sin(ω₀·)` | `fractus/nn/siren.py` | ω₀=30 Sitzmann, ratio mesuré |
-| NOTEARS causal (DAG acyclique) | `fractus/causal/notears.py` | SHD=0 sur SCM non-linéaire |
-| RKHS via Random Fourier Features | `fractus/causal/rkhs.py` | vrai noyau, pas projection nue |
-| do-calculus de Pearl | `fractus/causal/do.py` | clamp à v, pas zeroring |
-| Preuves (vérificateur exact sound) | `fractus/reasoning/proof.py` | Fermat/Wilson/GCD |
-| Génération de nombres premiers | `fractus/reasoning/prime_generator.py` | **100% primalité** après 100 steps |
-| Conjectures (falsification popperienne) | `fractus/reasoning/conjecture.py` | 10 templates, 6 stratégies |
+| MoE a routing von Mises / Farey | `fractus/nn/moe.py` | load-balance + top-k |
+| Compression SIREN `sin(ω₀·)` | `fractus/nn/siren.py` | ω₀=30 Sitzmann, ratio mesure |
+| NOTEARS causal (DAG acyclique) | `fractus/causal/notears.py` | SHD=0 sur SCM non-lineaire |
+| RKHS via Random Fourier Features | `fractus/causal/rkhs.py` | true noyau, pas projection nue |
+| do-calculus de Pearl | `fractus/causal/do.py` | clamp a v, pas zeroring |
+| Preuves (verify exact sound) | `fractus/reasoning/proof.py` | Fermat/Wilson/GCD |
+| Generation de numbers premiers | `fractus/reasoning/prime_generator.py` | **100% primalite** after 100 steps |
+| Conjectures (falsification popperienne) | `fractus/reasoning/conjecture.py` | 10 templates, 6 strategies |
 | ACT (Adaptive Computation Time) | `fractus/reasoning/act.py` | Graves 2016 |
-| Lyapunov (sous-système Kuramoto) | `fractus/stability/lyapunov.py` | vrai système dynamique |
+| Lyapunov (under-system Kuramoto) | `fractus/stability/lyapunov.py` | true system dynamique |
 
 ---
 
@@ -47,62 +47,62 @@ Les systèmes originaux (FNN + OMNI) avaient **9 mensonges/erreurs** majeurs :
 git clone https://github.com/AFKmoney/fractus.git
 cd fractus
 
-# Créer le venv (utiliser `py` sur Windows, pas python MSYS2)
+# Creer le venv (utiliser `py` sur Windows, pas python MSYS2)
 py -m venv .venv
 .venv\Scripts\Activate.ps1   # Windows
 # source .venv/bin/activate  # Linux/macOS
 
-# Dépendances Python
+# Dependances Python
 pip install torch --index-url https://download.pytorch.org/whl/cpu  # CPU-only
 pip install -r requirements.txt
 
 # Module natif Rust (pont Python↔Rust)
 maturin develop --release
 
-# Tests (doivent tous passer)
+# Tests (must all passer)
 pytest tests/ -q
 ```
 
-**Prérequis** : Rust (`cargo`), Python 3.10+ avec `py` launcher.
+**Prerequis** : Rust (`cargo`), Python 3.10+ with `py` launcher.
 
 ---
 
-## Démarrage rapide
+## Demarrage rapide
 
 ```bash
-# Démo 1 : transformer fractal apprend "hello world"
+# Demo 1 : transformer fractal apprend "hello world"
 python scripts/demo_transformer.py
 
-# Démo 2 : génération de nombres premiers (100% validité)
+# Demo 2 : generation de numbers premiers (100% validite)
 python scripts/demo_prime_reinforce.py
 
-# Démo 3 : NOTEARS récupère un DAG causal
+# Demo 3 : NOTEARS recupere un DAG causal
 python scripts/demo_causal.py
 
-# Démo 4 : tinyshakespeare (perplexité réelle)
+# Demo 4 : tinyshakespeare (perplexite real)
 python scripts/demo_shakespeare.py
 
-# Démo complète : texte + preuves + causal
+# Demo complete : texte + preuves + causal
 python scripts/demo_full.py
 ```
 
 ---
 
-## Entraînement sur datasets HuggingFace
+## Entrainement sur datasets HuggingFace
 
 ```bash
-# Petit modèle sur tinyshakespeare (CPU, ~2 min)
+# Petit modele sur tinyshakespeare (CPU, ~2 min)
 python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare
 
-# Modèle medium sur wikitext (GPU recommandé)
+# Modele medium sur wikitext (GPU recommande)
 python scripts/train_hf.py --preset gpu-medium --dataset wikitext-2
 
-# Configuration personnalisée
+# Configuration personnalisee
 python scripts/train_hf.py --dataset HuggingFaceFW/fineweb --text-field text \
     --d-model 256 --n-blocks 6 --seq-len 128 --batch-size 16 --epochs 3
 ```
 
-### Tailles de modèle et hardware requis
+### Tailles de modele et hardware requis
 
 | Preset | Params | RAM min | Temps/epoch | Hardware |
 |---|---|---|---|---|
@@ -113,24 +113,24 @@ python scripts/train_hf.py --dataset HuggingFaceFW/fineweb --text-field text \
 | `gpu-large` | ~300M | 40 GB VRAM | ~2h | A100 40GB |
 | `gpu-1b` | ~1B | 80 GB VRAM | ~8h | A100 80GB / H100 |
 
-> ⚠️ **Honnêteté** : le preset `gpu-1b` est fourni pour la complétude, mais il **nécessite un GPU datacenter** (A100 80GB ou H100). Il est **impossible** sur CPU ou GPU consumer. Ne le lancez pas sans le hardware approprié — ça OOM ou prendra des semaines. Le bottleneck principal est le Kuramoto RK4 (non encore vectorisé) et la SIREN (évaluation à chaque forward).
+> ⚠️ **Honnetete** : le preset `gpu-1b` est fourni for la completude, but il **necessite un GPU datacenter** (A100 80GB ou H100). Il est **impossible** sur CPU ou GPU consumer. Ne le lancez pas without le hardware approprie — ca OOM ou prendra des semaines. Le bottleneck principal est le Kuramoto RK4 (non encore vectorise) et la SIREN (evaluation a each forward).
 
 ---
 
 ## Tests
 
 ```bash
-pytest tests/ -q                    # 156 tests, tous passants
-pytest tests/test_attention_vectorized.py -v   # équivalence vectorisée
+pytest tests/ -q                    # 156 tests, all passants
+pytest tests/test_attention_vectorized.py -v   # equivalence vectorisee
 ```
 
 ---
 
 ## Documentation
 
-- `docs/CORRECTIONS.md` — les 9 mensonges originaux corrigés (traçabilité file:line)
-- `docs/superpowers/specs/2026-06-19-fractus-unified-design.md` — spec complet
-- `docs/superpowers/plans/` — plans d'implémentation par couche (L0→L7)
+- `docs/CORRECTIONS.md` — les 9 mensonges originaux corriges (tracabilite file:line)
+- `docs/superpowers/specs/2026-06-19-fractus-unified-design.md` — spec complete
+- `docs/superpowers/plans/` — plans d'implementation par couche (L0→L7)
 
 ---
 
@@ -144,23 +144,23 @@ fractus/
 ├── fractus/causal/           PyTorch : NOTEARS, RKHS, do-calculus
 ├── fractus/reasoning/        PyTorch : preuves, conjectures, ACT
 ├── fractus/stability/        PyTorch : Lyapunov
-├── fractus/metrics/          mesures honnêtes (compression, SHD, perplexité)
-├── data/                     datasets (tinyshakespeare, SCM synthétiques)
+├── fractus/metrics/          mesures honnetes (compression, SHD, perplexite)
+├── data/                     datasets (tinyshakespeare, SCM synthetiques)
 ├── tests/                    156 tests
-├── scripts/                  8 démos + train_hf.py
+├── scripts/                  8 demos + train_hf.py
 └── docs/                     spec, plans, corrections
 ```
 
-**Le Rust reste hors-graphe autodiff** (calcul exact, vérification, précalcul). La forward/backward est **PyTorch pur** (autodiff natif).
+**Le Rust reste hors-graphe autodiff** (computation exact, verification, precalcul). La forward/backward est **PyTorch pur** (autodiff natif).
 
 ---
 
-## Limites connues (honnêtes)
+## Limites connues (honnetes)
 
-1. **Kuramoto RK4 non vectorisé** : 4 sous-steps Python, ~116ms/batch. Future work : vectoriser comme l'attention.
-2. **SIREN compression faible** : 1.51× sur poids denses (inhérent — les SIREN compressent les fonctions lisses, pas le bruit).
-3. **ProofGenerator REINFORCE** : la tâche FNN originale (converger à 1e-3) est inatteignable. La tâche redéfinie (produire des premiers) marche à 100%.
-4. **Causal non-linéaire fort** : NOTEARS linéaire est robuste à la non-linéarité modérée (tanh), mais pas aux relations fortement non-linéaires.
+1. **Kuramoto RK4 non vectorise** : 4 under-steps Python, ~116ms/batch. Future work : vectoriser comme l'attention.
+2. **SIREN compression faible** : 1.51× sur poids denses (inherent — les SIREN compressent les functions lisses, pas le bruit).
+3. **ProofGenerator REINFORCE** : la tâche FNN originale (converger a 1e-3) est inatteignable. La tâche redefinie (produire des premiers) marche a 100%.
+4. **Causal non-lineaire fort** : NOTEARS lineaire est robuste a la non-linearite moderee (tanh), but pas aux relations fortement non-lineaires.
 
 ---
 
@@ -170,7 +170,7 @@ MIT. Voir `LICENSE`.
 
 ---
 
-## Crédits
+## Credits
 
-Concepts originaux : **Philippe-Antoine Robert** (FNN v5.0, OMNI-FRACTAL).
-Réfonte honnête : fractus project, 2026.
+Concepts originaux : **the original author** (the original architecture, the original design).
+Refonte honnete : fractus project, 2026.

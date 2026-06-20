@@ -8,7 +8,7 @@ build-backend = "maturin"
 [project]
 name = "fractus"
 version = "0.1.0"
-description = "Réfonte unifiée de FNN + OMNI-FRACTAL : transformer fractal entraînable."
+description = "Refonte unifiee de FNN + the original design : transformer fractal entrainable."
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.2",
@@ -22,7 +22,7 @@ dev = [
 ]
 
 [tool.maturin]
-# Le module natif (cdylib _core) sera placé dans fractus/ → importé comme fractus._core.
+# Le module natif (cdylib _core) sera place in fractus/ → importe comme fractus._core.
 python-source = "."
 module-name = "fractus._core"
 manifest-path = "crate/fractus-py/Cargo.toml"

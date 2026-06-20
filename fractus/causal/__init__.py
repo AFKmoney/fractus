@@ -1,7 +1,7 @@
 """Sous-package causal : NOTEARS, RKHS, do-calculus.
 
-L4 : découverte causale avec DAG garanti acyclique (NOTEARS), opérateur RKHS
-via Random Fourier Features, et vrai do-calculus de Pearl.
+L4 : decouverte causale with DAG garanti acyclique (NOTEARS), operateur RKHS
+via Random Fourier Features, et true do-calculus de Pearl.
 """
 
 from .notears import notears_penalty

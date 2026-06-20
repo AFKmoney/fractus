@@ -1,10 +1,10 @@
 # Workspace racine fractus.
-# Les deux crates (fractus-core, fractus-py) sont des members isolés.
+# Les deux crates (fractus-core, fractus-py) sont des members isoles.
 [workspace]
 members = ["crate/fractus-core", "crate/fractus-py"]
 resolver = "2"
 
-# Profil release optimisé pour CPU-only.
+# Profil release optimise for CPU-only.
 [profile.release]
 opt-level = 3
 lto = true

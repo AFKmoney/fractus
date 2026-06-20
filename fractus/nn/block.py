@@ -1,14 +1,14 @@
-"""FractalBlock : bloc transformer fractal (L2a minimal + L2b complet).
+"""FractalBlock : bloc transformer fractal (L2a minimal + L2b complete).
 
 L2a (FractalBlock minimal) :
-    x → LayerNorm → FractalLinearAttention → Dropout → + x (résiduelle)
+    x → LayerNorm → FractalLinearAttention → Dropout → + x (residuelle)
 
 L2b (FractalBlockFull) :
-    x → LN → FractalLinearAttention → + x (résiduelle 1)
+    x → LN → FractalLinearAttention → + x (residuelle 1)
         → LN → KuramotoLayer → phases
-        → LN → PhaseRoutedMoE(hidden, phases) → + x (résiduelle 2)
+        → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
-La connexion résiduelle garantit la stabilité et permet l'empilement.
+La connexion residuelle garantit la stabilite et permet l'empilement.
 """
 
 import torch
@@ -23,11 +23,11 @@ class FractalBlock(nn.Module):
     """Bloc transformer fractal minimal (L2a).
 
     Args:
-        d_model  : dimension du modèle.
-        n_heads  : nombre de têtes d'attention.
-        d_head   : dimension par tête (n_heads·d_head == d_model requis).
+        d_model  : dimension du modele.
+        n_heads  : number de tetes d'attention.
+        d_head   : dimension par tete (n_heads·d_head == d_model requis).
         n_levels : niveaux fractals de l'attention.
-        dropout  : taux de dropout (0 par défaut en L2a, on ajoutera en L7).
+        dropout  : taux de dropout (0 par defaut en L2a, on ajoutera en L7).
     """
 
     def __init__(
@@ -46,21 +46,21 @@ class FractalBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x : (B, L, d_model) → (B, L, d_model).
 
-        Connexion résiduelle : out = x + dropout(attn(norm(x))).
+        Connexion residuelle : out = x + dropout(attn(norm(x))).
         """
         return x + self.dropout(self.attn(self.norm(x)))
 
 
 class FractalBlockFull(nn.Module):
-    """Bloc transformer fractal complet (L2b) : intègre Kuramoto + MoE.
+    """Bloc transformer fractal complete (L2b) : integre Kuramoto + MoE.
 
     Architecture :
-        x → LN → FractalLinearAttention → + x (résiduelle 1)
+        x → LN → FractalLinearAttention → + x (residuelle 1)
               → LN → KuramotoLayer → phases
-              → LN → PhaseRoutedMoE(hidden, phases) → + x (résiduelle 2)
+              → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
-    Retourne (output, loss_aux) où loss_aux est la load_balance_loss du MoE
-    (à ajouter à la loss principale par le caller).
+    Retourne (output, loss_aux) ou loss_aux est la load_balance_loss du MoE
+    (a ajouter a la loss principale par le caller).
     """
 
     def __init__(
@@ -91,10 +91,10 @@ class FractalBlockFull(nn.Module):
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
     def forward(self, x: torch.Tensor):
-        """x : (B, L, d_model) → (output (B, L, d_model), loss_aux scalaire)."""
-        # Résiduelle 1 : attention.
+        """x : (B, L, d_model) → (output (B, L, d_model), loss_aux scalar)."""
+        # Residuelle 1 : attention.
         x = x + self.dropout(self.attn(self.norm1(x)))
-        # Kuramoto : phases depuis hidden normalisé.
+        # Kuramoto : phases depuis hidden normalise.
         phases = self.kuramoto(self.norm_kur(x))  # (B, L, N)
         # MoE : routing par phases.
         moe_out, lb_loss = self.moe(self.norm_moe(x), phases)

@@ -1,21 +1,21 @@
-"""Démo L4 : NOTEARS récupère un DAG synthétique connu.
+"""Demo L4 : NOTEARS recupere un DAG synthetique connu.
 
-AVERTISSEMENT D'HONNÊTETÉ : cette démo utilise un SCM LINÉAIRE et triangulaire
-supérieur (ordre topologique trivial). C'est le cas-jouet idéal pour NOTEARS —
-il a été conçu exactement pour ce réglage. SHD=0 ici prouve que le PIPELINE
-tourne (les modules communiquent, NOTEARS s'optimise, la pénalité fonctionne),
-PAS que NOTEARS est compétent sur données réelles. Un SCM non-linéaire avec
+AVERTISSEMENT D'HONNETETE : cette demo utilise un SCM LINEAIRE et triangulaire
+superieur (ordre topologique trivial). C'est le cas-jouet ideal for NOTEARS —
+il a ete concu exactement for ce reglage. SHD=0 ici prouve que le PIPELINE
+tourne (les modules communiquent, NOTEARS s'optimise, la penalty fonctionne),
+PAS que NOTEARS est competent sur donnees reelles. Un SCM non-lineaire with
 ordre topologique inconnu serait nettement plus dur (future work).
 
-Étapes :
-    1. Génère un SCM linéaire à 5 variables (DAG connu W_true + données X).
-    2. Initialise W_pred aléatoire (entraînable).
-    3. Optimise W_pred pour minimiser :
+Etapes :
+    1. Genere un SCM lineaire a 5 variables (DAG connu W_true + donnees X).
+    2. Initialise W_pred aleatoire (entrainable).
+    3. Optimise W_pred for minimiser :
            reconstruction loss + λ · |notears_penalty(W_pred)|
-       La pénalité NOTEARS force W_pred à être acyclique.
-    4. Mesure le SHD entre W_pred et W_true.
+       La penalty NOTEARS force W_pred a etre acyclique.
+    4. Mesure le SHD between W_pred et W_true.
 
-Critère : SHD <= 3 sur 5 variables (cas jouet idéal — doit passer).
+Critere : SHD <= 3 sur 5 variables (cas jouet ideal — must passer).
 
 Run :
     python scripts/demo_causal.py
@@ -36,21 +36,21 @@ from data.causal.generate_scm import generate_linear_scm
 def main():
     torch.manual_seed(42)
 
-    # 1. SCM synthétique.
+    # 1. SCM synthetique.
     W_true, X = generate_linear_scm(n_vars=5, n_samples=500, edge_prob=0.5, seed=7)
-    print("=== SCM synthétique ===")
-    print("W_true (DAG à 5 variables, triangulaire sup) :")
+    print("=== SCM synthetique ===")
+    print("W_true (DAG a 5 variables, triangulaire sup) :")
     print(W_true)
-    print(f"Données X : {X.shape}")
+    print(f"Donnees X : {X.shape}")
     print()
 
-    # 2. W_pred aléatoire, entraînable.
+    # 2. W_pred aleatoire, entrainable.
     n_vars = W_true.shape[0]
     W_pred = torch.zeros(n_vars, n_vars, requires_grad=True)
     torch.nn.init.normal_(W_pred, std=0.1)
 
     h_init = notears_penalty(W_pred).item()
-    print(f"h(W_pred) initial = {h_init:.4f} (devrait être ~0 car W petite)")
+    print(f"h(W_pred) initial = {h_init:.4f} (should etre ~0 because W petite)")
 
     # 3. Optimisation : reconstruction + λ·|NOTEARS|.
     opt = torch.optim.Adam([W_pred], lr=0.05)
@@ -68,22 +68,22 @@ def main():
 
     # 4. Mesure SHD.
     print()
-    print("=== Récupération du DAG ===")
+    print("=== Recuperation du DAG ===")
     print("W_pred appris (seuil 0.3) :")
     W_pred_bin = (W_pred.detach().abs() > 0.3).float()
     print(W_pred_bin)
-    print("W_true binaire :")
+    print("W_true binary :")
     print((W_true.abs() > 0.3).float())
 
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
-    print(f"\nSHD = {shd} (sur {n_vars*n_vars} entrées)")
-    print(f"  0 = récupération parfaite, plus c'est bas mieux c'est.")
-    print(f"  (Note : cas-jouet idéal — SCM linéaire + triangulaire. Ne prouve")
-    print(f"   pas la compétence sur données réelles, juste que le pipeline tourne.)")
+    print(f"\nSHD = {shd} (sur {n_vars*n_vars} entrees)")
+    print(f"  0 = recuperation parfaite, plus c'est bas mieux c'est.")
+    print(f"  (Note : cas-jouet ideal — SCM lineaire + triangulaire. Ne prouve")
+    print(f"   pas la competence sur donnees reelles, juste que le pipeline tourne.)")
     if shd <= 3:
         print(f"\nOK : le pipeline causal tourne (SHD <= 3 sur cas jouet).")
     else:
-        print(f"\n~ : SHD > 3, le pipeline a un souci même sur cas jouet.")
+        print(f"\n~ : SHD > 3, le pipeline a un souci meme sur cas jouet.")
 
 
 if __name__ == "__main__":

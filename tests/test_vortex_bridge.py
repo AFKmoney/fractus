@@ -1,13 +1,13 @@
-"""Tests du pont Python pour les fonctions 2-adiques du vortex.
+"""Tests du pont Python for les functions 2-adiques du vortex.
 
-Vérifie que les wrappers Rust sont bien exposés et retournent des valeurs
-correctes. Ces tests ne font PAS de mathématique avancée (ça, c'est en Rust) —
+Verifie que les wrappers Rust sont bien exposes et return des valeurs
+correctes. Ces tests ne font PAS de mathematical avancee (ca, c'est en Rust) —
 ils valident juste le pont PyO3.
 """
 
 
 def test_collatz_hash_is_deterministic():
-    """Même entrée → même sortie (propriété requise pour le conditionnement)."""
+    """Meme entree → meme sortie (property requise for le conditionnement)."""
     from fractus import _core
     h1 = _core.collatz_hash(7, 10)
     h2 = _core.collatz_hash(7, 10)
@@ -21,7 +21,7 @@ def test_collatz_hash_zero_stays_zero():
 
 
 def test_collatz_hash_returns_u64():
-    """Le hash doit être un entier positif compatible avec PyTorch indexing."""
+    """Le hash must etre un integer positif compatible with PyTorch indexing."""
     from fractus import _core
     h = _core.collatz_hash(42, 5)
     assert isinstance(h, int)
@@ -50,7 +50,7 @@ def test_ultrametric_distance_in_unit_interval():
 
 
 def test_norm_2adic_basic():
-    """||x||_2 = 2^{-v_2(x)}, vérifié sur quelques valeurs connues."""
+    """||x||_2 = 2^{-v_2(x)}, verifies sur quelques valeurs connues."""
     from fractus import _core
     assert _core.norm_2adic(0) == 0.0
     assert _core.norm_2adic(1) == 1.0   # v_2(1)=0 → 2^0
@@ -59,10 +59,10 @@ def test_norm_2adic_basic():
 
 
 def test_ultrametric_strong_triangle_in_python():
-    """La propriété ultramétrique forte doit tenir via le pont Python.
+    """La property ultrametrique forte must tenir via le pont Python.
     C'est le test-pivot qui distingue 2^{-v} (correct) de 2^{+v} (bug OMNI)."""
     from fractus import _core
-    # Le triplet (7, 56, 13) discrimine : passe avec -v, échoue avec +v.
+    # Le triplet (7, 56, 13) discrimine : passe with -v, echoue with +v.
     x, y, z = 7, 56, 13
     d_xy = _core.ultrametric_distance(x, y)
     d_yz = _core.ultrametric_distance(y, z)

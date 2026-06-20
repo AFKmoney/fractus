@@ -1,14 +1,14 @@
-"""Suite de Farey et sélection de phases pour le MoE à routing de phase.
+"""Suite de Farey et selection de phases for le MoE a routing de phase.
 
-Porté depuis FNN v5.0 (src/math/farey.rs).
+Porte depuis the original architecture (src/math/farey.rs).
 
-La suite de Farey F_n est l'ensemble trié des fractions irréductibles p/q dans
-[0, 1] avec q <= n. Elle est générée itérativement par la propriété de médiante.
+La suite de Farey F_n est l'ensemble trie des fractions irreductibles p/q in
+[0, 1] with q <= n. Elle est generee iterativement par la property de mediante.
 
-Pour le MoE : on prend F_{2E} (ordre double du nombre d'experts) et on sélectionne
-uniformément E angles parmi les fractions, convertis en angles 2π·p/q ∈ [0, 2π).
-Cela donne une distribution de phases dense, non-collapsante et déterministe —
-l'intérêt pour le routing von Mises.
+Pour le MoE : on prend F_{2E} (ordre double du number d'experts) et on selectionne
+uniformement E angles parmi les fractions, convertis en angles 2π·p/q ∈ [0, 2π).
+Cela donne une distribution de phases dense, non-collapsante et deterministe —
+l'interet for le routing von Mises.
 """
 
 import math
@@ -16,13 +16,13 @@ from typing import List, Tuple
 
 
 def farey_sequence(n: int) -> List[Tuple[int, int]]:
-    """Génère la suite de Farey F_n comme liste de (p, q) triée croissante.
+    """Genere la suite de Farey F_n comme liste de (p, q) triee croissante.
 
-    Algorithme par médiante (comme farey.rs:18-49).
+    Algorithme par mediante (comme farey.rs:18-49).
     F_n contient exactement 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
     """
     if n < 1:
-        raise ValueError("n doit être >= 1")
+        raise ValueError("n must etre >= 1")
     fractions: List[Tuple[int, int]] = []
     a, b = 0, 1
     c, d = 1, n
@@ -38,13 +38,13 @@ def farey_sequence(n: int) -> List[Tuple[int, int]]:
 
 
 def expert_phases(n_experts: int) -> List[float]:
-    """Sélectionne n_experts angles ∈ [0, 2π) depuis F_{2·n_experts}.
+    """Selectionne n_experts angles ∈ [0, 2π) depuis F_{2·n_experts}.
 
-    Comme farey.rs:53-64 : on construit F_{2E} (ordre double), puis on sélectionne
-    uniformément E angles parmi les n_frac = len(F_{2E}) fractions disponibles.
+    Comme farey.rs:53-64 : on construit F_{2E} (ordre double), then on selectionne
+    uniformement E angles parmi les n_frac = len(F_{2E}) fractions disponibles.
     """
     if n_experts < 1:
-        raise ValueError("n_experts doit être >= 1")
+        raise ValueError("n_experts must etre >= 1")
     fractions = farey_sequence(2 * n_experts)
     n_frac = len(fractions)
     angles_all = [2.0 * math.pi * p / q for (p, q) in fractions]

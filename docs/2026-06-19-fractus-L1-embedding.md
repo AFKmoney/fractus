@@ -1,21 +1,21 @@
-# Fractus L1 — Embedding fractal + vortex 2-adique branché Implementation Plan
+# Fractus L1 — Embedding fractal + vortex 2-adique branche Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Brancher le vortex 2-adique d'OMNI-FRACTAL sur le réseau de neurones pour la première fois, en l'utilisant comme **conditionnement** d'un MLP entraînable PyTorch. Ajouter l'embedding de codepoint fractal (base de Fourier à décroissance Mandelbrot + 16 features morphologiques), tout en PyTorch pur pour l'autodiff. Corriger deux erreurs des systèmes originaux : le vortex orphelin (jamais importé) et les « Mandelbrot frequencies » mal nommées.
+**Goal:** Brancher le vortex 2-adique d'the original design sur le reseau de neurones for la premiere fois, en l'utilisant comme **conditionnement** d'un MLP entrainable PyTorch. Ajouter l'embedding de codepoint fractal (base de Fourier a decroissance Mandelbrot + 16 features morphologiques), tout en PyTorch pur for l'autodiff. Corriger deux errors des systems originaux : le vortex orphaned (never imported) et les « Mandelbrot frequencies » mal nommees.
 
-**Architecture:** (1) `fractus-core` (Rust) expose `collatz_hash(token_id)` et `ultrametric_distance(a,b)` — calcul exact, hors-graphe autodiff, appelé depuis Python pour précalculer le conditionnement. (2) `fractus/nn/embedding.py` (PyTorch) contient trois modules composés : `CharClassFeatures` (16 features morphologiques déterministes, portées de FNN), `MandelbrotFourierBasis` (base de Fourier à décroissance `(φ²)^{-k}`, nommée honnêtement), et `FractalEmbedding` (assemblage final : les features morpho + la base de Fourier + les phases vortex-conditionnées sont projetées vers `d_model` par un `nn.Linear` entraînable). La forward est différentiable de bout en bout.
+**Architecture:** (1) `fractus-core` (Rust) expose `collatz_hash(token_id)` et `ultrametric_distance(a,b)` — computation exact, hors-graphe autodiff, appele depuis Python for precalculer le conditionnement. (2) `fractus/nn/embedding.py` (PyTorch) contient trois modules composes : `CharClassFeatures` (16 features morphologiques deterministes, portees de FNN), `MandelbrotFourierBasis` (base de Fourier a decroissance `(φ²)^{-k}`, nommee honnetement), et `FractalEmbedding` (assemblage final : les features morpho + la base de Fourier + les phases vortex-conditionnees sont projetees vers `d_model` par un `nn.Linear` entrainable). La forward est differentiable de bout en bout.
 
-**Tech Stack:** Rust 1.94 + pyo3 0.29 (déjà installé en L0) ; Python 3.14 + torch 2.12 CPU + numpy (déjà installés en L0) ; pytest. Le module natif doit être reconstruit via `maturin develop` après modification du Rust.
+**Tech Stack:** Rust 1.94 + pyo3 0.29 (deja installe en L0) ; Python 3.14 + torch 2.12 CPU + numpy (deja installes en L0) ; pytest. Le module natif must etre reconstruit via `maturin develop` after modification du Rust.
 
-**Lien spec :** `docs/superpowers/specs/2026-06-19-fractus-unified-design.md`, section « L1 — Embedding fractal + vortex 2-adique branché ». Décision clé validée : **option B** — le hash 2-adique exact (Rust, hors-graphe) conditionne un MLP entraînable (PyTorch, dans le graphe).
+**Lien spec :** `docs/superpowers/specs/2026-06-19-fractus-unified-design.md`, section « L1 — Embedding fractal + vortex 2-adique branche ». Decision cle validee : **option B** — le hash 2-adique exact (Rust, hors-graphe) conditionne un MLP entrainable (PyTorch, in le graphe).
 
-**Prérequis :** L0 terminé (repo `C:/Users/PHIL/ZCodeProject/fractus/` opérationnel, venv `.venv` avec torch + maturin installés, 9 tests Rust + 5 tests Python passent).
+**Prerequis :** L0 termine (repo `C:/Users/PHIL/ZCodeProject/fractus/` operationnel, venv `.venv` with torch + maturin installes, 9 tests Rust + 5 tests Python passent).
 
-**Vocabulaire honnête appliqué dans ce plan :**
-- « Mandelbrot frequencies » → « Mandelbrot-decayed Fourier basis » (la décroissance `(φ²)^{-k}` est réelle et justifiée, mais ce n'est pas l'ensemble de Mandelbrot).
-- « Collatz ergodic flow » → « Collatz hash » (l'ergodicité de Collatz est non démontrée, problème ouvert).
-- On parle de « norme 2-adique » et « distance ultramétrique » (termes mathématiques exacts).
+**Vocabulaire honnete applique in ce plan :**
+- « Mandelbrot frequencies » → « Mandelbrot-decayed Fourier basis » (la decroissance `(φ²)^{-k}` est real et justifiee, but ce n'est pas l'ensemble de Mandelbrot).
+- « Collatz ergodic flow » → « Collatz hash » (l'ergodicite de Collatz est non demontree, problem ouvert).
+- On parle de « norme 2-adique » et « distance ultrametrique » (termes mathematics exacts).
 
 ---
 
@@ -24,71 +24,71 @@
 ```
 C:/Users/PHIL/ZCodeProject/fractus/
 ├── crate/fractus-core/src/
-│   ├── lib.rs                  # inchangé (déclare déjà pub mod vortex)
-│   └── vortex.rs               # MODIFY : expose aussi norm_2adic (déjà défini, juste à binder)
+│   ├── lib.rs                  # inchange (declare deja pub mod vortex)
+│   └── vortex.rs               # MODIFY : expose aussi norm_2adic (deja defini, juste a binder)
 ├── crate/fractus-py/src/
-│   └── lib.rs                  # MODIFY : ajoute wrappers #[pyfunction] pour collatz_hash,
+│   └── lib.rs                  # MODIFY : ajoute wrappers #[pyfunction] for collatz_hash,
 │                               #   ultrametric_distance, norm_2adic
 ├── fractus/nn/
 │   ├── __init__.py             # MODIFY : exporte les classes publiques
-│   ├── char_features.py        # CREATE : 16 features morphologiques (porté de FNN)
-│   ├── fourier.py              # CREATE : base de Fourier à décroissance Mandelbrot
+│   ├── char_features.py        # CREATE : 16 features morphologiques (ported de FNN)
+│   ├── fourier.py              # CREATE : base de Fourier a decroissance Mandelbrot
 │   └── embedding.py            # CREATE : FractalEmbedding (assemblage + projection Linear)
 └── tests/
-    ├── test_vortex_bridge.py   # CREATE : tests du pont Python des fonctions 2-adiques
+    ├── test_vortex_bridge.py   # CREATE : tests du pont Python des functions 2-adiques
     └── test_embedding.py       # CREATE : tests de l'embedding fractal
 ```
 
-**Responsabilités (un fichier = une responsabilité) :**
-- `char_features.py` : uniquement les 16 features morphologiques (déterministe, sans paramètre).
-- `fourier.py` : uniquement la base de Fourier à décroissance Mandelbrot (déterministe, sans paramètre).
-- `embedding.py` : l'assemblage + la projection entraînable (le seul endroit avec des `nn.Parameter`).
-- `test_vortex_bridge.py` : vérifie que les fonctions Rust sont bien appelables depuis Python et retournent les bonnes valeurs (pont opérationnel).
-- `test_embedding.py` : vérifie formes, finitude, et surtout que `backward()` propage des gradients finis (le critère critique hérité de FNN qui échouait là).
+**Responsabilites (un fichier = une responsabilite) :**
+- `char_features.py` : uniquement les 16 features morphologiques (deterministe, without parameter).
+- `fourier.py` : uniquement la base de Fourier a decroissance Mandelbrot (deterministe, without parameter).
+- `embedding.py` : l'assemblage + la projection entrainable (le seul endroit with des `nn.Parameter`).
+- `test_vortex_bridge.py` : verifies que les functions Rust sont bien appelables depuis Python et return les bonnes valeurs (pont operationnel).
+- `test_embedding.py` : verifies formes, finitude, et surtout que `backward()` propage des gradients finis (le critere critique herite de FNN qui echouait la).
 
 ---
 
-## Task 1: Exposer collatz_hash, ultrametric_distance, norm_2adic dans les bindings Python
+## Task 1: Exposer collatz_hash, ultrametric_distance, norm_2adic in les bindings Python
 
 **Files:**
 - Modify: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/src/lib.rs`
 
-- [ ] **Step 1: Réécrire lib.rs avec les nouveaux wrappers**
+- [ ] **Step 1: Reecrire lib.rs with les nouveaux wrappers**
 
 Replace the entire content of `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/src/lib.rs` with :
 
 ```rust
-//! Bindings Python (PyO3) pour fractus-core.
+//! Bindings Python (PyO3) for fractus-core.
 //!
-//! Ce crate ne contient AUCUNE logique — seulement des wrappers #[pyfunction]
-//! qui délèguent à fractus-core. Le but est d'exposer le Rust à Python
-//! sous le nom `fractus._core`.
+//! Ce crate ne contient AUCUNE logical — seulement des wrappers #[pyfunction]
+//! qui deleguent a fractus-core. Le but est d'exposer le Rust a Python
+//! under le nom `fractus._core`.
 
 use pyo3::prelude::*;
 
-/// Addition entière — wrapper Python pour fractus_core::add.
-/// Exposée uniquement pour le test fume.
+/// Addition entiere — wrapper Python for fractus_core::add.
+/// Exposee uniquement for le test fume.
 #[pyfunction]
 fn add(a: i64, b: i64) -> i64 {
     fractus_core::add(a, b)
 }
 
-/// Hash Collatz d'un token id. Wrapper pour fractus_core::vortex::collatz_hash.
-/// Utilisé comme conditionnement déterministe (hors-graphe autodiff) pour
+/// Hash Collatz d'un token id. Wrapper for fractus_core::vortex::collatz_hash.
+/// Utilise comme conditionnement deterministe (hors-graphe autodiff) for
 /// l'embedding fractal (option B du spec L1).
 #[pyfunction]
 fn collatz_hash(x: u64, steps: u32) -> u64 {
     fractus_core::vortex::collatz_hash(x, steps)
 }
 
-/// Distance ultramétrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
-/// Wrapper pour fractus_core::vortex::ultrametric_distance. Dans (0, 1].
+/// Distance ultrametrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
+/// Wrapper for fractus_core::vortex::ultrametric_distance. Dans (0, 1].
 #[pyfunction]
 fn ultrametric_distance(a: u64, b: u64) -> f64 {
     fractus_core::vortex::ultrametric_distance(a, b)
 }
 
-/// Norme 2-adique : ||x||_2 = 2^{-v_2(x)}. Wrapper pour fractus_core::vortex::norm_2adic.
+/// Norme 2-adique : ||x||_2 = 2^{-v_2(x)}. Wrapper for fractus_core::vortex::norm_2adic.
 #[pyfunction]
 fn norm_2adic(x: u64) -> f64 {
     fractus_core::vortex::norm_2adic(x)
@@ -96,9 +96,9 @@ fn norm_2adic(x: u64) -> f64 {
 
 /// Module Python `fractus._core`.
 ///
-/// Signature pyo3 0.29 : le module est reçu comme `&Bound<'_, PyModule>`.
-/// Les méthodes `.add_function(...)` viennent du trait `PyModuleMethods`
-/// (ré-exporté par `pyo3::prelude`).
+/// Signature pyo3 0.29 : le module est recu comme `&Bound<'_, PyModule>`.
+/// Les methodes `.add_function(...)` viennent du trait `PyModuleMethods`
+/// (re-exporte par `pyo3::prelude`).
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add, m)?)?;
@@ -111,18 +111,18 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 - [ ] **Step 2: Reconstruire le module natif**
 
-Run (depuis `C:/Users/PHIL/ZCodeProject/fractus`, venv activé) :
+Run (depuis `C:/Users/PHIL/ZCodeProject/fractus`, venv active) :
 ```powershell
 .venv\Scripts\python.exe -m maturin develop --release
 ```
-Expected: `🛠 Installed fractus-0.1.0`. Peut prendre 30-60s (recompile pyo3 si le hash a changé).
+Expected: `🛠 Installed fractus-0.1.0`. Peut prendre 30-60s (recompile pyo3 si le hash a change).
 
-- [ ] **Step 3: Vérifier vite que les nouvelles fonctions sont exposées**
+- [ ] **Step 3: Verifier vite que les nouvelles functions sont exposees**
 
 ```powershell
 .venv\Scripts\python.exe -c "from fractus import _core; print('hash(7,5)=', _core.collatz_hash(7,5)); print('dist(1,2)=', _core.ultrametric_distance(1,2)); print('norm(8)=', _core.norm_2adic(8))"
 ```
-Expected: trois valeurs numériques sans erreur (par ex. `hash(7,5)= 52`, `dist(1,2)= 0.5`, `norm(8)= 0.125`).
+Expected: trois valeurs numeriques without error (par ex. `hash(7,5)= 52`, `dist(1,2)= 0.5`, `norm(8)= 0.125`).
 
 - [ ] **Step 4: Commit**
 
@@ -135,19 +135,19 @@ Expected: `1 file changed`.
 
 ---
 
-## Task 2: Tests du pont Python des fonctions 2-adiques (TDD)
+## Task 2: Tests du pont Python des functions 2-adiques (TDD)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/tests/test_vortex_bridge.py`
 
-- [ ] **Step 1: Écrire les tests**
+- [ ] **Step 1: Ecrire les tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_vortex_bridge.py` :
 ```python
-"""Tests du pont Python pour les fonctions 2-adiques du vortex.
+"""Tests du pont Python for les functions 2-adiques du vortex.
 
-Vérifie que les wrappers Rust sont bien exposés et retournent des valeurs
-correctes. Ces tests ne font PAS de mathématique avancée (ça, c'est en Rust) —
+Verifie que les wrappers Rust sont bien exposes et return des valeurs
+correctes. Ces tests ne font PAS de mathematical avancee (ca, c'est en Rust) —
 ils valident juste le pont PyO3.
 """
 
@@ -155,7 +155,7 @@ import pytest
 
 
 def test_collatz_hash_is_deterministic():
-    """Même entrée → même sortie (propriété requise pour le conditionnement)."""
+    """Meme entree → meme sortie (property requise for le conditionnement)."""
     from fractus import _core
     h1 = _core.collatz_hash(7, 10)
     h2 = _core.collatz_hash(7, 10)
@@ -169,7 +169,7 @@ def test_collatz_hash_zero_stays_zero():
 
 
 def test_collatz_hash_returns_u64():
-    """Le hash doit être un entier positif compatible avec PyTorch indexing."""
+    """Le hash must etre un integer positif compatible with PyTorch indexing."""
     from fractus import _core
     h = _core.collatz_hash(42, 5)
     assert isinstance(h, int)
@@ -198,7 +198,7 @@ def test_ultrametric_distance_in_unit_interval():
 
 
 def test_norm_2adic_basic():
-    """||x||_2 = 2^{-v_2(x)}, vérifié sur quelques valeurs connues."""
+    """||x||_2 = 2^{-v_2(x)}, verifies sur quelques valeurs connues."""
     from fractus import _core
     assert _core.norm_2adic(0) == 0.0
     assert _core.norm_2adic(1) == 1.0   # v_2(1)=0 → 2^0
@@ -207,10 +207,10 @@ def test_norm_2adic_basic():
 
 
 def test_ultrametric_strong_triangle_in_python():
-    """La propriété ultramétrique forte doit tenir via le pont Python.
+    """La property ultrametrique forte must tenir via le pont Python.
     C'est le test-pivot qui distingue 2^{-v} (correct) de 2^{+v} (bug OMNI)."""
     from fractus import _core
-    # Le triplet (7, 56, 13) discrimine : passe avec -v, échoue avec +v.
+    # Le triplet (7, 56, 13) discrimine : passe with -v, echoue with +v.
     x, y, z = 7, 56, 13
     d_xy = _core.ultrametric_distance(x, y)
     d_yz = _core.ultrametric_distance(y, z)
@@ -223,31 +223,31 @@ def test_ultrametric_strong_triangle_in_python():
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_vortex_bridge.py -v
 ```
-Expected: 8 passed. Si un test échoue, le pont PyO3 est cassé — vérifier que Task 1 a bien reconstruit le module.
+Expected: 8 passed. Si un test echoue, le pont PyO3 est casse — verify que Task 1 a bien reconstruit le module.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add tests/test_vortex_bridge.py
-git commit -m "test(vortex): 8 tests du pont Python pour collatz_hash/ultrametric/norm"
+git commit -m "test(vortex): 8 tests du pont Python for collatz_hash/ultrametric/norm"
 ```
 Expected: `1 file changed`.
 
 ---
 
-## Task 3: Implémenter les 16 features morphologiques (CharClassFeatures)
+## Task 3: Implementer les 16 features morphologiques (CharClassFeatures)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/char_features.py`
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [ ] **Step 1: Ecrire le test qui echoue**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_embedding.py` (initial content — sera étendu dans les tâches suivantes) :
+Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_embedding.py` (initial content — sera etendu in les tâches suivantes) :
 ```python
 """Tests de l'embedding fractal : char features, base de Fourier, FractalEmbedding.
 
-Le critère critique (hérité de FNN qui échouait là) : la forward doit être
-différentiable et backward() doit propager des gradients finis partout.
+Le critere critique (herite de FNN qui echouait la) : la forward must etre
+differentiable et backward() must propager des gradients finis partout.
 """
 
 import torch
@@ -259,7 +259,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 def test_char_features_shape():
-    """16 features pour tout token id."""
+    """16 features for tout token id."""
     from fractus.nn.char_features import CharClassFeatures
     f = CharClassFeatures.extract(ord("a"))
     assert f.shape == (16,)
@@ -281,39 +281,39 @@ def test_char_features_digit_value():
 
 
 def test_char_features_batch_consistency():
-    """La même lettre donne le même vecteur de features."""
+    """La meme lettre donne le meme vector de features."""
     from fractus.nn.char_features import CharClassFeatures
     f1 = CharClassFeatures.extract(ord("z"))
     f2 = CharClassFeatures.extract(ord("z"))
     assert torch.equal(f1, f2)
 ```
 
-- [ ] **Step 2: Lancer le test pour vérifier qu'il échoue**
+- [ ] **Step 2: Lancer le test for verify qu'il echoue**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_embedding.py -v
 ```
 Expected: FAIL — `ModuleNotFoundError: No module named 'fractus.nn.char_features'`. C'est normal.
 
-- [ ] **Step 3: Implémenter CharClassFeatures**
+- [ ] **Step 3: Implementer CharClassFeatures**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/char_features.py` :
 ```python
-"""16 features morphologiques déterministes par token.
+"""16 features morphologiques deterministes par token.
 
-Porté depuis FNN v5.0 (src/embedding.rs, CharClassFeatures). Le token id est
-interprété comme un codepoint Unicode ; pour les ids < 128 ce sont des
-caractères ASCII, au-delà on dérive les features de la valeur numérique.
+Porte depuis the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
+interprete comme un codepoint Unicode ; for les ids < 128 ce sont des
+caracteres ASCII, au-dela on derive les features de la valeur numerique.
 
-Ces features n'ont AUCUN paramètre entraînable — elles sont calculées
-déterministiquement puis concaténées à la base de Fourier dans FractalEmbedding.
+Ces features n'ont AUCUN parameter entrainable — elles sont calculees
+deterministiquement then concatenees a la base de Fourier in FractalEmbedding.
 """
 
 import torch
 
 
 class CharClassFeatures:
-    """Extraction de 16 features morphologiques à partir d'un token id.
+    """Extraction de 16 features morphologiques a partir d'un token id.
 
     Features (index : signification) :
         0  : is_vowel          (a, e, i, o, u)
@@ -328,7 +328,7 @@ class CharClassFeatures:
         9  : is_whitespace     (espace, tab, newline)
         10 : is_control        (codepoint < 32 ou == 127)
         11 : digit_value       (0-9, ou 0 si pas un chiffre)
-        12 : char_category     (catégorie Unicode simplifiée comme float)
+        12 : char_category     (categorie Unicode simplifiee comme float)
         13 : position_in_alphabet (0-25, ou -1 si pas une lettre ; on encode -1→0)
         14 : is_ascii          (codepoint < 128)
         15 : parity            (token id pair = 1, impair = 0)
@@ -340,17 +340,17 @@ class CharClassFeatures:
 
     @staticmethod
     def extract(token_id: int) -> torch.Tensor:
-        """Retourne un tenseur float32 de forme (16,)."""
+        """Retourne un tenseur float32 de shape (16,)."""
         f = torch.zeros(CharClassFeatures.N_FEATURES, dtype=torch.float32)
 
-        # On interprète l'octet de poids faible comme un caractère potentiel.
+        # On interprete l'octet de poids faible comme un caractere potentiel.
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel
         is_vowel = float(as_byte in CharClassFeatures.VOWELS)
         f[0] = is_vowel
 
-        # 1: is_consonant (lettre alphabétique non voyelle)
+        # 1: is_consonant (lettre alphabetique non voyelle)
         is_alpha = (
             (0x41 <= as_byte <= 0x5A) or  # A-Z
             (0x61 <= as_byte <= 0x7A)     # a-z
@@ -394,8 +394,8 @@ class CharClassFeatures:
         # 11: digit_value
         f[11] = float(as_byte - 0x30) if is_digit else 0.0
 
-        # 12: char_category simplifié : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
-        #     4.0 espace, 5.0 contrôle, 0.0 autre.
+        # 12: char_category simplifie : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
+        #     4.0 espace, 5.0 controle, 0.0 autre.
         if is_alpha:
             f[12] = 1.0
         elif is_digit:
@@ -423,10 +423,10 @@ class CharClassFeatures:
 
     @staticmethod
     def extract_batch(token_ids: torch.Tensor) -> torch.Tensor:
-        """Version vectorisée : token_ids de forme (N,) → features (N, 16).
+        """Version vectorisee : token_ids de shape (N,) → features (N, 16).
 
-        Comme le calcul est déterministe et indépendant par token, on peut
-        précalculer une lookup table une fois pour toute la taille du vocab.
+        Comme le computation est deterministe et independent par token, on can
+        precalculer une lookup table une fois for toute la taille du vocab.
         """
         ids_list = token_ids.tolist()
         rows = [CharClassFeatures.extract(int(i)) for i in ids_list]
@@ -450,23 +450,23 @@ Expected: `2 files changed`.
 
 ---
 
-## Task 4: Implémenter la base de Fourier à décroissance Mandelbrot
+## Task 4: Implementer la base de Fourier a decroissance Mandelbrot
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/fourier.py`
 
-- [ ] **Step 1: Ajouter les tests à tests/test_embedding.py**
+- [ ] **Step 1: Ajouter les tests a tests/test_embedding.py**
 
 Append to `C:/Users/PHIL/ZCodeProject/fractus/tests/test_embedding.py` (after the existing char-features tests) :
 ```python
 
 
 # ---------------------------------------------------------------------------
-# Task 4 : MandelbrotFourierBasis (base de Fourier à décroissance (φ²)^{-k})
+# Task 4 : MandelbrotFourierBasis (base de Fourier a decroissance (φ²)^{-k})
 # ---------------------------------------------------------------------------
 
 def test_fourier_basis_shape():
-    """Pour vocab 128 et 32 fréquences : matrice (vocab, n_freq) en entrée du calcul."""
+    """Pour vocab 128 et 32 frequences : matrix (vocab, n_freq) en entree du computation."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     basis = MandelbrotFourierBasis(vocab_size=128, n_frequencies=32)
     M = basis.matrix()  # (vocab, n_freq)
@@ -481,7 +481,7 @@ def test_fourier_basis_is_finite():
 
 
 def test_fourier_frequencies_decay():
-    """Les fréquences ω_k = (φ²)^{-k} doivent décroître géométriquement."""
+    """Les frequences ω_k = (φ²)^{-k} must decroitre geometriquement."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     basis = MandelbrotFourierBasis(vocab_size=10, n_frequencies=4)
     # ω_0 = 1.0, ω_1 = 1/φ², ω_2 = 1/φ⁴, ...
@@ -493,47 +493,47 @@ def test_fourier_frequencies_decay():
 
 
 def test_fourier_matrix_is_deterministic():
-    """Deux appels donnent la même matrice (pas d'aléa)."""
+    """Deux appels donnent la meme matrix (pas d'alea)."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     b1 = MandelbrotFourierBasis(vocab_size=64, n_frequencies=16)
     b2 = MandelbrotFourierBasis(vocab_size=64, n_frequencies=16)
     assert torch.allclose(b1.matrix(), b2.matrix())
 ```
 
-- [ ] **Step 2: Lancer pour vérifier que les nouveaux tests échouent**
+- [ ] **Step 2: Lancer for verify que les nouveaux tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_embedding.py -v
 ```
 Expected: 4 passed (char features), 4 failed/error (fourier — module absent).
 
-- [ ] **Step 3: Implémenter MandelbrotFourierBasis**
+- [ ] **Step 3: Implementer MandelbrotFourierBasis**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/fourier.py` :
 ```python
-"""Base de Fourier à décroissance Mandelbrot pour l'embedding fractal.
+"""Base de Fourier a decroissance Mandelbrot for l'embedding fractal.
 
-Inspiré de FNN v5.0 (src/math/mandelbrot.rs + src/embedding.rs) mais renommé
-honnêtement : FNN appelait ça "Mandelbrot frequencies" en référence à l'ensemble
-de Mandelbrot, alors qu'il s'agit juste d'une décroissance géométrique de base
-φ² (le carré du nombre d'or). On appelle donc ça "Mandelbrot-decayed Fourier
-basis" — la décroissance est réelle et justifiée (séparation d'échelles
-multi-niveaux), mais le lien à l'ensemble de Mandelbrot est nul.
+Inspire de the original architecture (src/math/mandelbrot.rs + src/embedding.rs) but renomme
+honnetement : FNN appelait ca "Mandelbrot frequencies" en reference a l'ensemble
+de Mandelbrot, alors qu'il s'agit juste d'une decroissance geometrique de base
+φ² (le carre du number d'or). On appelle therefore ca "Mandelbrot-decayed Fourier
+basis" — la decroissance est real et justifiee (separation d'echelles
+multi-niveaux), but le lien a l'ensemble de Mandelbrot est nul.
 
-Mathématique :
+Mathematique :
     φ = (1 + √5) / 2  ≈ 1.618
     φ² ≈ 2.618
-    ω_k = (φ²)^{-k}    pour k = 0, 1, ..., n_freq-1
+    ω_k = (φ²)^{-k}    for k = 0, 1, ..., n_freq-1
 
-La base de Fourier associe à chaque token id t et chaque fréquence k la paire
+La base de Fourier associe a each token id t et each frequence k la paire
 (sin, cos) de ω_k · t :
     M[t, 2k]   = sin(ω_k · t)
     M[t, 2k+1] = cos(ω_k · t)
 
-On stocke n_freq fréquences ; la matrice produite a 2·n_freq colonnes
-(sin+cos par fréquence). Le caller (FractalEmbedding) gère la projection finale.
+On stocke n_freq frequences ; la matrix produite a 2·n_freq colonnes
+(sin+cos par frequence). Le caller (FractalEmbedding) gere la projection finale.
 
-AUCUN paramètre entraînable ici : tout est déterministe, précalculé une fois.
+AUCUN parameter entrainable ici : tout est deterministe, precalcule une fois.
 """
 
 import math
@@ -541,17 +541,17 @@ import torch
 
 
 class MandelbrotFourierBasis:
-    """Base de Fourier déterministe avec décroissance (φ²)^{-k}.
+    """Base de Fourier deterministe with decroissance (φ²)^{-k}.
 
     Attributs :
-        vocab_size   : nombre de token ids couverts (0 .. vocab_size-1)
-        n_frequencies : nombre de fréquences ω_k
+        vocab_size   : number de token ids couverts (0 .. vocab_size-1)
+        n_frequencies : number de frequences ω_k
         frequencies  : tenseur (n_frequencies,) des ω_k, en float32
     """
 
     def __init__(self, vocab_size: int, n_frequencies: int):
         if vocab_size <= 0 or n_frequencies <= 0:
-            raise ValueError("vocab_size et n_frequencies doivent être > 0")
+            raise ValueError("vocab_size et n_frequencies must etre > 0")
         self.vocab_size = vocab_size
         self.n_frequencies = n_frequencies
 
@@ -561,11 +561,11 @@ class MandelbrotFourierBasis:
         # ω_k = (φ²)^{-k}
         self.frequencies = phi_sq ** (-ks)
 
-        # Précalcul de la matrice (vocab_size, 2·n_frequencies).
+        # Precalcul de la matrix (vocab_size, 2·n_frequencies).
         self._matrix = self._build_matrix()
 
     def _build_matrix(self) -> torch.Tensor:
-        """Construit la matrice M[t, :] = [sin(ω_k·t), cos(ω_k·t)] pour tout k."""
+        """Construit la matrix M[t, :] = [sin(ω_k·t), cos(ω_k·t)] for tout k."""
         t = torch.arange(self.vocab_size, dtype=torch.float32).unsqueeze(1)  # (V, 1)
         omega = self.frequencies.unsqueeze(0)  # (1, K)
         phases = omega * t  # (V, K) broadcast
@@ -578,15 +578,15 @@ class MandelbrotFourierBasis:
         return M
 
     def matrix(self) -> torch.Tensor:
-        """Retourne la matrice précalculée (vocab_size, 2·n_frequencies)."""
+        """Retourne la matrix precalculee (vocab_size, 2·n_frequencies)."""
         return self._matrix
 
     def dim_output(self) -> int:
-        """Dimension de sortie (nombre de colonnes de la matrice)."""
+        """Dimension de sortie (number de colonnes de la matrix)."""
         return 2 * self.n_frequencies
 ```
 
-- [ ] **Step 4: Lancer tous les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer all les tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_embedding.py -v
@@ -603,7 +603,7 @@ Expected: `2 files changed`.
 
 ---
 
-## Task 5: Implémenter FractalEmbedding (assemblage + projection entraînable)
+## Task 5: Implementer FractalEmbedding (assemblage + projection entrainable)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/embedding.py`
@@ -616,11 +616,11 @@ Append to `C:/Users/PHIL/ZCodeProject/fractus/tests/test_embedding.py` :
 
 
 # ---------------------------------------------------------------------------
-# Task 5 : FractalEmbedding (assemblage + projection entraînable)
+# Task 5 : FractalEmbedding (assemblage + projection entrainable)
 # ---------------------------------------------------------------------------
 
 def test_fractal_embedding_shape():
-    """Sortie (N, d_model) pour entrée (N,) d'ids."""
+    """Sortie (N, d_model) for entree (N,) d'ids."""
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=128, d_model=64, n_frequencies=16)
     ids = torch.tensor([0, 1, 2, 65, 97])  # mix
@@ -637,11 +637,11 @@ def test_fractal_embedding_is_finite():
 
 
 def test_fractal_embedding_backward_propagates():
-    """CRITIQUE : backward() doit propager des gradients finis à tous les params.
+    """CRITIQUE : backward() must propager des gradients finis a all les params.
 
-    C'est exactement le test que FNN v5.0 échouait (training.rs:399 utilisait du
-    bruit aléatoire au lieu d'un gradient). Ici, la projection Linear est dans
-    le graphe autodiff, donc les gradients doivent être non-nuls et finis.
+    C'est exactement le test que the original architecture echouait (training.rs:399 utilisait du
+    bruit aleatoire au lieu d'un gradient). Ici, la projection Linear est in
+    le graphe autodiff, therefore les gradients must etre non-nuls et finis.
     """
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=128, d_model=64, n_frequencies=16)
@@ -652,54 +652,54 @@ def test_fractal_embedding_backward_propagates():
 
     has_param_with_grad = False
     for name, p in emb.named_parameters():
-        assert p.requires_grad, f"{name} devrait requires_grad=True"
+        assert p.requires_grad, f"{name} should requires_grad=True"
         if p.grad is not None:
             assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
             if p.grad.abs().sum().item() > 0:
                 has_param_with_grad = True
-    assert has_param_with_grad, "Aucun paramètre n'a reçu de gradient non-nul"
+    assert has_param_with_grad, "Aucun parameter n'a recu de gradient non-nul"
 
 
 def test_fractal_embedding_respects_vocab_bounds():
-    """Un id >= vocab_size doit lever une erreur (pas de crash silencieux)."""
+    """Un id >= vocab_size must lever une error (pas de crash silencieux)."""
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=100, d_model=32, n_frequencies=8)
     with pytest.raises(IndexError):
         emb(torch.tensor([100]))  # hors borne
 ```
 
-- [ ] **Step 2: Lancer pour vérifier que les tests FractalEmbedding échouent**
+- [ ] **Step 2: Lancer for verify que les tests FractalEmbedding echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_embedding.py -v
 ```
 Expected: 8 passed (char + fourier), 4 failed/error (FractalEmbedding absent).
 
-- [ ] **Step 3: Implémenter FractalEmbedding**
+- [ ] **Step 3: Implementer FractalEmbedding**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/embedding.py` :
 ```python
-"""FractalEmbedding : embedding de codepoint fractal entraînable.
+"""FractalEmbedding : embedding de codepoint fractal entrainable.
 
-Assemblage de trois sources de features pour chaque token id t :
+Assemblage de trois sources de features for each token id t :
 
-    (A) 16 features morphologiques déterministes (CharClassFeatures)
-    (B) base de Fourier à décroissance Mandelbrot (MandelbrotFourierBasis)
-    (C) conditionnement vortex : un hash 2-adique (Collatz, calculé en Rust,
-        hors-graphe autodiff) est projeté en phases via un MLP entraînable
-        (PyTorch, dans le graphe). C'est l'option B du spec L1 : le vortex
-        2-adique influence l'apprentissage sans prétendre être différentiable.
+    (A) 16 features morphologiques deterministes (CharClassFeatures)
+    (B) base de Fourier a decroissance Mandelbrot (MandelbrotFourierBasis)
+    (C) conditionnement vortex : un hash 2-adique (Collatz, calcule en Rust,
+        hors-graphe autodiff) est projete en phases via un MLP entrainable
+        (PyTorch, in le graphe). C'est l'option B du spec L1 : le vortex
+        2-adique influence l'apprentissage without pretendre etre differentiable.
 
-La projection finale vers d_model est un nn.Linear entraînable. Toute la forward
-est différentiable de bout en bout — les parties déterministes (A, B, et le hash
-de C) sont précalculées en buffers hors-graphe ; seul le MLP de C et la
-projection finale portent des paramètres.
+La projection finale vers d_model est un nn.Linear entrainable. Toute la forward
+est differentiable de bout en bout — les parties deterministes (A, B, et le hash
+de C) sont precalculees en buffers hors-graphe ; seul le MLP de C et la
+projection finale portent des parameters.
 
-Corrections vs systèmes originaux :
+Corrections vs systems originaux :
 - FNN n'apprenait pas (training.rs:399 = bruit) → ici backward() marche (test).
-- OMNI : le vortex 2-adique était orphelin (jamais importé par le Python) →
-  ici il conditionne réellement l'embedding.
-- OMNI : les « Mandelbrot frequencies » étaient mal nommées → ici on dit
+- OMNI : the 2-adic vortex was orphaned (never imported by Python) →
+  ici il conditionne reellement l'embedding.
+- OMNI : les « Mandelbrot frequencies » etaient mal nommees → ici on dit
   « Mandelbrot-decayed Fourier basis » (voir fourier.py).
 """
 
@@ -711,14 +711,14 @@ from .fourier import MandelbrotFourierBasis
 
 
 class FractalEmbedding(nn.Module):
-    """Embedding fractal entraînable.
+    """Embedding fractal entrainable.
 
     Args :
-        vocab_size     : nombre de token ids couverts.
+        vocab_size     : number de token ids couverts.
         d_model        : dimension de sortie.
-        n_frequencies  : nombre de fréquences ω_k pour la base de Fourier.
-        vortex_hidden  : largeur du MLP qui projette le hash Collatz en phases.
-        collatz_steps  : nombre d'itérations Collatz pour le hash (déterministe).
+        n_frequencies  : number de frequences ω_k for la base de Fourier.
+        vortex_hidden  : width du MLP qui projette le hash Collatz en phases.
+        collatz_steps  : number d'iterations Collatz for le hash (deterministe).
     """
 
     def __init__(
@@ -731,25 +731,25 @@ class FractalEmbedding(nn.Module):
     ):
         super().__init__()
         if vocab_size <= 0 or d_model <= 0:
-            raise ValueError("vocab_size et d_model doivent être > 0")
+            raise ValueError("vocab_size et d_model must etre > 0")
 
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.collatz_steps = collatz_steps
 
-        # (A) Features morphologiques : précalcul déterministe, hors-graphe.
+        # (A) Features morphologiques : precalcul deterministe, hors-graphe.
         char_matrix = torch.stack(
             [CharClassFeatures.extract(t) for t in range(vocab_size)], dim=0
         )  # (vocab, 16)
         self.register_buffer("char_features", char_matrix)
 
-        # (B) Base de Fourier Mandelbrot-décroissante : précalcul déterministe.
+        # (B) Base de Fourier Mandelbrot-decroissante : precalcul deterministe.
         self.fourier = MandelbrotFourierBasis(vocab_size, n_frequencies)
         fourier_matrix = self.fourier.matrix()  # (vocab, 2·n_freq)
         self.register_buffer("fourier_features", fourier_matrix)
 
-        # (C) Conditionnement vortex : hash Collatz précalculé (hors-graphe),
-        # puis projeté par un MLP entraînable (dans le graphe).
+        # (C) Conditionnement vortex : hash Collatz precalcule (hors-graphe),
+        # then projete par un MLP entrainable (in le graphe).
         # On importe le hash depuis le module natif Rust.
         try:
             from fractus import _core
@@ -761,14 +761,14 @@ class FractalEmbedding(nn.Module):
             [_core.collatz_hash(t, collatz_steps) for t in range(vocab_size)],
             dtype=torch.float32,
         )  # (vocab,)
-        # Normalisation douce : on ramène dans [0, 1) via / (max+1) pour stabilité.
+        # Normalisation douce : on ramene in [0, 1) via / (max+1) for stabilite.
         max_h = hashes.max().item() + 1.0
         hashes_norm = hashes / max_h
         self.register_buffer("vortex_hashes", hashes_norm)  # (vocab,)
 
-        # MLP entraînable : projette le scalaire hash (1) vers un vecteur de
+        # MLP entrainable : projette le scalar hash (1) vers un vector de
         # dimension vortex_phase_dim. C'est ici que le vortex « conditionne »
-        # le réseau : le MLP apprend à interpréter le hash 2-adique.
+        # le reseau : le MLP apprend a interpreter le hash 2-adique.
         self.vortex_phase_dim = vortex_hidden
         self.vortex_mlp = nn.Sequential(
             nn.Linear(1, vortex_hidden),
@@ -776,13 +776,13 @@ class FractalEmbedding(nn.Module):
             nn.Linear(vortex_hidden, vortex_hidden),
         )
 
-        # Projection finale entraînable vers d_model.
-        # dim d'entrée = 16 (char) + 2·n_freq (fourier) + vortex_hidden
+        # Projection finale entrainable vers d_model.
+        # dim d'entree = 16 (char) + 2·n_freq (fourier) + vortex_hidden
         in_dim = 16 + fourier_matrix.shape[1] + vortex_hidden
         self.proj = nn.Linear(in_dim, d_model)
 
     def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
-        """token_ids : (N,) ou (N, L) d'entiers dans [0, vocab_size).
+        """token_ids : (N,) ou (N, L) d'integers in [0, vocab_size).
 
         Retourne (N, d_model) ou (N, L, d_model).
         """
@@ -795,12 +795,12 @@ class FractalEmbedding(nn.Module):
         original_shape = token_ids.shape
         flat = token_ids.reshape(-1)  # (M,)
 
-        # (A) + (B) : lookup dans les buffers précalculés (hors-graphe, mais le
-        # résultat alimente la projection entraînable, donc le graphe traverse).
+        # (A) + (B) : lookup in les buffers precalcules (hors-graphe, but le
+        # result alimente la projection entrainable, therefore le graphe traverse).
         char = self.char_features[flat]      # (M, 16)
         fourier = self.fourier_features[flat]  # (M, 2·n_freq)
 
-        # (C) : hash précalculé → reshape (M, 1) → MLP entraînable (dans le graphe).
+        # (C) : hash precalcule → reshape (M, 1) → MLP entrainable (in le graphe).
         h = self.vortex_hashes[flat].unsqueeze(1)  # (M, 1)
         vortex_phases = self.vortex_mlp(h)         # (M, vortex_hidden)
 
@@ -811,13 +811,13 @@ class FractalEmbedding(nn.Module):
         return out.reshape(*original_shape, self.d_model)
 ```
 
-- [ ] **Step 4: Mettre à jour fractus/nn/__init__.py**
+- [ ] **Step 4: Mettre a jour fractus/nn/__init__.py**
 
 Replace the entire content of `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/__init__.py` with :
 ```python
-"""Sous-package nn — modules de réseau de neurones (PyTorch).
+"""Sous-package nn — modules de reseau de neurones (PyTorch).
 
-L1 : embedding fractal entraînable (FractalEmbedding).
+L1 : embedding fractal entrainable (FractalEmbedding).
 """
 
 from .char_features import CharClassFeatures
@@ -827,12 +827,12 @@ from .embedding import FractalEmbedding
 __all__ = ["CharClassFeatures", "MandelbrotFourierBasis", "FractalEmbedding"]
 ```
 
-- [ ] **Step 5: Lancer tous les tests — DOIVENT PASSER**
+- [ ] **Step 5: Lancer all les tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_embedding.py -v
 ```
-Expected: 12 passed (4 char + 4 fourier + 4 FractalEmbedding). Le test `test_fractal_embedding_backward_propagates` est le critère critique : il prouve que l'embedding apprend vraiment.
+Expected: 12 passed (4 char + 4 fourier + 4 FractalEmbedding). Le test `test_fractal_embedding_backward_propagates` est le critere critique : il prouve que l'embedding apprend vraiment.
 
 - [ ] **Step 6: Commit**
 
@@ -841,30 +841,30 @@ git add fractus/nn/embedding.py fractus/nn/__init__.py tests/test_embedding.py
 git commit -m "feat(nn): add FractalEmbedding with vortex 2-adic conditioning
 
 - Assemblage : 16 char features + base Fourier Mandelbrot + conditionnement
-  vortex (hash Collatz en Rust → MLP entraînable en PyTorch).
+  vortex (hash Collatz en Rust → MLP entrainable en PyTorch).
 - Option B du spec L1 : le vortex 2-adique exact (hors-graphe) conditionne
-  un MLP différentiable. Le vortex n'est PAS prétendu différentiable.
-- Critère critique validé : backward() propage des gradients finis à tous
-  les paramètres (le test que FNN v5.0 échouait)."
+  un MLP differentiable. Le vortex n'est PAS pretendu differentiable.
+- Critere critique valide : backward() propage des gradients finis a all
+  les parameters (le test que the original architecture echouait)."
 ```
 Expected: `3 files changed`.
 
 ---
 
-## Task 6: Démo interactive L1 — prouver que l'embedding apprend
+## Task 6: Demo interactive L1 — prouver que l'embedding apprend
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/scripts/demo_embedding.py`
 
-- [ ] **Step 1: Écrire la démo**
+- [ ] **Step 1: Ecrire la demo**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/scripts/demo_embedding.py` :
 ```python
-"""Démo L1 : prouve que FractalEmbedding apprend vraiment.
+"""Demo L1 : prouve que FractalEmbedding apprend vraiment.
 
-Objectif : surfit un embedding cible aléatoire fixe en quelques steps Adam,
+Objectif : surfit un embedding cible aleatoire fixe en quelques steps Adam,
 et montre que la loss baisse. C'est la preuve minimale que l'autodiff traverse
-l'embedding fractal (ce que FNN v5.0 ne savait pas faire).
+l'embedding fractal (ce que the original architecture ne savait pas faire).
 
 Run :
     python scripts/demo_embedding.py
@@ -880,9 +880,9 @@ def main():
     vocab = 64
     d_model = 32
     emb = FractalEmbedding(vocab_size=vocab, d_model=d_model, n_frequencies=12)
-    print(f"Paramètres entraînables : {sum(p.numel() for p in emb.parameters())}")
+    print(f"Parametres entrainables : {sum(p.numel() for p in emb.parameters())}")
 
-    # Cible aléatoire fixe : le but est de surfit cette cible.
+    # Cible aleatoire fixe : le but est de surfit cette cible.
     target = torch.randn(vocab, d_model)
 
     opt = torch.optim.Adam(emb.parameters(), lr=1e-2)
@@ -902,28 +902,28 @@ def main():
 
     final_loss = loss.item()
     print()
-    print(f"Loss initiale : {initial_loss:.4f}")
+    print(f"Loss initial : {initial_loss:.4f}")
     print(f"Loss finale   : {final_loss:.4f}")
     print(f"Baisse        : {(1 - final_loss / initial_loss) * 100:.1f}%")
 
     if final_loss < initial_loss * 0.5:
-        print("\n✓ SUCCÈS : l'embedding fractal apprend (loss divisée par >2).")
+        print("\n✓ SUCCES : l'embedding fractal apprend (loss divisee par >2).")
     else:
-        print("\n✗ ÉCHEC : la loss ne baisse pas assez — investiguer.")
+        print("\n✗ ECHEC : la loss ne baisse pas assez — investiguer.")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Lancer la démo**
+- [ ] **Step 2: Lancer la demo**
 
 ```powershell
 .venv\Scripts\python.exe scripts\demo_embedding.py
 ```
-Expected output (approximatif — les valeurs exactes dépendent du seed) :
+Expected output (approximatif — les valeurs exactes dependent du seed) :
 ```
-Paramètres entraînables : ~3000
+Parametres entrainables : ~3000
 step   0  loss = 1.2xxx
 step  40  loss = 0.6xxx
 step  80  loss = 0.3xxx
@@ -931,14 +931,14 @@ step 120  loss = 0.15xxx
 step 160  loss = 0.08xxx
 step 199  loss = 0.05xxx
 
-Loss initiale : 1.2xxx
+Loss initial : 1.2xxx
 Loss finale   : 0.05xxx
 Baisse        : ~95%
 
-✓ SUCCÈS : l'embedding fractal apprend (loss divisée par >2).
+✓ SUCCES : l'embedding fractal apprend (loss divisee par >2).
 ```
 
-Si la démo affiche ÉCHEC, le bug est sérieux — déboguer avant L2.
+Si la demo affiche ECHEC, le bug est serieux — deboguer before L2.
 
 - [ ] **Step 3: Commit**
 
@@ -950,18 +950,18 @@ Expected: `1 file changed`.
 
 ---
 
-## Critère final de L1 « terminé »
+## Critere final de L1 « termine »
 
-Après le Task 6, ces vérifications doivent toutes réussir :
+Apres le Task 6, ces verifications must toutes reussir :
 
 ```powershell
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 
-# 1. Le Rust compile et ses tests passent (inchangé depuis L0)
+# 1. Le Rust compile et ses tests passent (inchange depuis L0)
 cargo test -p fractus-core
 # → 9 passed
 
-# 2. Le module natif est à jour (inclut les nouveaux bindings)
+# 2. Le module natif est a jour (inclut les nouveaux bindings)
 .venv\Scripts\python.exe -m maturin develop --release
 # → 🛠 Installed fractus-0.1.0
 
@@ -969,31 +969,31 @@ cargo test -p fractus-core
 .venv\Scripts\python.exe -m pytest tests/ -v
 # → 5 (smoke) + 8 (vortex bridge) + 12 (embedding) = 25 passed
 
-# 4. La démo prouve l'apprentissage
+# 4. La demo prouve l'apprentissage
 .venv\Scripts\python.exe scripts\demo_embedding.py
-# → "✓ SUCCÈS : l'embedding fractal apprend"
+# → "✓ SUCCES : l'embedding fractal apprend"
 ```
 
-Si tout passe, L1 est terminé et on peut passer au plan L2 (bloc transformer fractal : attention linéaire + Kuramoto + MoE Farey).
+Si tout passe, L1 est termine et on can passer au plan L2 (bloc transformer fractal : attention lineaire + Kuramoto + MoE Farey).
 
 ---
 
-## Self-Review (post-écriture)
+## Self-Review (post-ecriture)
 
 **1. Spec coverage :**
-- Spec L1 demande (a) CharClassFeatures porté → Task 3 ✅ ;
-  (b) MandelbrotFourierBasis (renommé honnêtement) → Task 4 ✅ ;
-  (c) pont option B (hash conditionne MLP entraînable) → Task 5 ✅ ;
-  (d) critère « backward() propage gradients finis » → test `test_fractal_embedding_backward_propagates` Task 5 ✅ ;
-  (e) ultramétrie testée depuis Python → `test_ultrametric_strong_triangle_in_python` Task 2 ✅.
-- Couverture complète.
+- Spec L1 demande (a) CharClassFeatures ported → Task 3 ✅ ;
+  (b) MandelbrotFourierBasis (renomme honnetement) → Task 4 ✅ ;
+  (c) pont option B (hash conditionne MLP entrainable) → Task 5 ✅ ;
+  (d) critere « backward() propage gradients finis » → test `test_fractal_embedding_backward_propagates` Task 5 ✅ ;
+  (e) ultrametrie testee depuis Python → `test_ultrametric_strong_triangle_in_python` Task 2 ✅.
+- Couverture complete.
 
-**2. Placeholder scan :** aucun « TBD/TODO/fill in ». Chaque étape a du code complet ou des commandes exactes. ✅
+**2. Placeholder scan :** no « TBD/TODO/fill in ». Chaque etape a du code complete ou des commandes exactes. ✅
 
-**3. Type consistency :** `CharClassFeatures.extract(int) → Tensor(16,)`, `.extract_batch(Tensor) → Tensor(N,16)`. `MandelbrotFourierBasis.matrix() → Tensor(V, 2K)`, `.frequencies → Tensor(K,)`. `FractalEmbedding(vocab_size, d_model, n_frequencies, vortex_hidden, collatz_steps).forward(Tensor) → Tensor`. Cohérent entre définitions (Tasks 3/4/5) et tests. ✅
+**3. Type consistency :** `CharClassFeatures.extract(int) → Tensor(16,)`, `.extract_batch(Tensor) → Tensor(N,16)`. `MandelbrotFourierBasis.matrix() → Tensor(V, 2K)`, `.frequencies → Tensor(K,)`. `FractalEmbedding(vocab_size, d_model, n_frequencies, vortex_hidden, collatz_steps).forward(Tensor) → Tensor`. Coherent between definitions (Tasks 3/4/5) et tests. ✅
 
-**4. Imports cohérents :** `from fractus.nn import FractalEmbedding` fonctionne grâce à `fractus/nn/__init__.py` mis à jour (Task 5 Step 4). Le hash vient de `from fractus import _core` (Task 5 Step 3, dans `__init__` du module). ✅
+**4. Imports coherents :** `from fractus.nn import FractalEmbedding` fonctionne grâce a `fractus/nn/__init__.py` mis a jour (Task 5 Step 4). Le hash vient de `from fractus import _core` (Task 5 Step 3, in `__init__` du module). ✅
 
-**5. Dépendance sur L0 :** Le pont `_core` (L0) est requis pour Task 1 (nouveaux wrappers) et Task 5 (hash Collatz). `cargo test -p fractus-core` inchangé (le vortex.rs n'est pas modifié en L1, juste exposé différemment). ✅
+**5. Dependance sur L0 :** Le pont `_core` (L0) est requis for Task 1 (nouveaux wrappers) et Task 5 (hash Collatz). `cargo test -p fractus-core` inchange (le vortex.rs n'est pas modifie en L1, juste expose differemment). ✅
 
 **6. YAGNI :** Pas de MoE, pas d'attention, pas de causal — juste l'embedding. Tout le reste vient en L2+. ✅

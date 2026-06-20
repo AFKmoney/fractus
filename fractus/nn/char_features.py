@@ -1,18 +1,18 @@
-"""16 features morphologiques déterministes par token.
+"""16 features morphologiques deterministes par token.
 
-Porté depuis FNN v5.0 (src/embedding.rs, CharClassFeatures). Le token id est
-interprété comme un codepoint Unicode ; pour les ids < 128 ce sont des
-caractères ASCII, au-delà on dérive les features de la valeur numérique.
+Porte depuis the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
+interprete comme un codepoint Unicode ; for les ids < 128 ce sont des
+caracteres ASCII, au-dela on derive les features de la valeur numerique.
 
-Ces features n'ont AUCUN paramètre entraînable — elles sont calculées
-déterministiquement puis concaténées à la base de Fourier dans FractalEmbedding.
+Ces features n'ont AUCUN parameter entrainable — elles sont calculees
+deterministiquement then concatenees a la base de Fourier in FractalEmbedding.
 """
 
 import torch
 
 
 class CharClassFeatures:
-    """Extraction de 16 features morphologiques à partir d'un token id.
+    """Extraction de 16 features morphologiques a partir d'un token id.
 
     Features (index : signification) :
         0  : is_vowel          (a, e, i, o, u)
@@ -27,7 +27,7 @@ class CharClassFeatures:
         9  : is_whitespace     (espace, tab, newline)
         10 : is_control        (codepoint < 32 ou == 127)
         11 : digit_value       (0-9, ou 0 si pas un chiffre)
-        12 : char_category     (catégorie Unicode simplifiée comme float)
+        12 : char_category     (categorie Unicode simplifiee comme float)
         13 : position_in_alphabet (0-25, ou -1 si pas une lettre ; on encode -1→0)
         14 : is_ascii          (codepoint < 128)
         15 : parity            (token id pair = 1, impair = 0)
@@ -39,17 +39,17 @@ class CharClassFeatures:
 
     @staticmethod
     def extract(token_id: int) -> torch.Tensor:
-        """Retourne un tenseur float32 de forme (16,)."""
+        """Retourne un tenseur float32 de shape (16,)."""
         f = torch.zeros(CharClassFeatures.N_FEATURES, dtype=torch.float32)
 
-        # On interprète l'octet de poids faible comme un caractère potentiel.
+        # On interprete l'octet de poids faible comme un caractere potentiel.
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel
         is_vowel_bool = as_byte in CharClassFeatures.VOWELS
         f[0] = float(is_vowel_bool)
 
-        # 1: is_consonant (lettre alphabétique non voyelle)
+        # 1: is_consonant (lettre alphabetique non voyelle)
         is_alpha = (
             (0x41 <= as_byte <= 0x5A) or  # A-Z
             (0x61 <= as_byte <= 0x7A)     # a-z
@@ -93,8 +93,8 @@ class CharClassFeatures:
         # 11: digit_value
         f[11] = float(as_byte - 0x30) if is_digit else 0.0
 
-        # 12: char_category simplifié : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
-        #     4.0 espace, 5.0 contrôle, 0.0 autre.
+        # 12: char_category simplifie : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
+        #     4.0 espace, 5.0 controle, 0.0 autre.
         if is_alpha:
             f[12] = 1.0
         elif is_digit:

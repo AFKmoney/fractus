@@ -1,41 +1,41 @@
-"""Pénalité d'acyclicité NOTEARS : h(W) = tr(e^{W⊙W}) − n.
+"""Penalite d'acyclicite NOTEARS : h(W) = tr(e^{W⊙W}) − n.
 
-Portée fidèlement depuis FNN v5.0 (src/causal.rs:159-196) en PyTorch pur.
+Portee faithfully depuis the original architecture (src/causal.rs:159-196) en PyTorch pur.
 
 Math (Zheng et al. 2018, "DAGs with NO TEARS") :
     h(W) = tr(expm(W ⊙ W)) − n
-    où expm est l'exponentielle matricielle et ⊙ le produit d'Hadamard.
+    ou expm est l'exponentielle matricielle et ⊙ le produit d'Hadamard.
 
-    Propriété : h(W) = 0 ssi W est acyclique (DAG).
+    Propriete : h(W) = 0 ssi W est acyclique (DAG).
     h(W) > 0 si W contient un cycle.
-    Différentiable → on peut l'optimiser par gradient descent.
+    Differentiable → on can l'optimiser par gradient descent.
 
-Approximation : expm via série de Taylor à 20 termes (comme FNN).
+Approximation : expm via serie de Taylor a 20 termes (comme FNN).
 
-CORRECTION vs OMNI : OMNI n'avait PAS de contrainte d'acyclicité du tout
-(rkhs_causal.py n'imposait aucun DAG). Ici on a un vrai NOTEARS différentiable.
+CORRECTION vs OMNI : OMNI n'avait PAS de contrainte d'acyclicite du tout
+(rkhs_causal.py n'imposait no DAG). Ici on a un true NOTEARS differentiable.
 """
 
 import torch
 
 
 def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
-    """Calcule h(W) = tr(e^{W⊙W}) − n, scalaire.
+    """Calcule h(W) = tr(e^{W⊙W}) − n, scalar.
 
     Args:
-        W : matrice d'adjacence (n, n), differentiable.
-        n_terms : nombre de termes de la série de Taylor (20 par défaut).
+        W : matrix d'adjacence (n, n), differentiable.
+        n_terms : number de termes de la serie de Taylor (20 par defaut).
     Returns:
-        h : scalaire. =0 si W est un DAG, >0 si W contient un cycle.
+        h : scalar. =0 si W est un DAG, >0 si W contient un cycle.
     """
     n = W.shape[0]
-    assert W.shape == (n, n), f"W doit être carrée, eu {W.shape}"
+    assert W.shape == (n, n), f"W must etre carree, eu {W.shape}"
 
     M = W * W  # produit d'Hadamard (W ⊙ W).
 
     eye = torch.eye(n, dtype=W.dtype, device=W.device)
     result = eye.clone()
-    term = eye.clone()  # term_k = M^k / k!, init à M^0/0! = I
+    term = eye.clone()  # term_k = M^k / k!, init a M^0/0! = I
     for k in range(1, n_terms + 1):
         term = (term @ M) / k
         result = result + term

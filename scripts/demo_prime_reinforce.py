@@ -1,14 +1,14 @@
-"""Démo L5+ v2 : PrimeGenerator apprend à produire des nombres premiers.
+"""Demo L5+ v2 : PrimeGenerator apprend a produire des numbers premiers.
 
-REDESIGN : la tâche 'converger vers target à 1e-3' (L5 original) était
-inatteignable. Nouvelle tâche : produire des entiers premiers, vérifiés par
+REDESIGN : la tâche 'converger vers target a 1e-3' (L5 original) was
+inatteignable. Nouvelle tâche : produire des integers premiers, verifies par
 le crible exact (soundness garantie).
 
-REINFORCE : reward = 1 si n prédit est premier, 0 sinon. Loss = -reward · log_prob.
-Comme 25% des entiers dans [2,100] sont premiers, le signal n'est pas sparse.
+REINFORCE : reward = 1 si n predit est premier, 0 sinon. Loss = -reward · log_prob.
+Comme 25% des integers in [2,100] sont premiers, le signal n'est pas sparse.
 
-Critère honnête : valid_rate doit dépasser 25% (le hasard) après entraînement,
-idéalement atteindre >70%.
+Critere honnete : valid_rate must depasser 25% (le hasard) after entrainement,
+idealement atteindre >70%.
 
 Run :
     python scripts/demo_prime_reinforce.py
@@ -19,7 +19,7 @@ from fractus.reasoning.prime_generator import PrimeGenerator
 
 
 def evaluate_valid_rate(gen: PrimeGenerator, n_eval: int = 200) -> float:
-    """Fraction de n prédits qui sont premiers."""
+    """Fraction de n predits qui sont premiers."""
     gen.eval()
     n_valid = 0
     with torch.no_grad():
@@ -37,8 +37,8 @@ def main():
     opt = torch.optim.Adam(gen.parameters(), lr=1e-2)
 
     initial_rate = evaluate_valid_rate(gen)
-    print(f"Taux de primalité initial (random) : {initial_rate:.1%}")
-    print(f"  (densité de premiers dans [2,100] ≈ 25%)")
+    print(f"Taux de primalite initial (random) : {initial_rate:.1%}")
+    print(f"  (densite de premiers in [2,100] ≈ 25%)")
     print()
 
     n_steps = 500
@@ -66,19 +66,19 @@ def main():
 
     final_rate = evaluate_valid_rate(gen)
     print()
-    print(f"Taux de primalité initial : {initial_rate:.1%}")
-    print(f"Taux de primalité final   : {final_rate:.1%}")
-    print(f"Amélioration              : {(final_rate - initial_rate)*100:+.1f} points")
+    print(f"Taux de primalite initial : {initial_rate:.1%}")
+    print(f"Taux de primalite final   : {final_rate:.1%}")
+    print(f"Amelioration              : {(final_rate - initial_rate)*100:+.1f} points")
 
     if final_rate > 0.5:
-        print(f"\nOK : PrimeGenerator APPREND à produire des premiers "
+        print(f"\nOK : PrimeGenerator APPREND a produire des premiers "
               f"({final_rate:.0%} vs 25% au hasard).")
-        print(f"  Tous les n acceptés sont mathématiquement premiers (soundness).")
+        print(f"  Tous les n acceptes sont mathematiquement premiers (soundness).")
     elif final_rate > initial_rate + 0.05:
-        print(f"\n~ : amélioration modeste ({final_rate:.0%}). REINFORCE marche")
-        print(f"  mais converge lentement. Plus de steps aideraient.")
+        print(f"\n~ : amelioration modeste ({final_rate:.0%}). REINFORCE marche")
+        print(f"  but converge lentement. Plus de steps aideraient.")
     else:
-        print(f"\n~ : pas d'amélioration. Investiguer.")
+        print(f"\n~ : pas d'amelioration. Investiguer.")
 
 
 if __name__ == "__main__":

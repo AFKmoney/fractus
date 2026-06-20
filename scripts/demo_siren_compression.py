@@ -1,18 +1,18 @@
-"""Démo L3 : mesurer la VRAIE compression SIREN sur un modèle.
+"""Demo L3 : mesurer la VRAIE compression SIREN sur un modele.
 
 On construit deux variantes d'un mini-MLP :
     (A) 100% dense (nn.Linear)
-    (B) Couches cachées en SirenLinear, dernière couche dense.
+    (B) Couches cachees en SirenLinear, derniere couche dense.
 
 On mesure :
-    - Le ratio de compression (params SIREN vs dense équivalent).
-    - La capacité d'apprentissage : peut-on surfit une cible avec (B) aussi bien
-      qu'avec (A) ?
+    - Le ratio de compression (params SIREN vs dense equivalent).
+    - La capacite d'apprentissage : can-on surfit une cible with (B) aussi bien
+      qu'with (A) ?
 
-POSITION SCIENTIFIQUE HONNÊTE :
-On s'attend à un ratio MODESTE (~2× à 5×) et à une perte de qualité d'apprentissage
-(les poids SIREN sont lisses, ce qui limite la capacité à exprimer des fonctions
-arbitraires). C'est la vérité — à comparer au mensonge 20.4× d'OMNI.
+POSITION SCIENTIFIQUE HONNETE :
+On s'attend a un ratio MODESTE (~2× a 5×) et a une loss de quality d'apprentissage
+(les poids SIREN sont lisses, ce qui limite la capacite a exprimer des functions
+arbitraires). C'est la verite — a comparer au falsehood 20.4× d'OMNI.
 
 Run :
     python scripts/demo_siren_compression.py
@@ -36,7 +36,7 @@ def make_siren_model(d_in, d_hidden, d_out, siren_hidden=16):
     return nn.Sequential(
         SirenLinear(d_in, d_hidden, hidden=siren_hidden), nn.ReLU(),
         SirenLinear(d_hidden, d_hidden, hidden=siren_hidden), nn.ReLU(),
-        nn.Linear(d_hidden, d_out),  # dernière couche dense
+        nn.Linear(d_hidden, d_out),  # derniere couche dense
     )
 
 
@@ -60,7 +60,7 @@ def main():
     d_in, d_hidden, d_out = 16, 32, 8
     n_samples = 64
 
-    # Cible : fonction non-triviale (sinus à fréquence non alignée).
+    # Cible : function non-triviale (sinus a frequence non alignee).
     X = torch.randn(n_samples, d_in)
     Y = torch.sin(X[:, :d_out] * 1.3) + 0.5 * torch.cos(X[:, :d_out] * 0.7)
 
@@ -72,31 +72,31 @@ def main():
     ratio_dense = measure_compression_ratio(dense)
     ratio_siren = measure_compression_ratio(siren)
 
-    print("=== Compression mesurée ===")
-    print(f"Modèle dense  : {n_dense} params, ratio = {ratio_dense:.2f}x")
-    print(f"Modèle SIREN  : {n_siren} params, ratio = {ratio_siren:.2f}x")
-    print(f"Économie      : {(1 - n_siren/n_dense)*100:.1f}% de params en moins")
+    print("=== Compression mesuree ===")
+    print(f"Modele dense  : {n_dense} params, ratio = {ratio_dense:.2f}x")
+    print(f"Modele SIREN  : {n_siren} params, ratio = {ratio_siren:.2f}x")
+    print(f"Economie      : {(1 - n_siren/n_dense)*100:.1f}% de params en moins")
     print()
 
-    print("=== Capacité d'apprentissage (surfit cible sinus) ===")
+    print("=== Capacite d'apprentissage (surfit cible sinus) ===")
     i_d, f_d = train_and_eval(dense, X, Y)
     i_s, f_s = train_and_eval(siren, X, Y)
     print(f"Dense  : loss {i_d:.4f} -> {f_d:.4f}  (baisse {(1-f_d/i_d)*100:.1f}%)")
     print(f"SIREN  : loss {i_s:.4f} -> {f_s:.4f}  (baisse {(1-f_s/i_s)*100:.1f}%)")
     print()
 
-    print("=== Verdict honnête ===")
-    print(f"Ratio de compression réel : {ratio_siren:.2f}x")
-    print(f"  (à comparer au '20.4x' hardcodé d'OMNI-FRACTAL, qui était faux)")
-    print(f"Perte de qualité apprentissage : {(f_s - f_d):.4f} (SIREN - Dense)")
+    print("=== Verdict honnete ===")
+    print(f"Ratio de compression real : {ratio_siren:.2f}x")
+    print(f"  (a comparer au '20.4x' hardcode d'the original design, qui was false)")
+    print(f"Perte de quality apprentissage : {(f_s - f_d):.4f} (SIREN - Dense)")
     if ratio_siren > 1.5 and f_s < i_s * 0.5:
-        print("\nOK : la SIREN comprime (>1.5x) ET apprend — honnête et utile.")
+        print("\nOK : la SIREN comprime (>1.5x) ET apprend — honnete et utile.")
     elif ratio_siren > 1.5:
-        print("\n~ : la SIREN comprime mais apprend moins bien — trade-off à documenter.")
+        print("\n~ : la SIREN comprime but apprend moins bien — trade-off a documenter.")
     else:
-        print("\n~ : compression faible (<1.5x) — la SIREN n'est pas adaptée à ces poids.")
-    print("\nConclusion : la thèse '20.4x sans perte' d'OMNI n'est pas reproduite.")
-    print("La SIREN est utile pour des fonctions lisses, pas pour des poids denses.")
+        print("\n~ : compression faible (<1.5x) — la SIREN n'est pas adaptee a ces poids.")
+    print("\nConclusion : la these '20.4x without loss' d'OMNI n'est pas reproduite.")
+    print("La SIREN est utile for des functions lisses, pas for des poids denses.")
 
 
 if __name__ == "__main__":

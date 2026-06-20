@@ -1,26 +1,26 @@
-"""Base de Fourier à décroissance Mandelbrot pour l'embedding fractal.
+"""Base de Fourier a decroissance Mandelbrot for l'embedding fractal.
 
-Inspiré de FNN v5.0 (src/math/mandelbrot.rs + src/embedding.rs) mais renommé
-honnêtement : FNN appelait ça "Mandelbrot frequencies" en référence à l'ensemble
-de Mandelbrot, alors qu'il s'agit juste d'une décroissance géométrique de base
-φ² (le carré du nombre d'or). On appelle donc ça "Mandelbrot-decayed Fourier
-basis" — la décroissance est réelle et justifiée (séparation d'échelles
-multi-niveaux), mais le lien à l'ensemble de Mandelbrot est nul.
+Inspire de the original architecture (src/math/mandelbrot.rs + src/embedding.rs) but renomme
+honnetement : FNN appelait ca "Mandelbrot frequencies" en reference a l'ensemble
+de Mandelbrot, alors qu'il s'agit juste d'une decroissance geometrique de base
+φ² (le carre du number d'or). On appelle therefore ca "Mandelbrot-decayed Fourier
+basis" — la decroissance est real et justifiee (separation d'echelles
+multi-niveaux), but le lien a l'ensemble de Mandelbrot est nul.
 
-Mathématique :
+Mathematique :
     φ = (1 + √5) / 2  ≈ 1.618
     φ² ≈ 2.618
-    ω_k = (φ²)^{-k}    pour k = 0, 1, ..., n_freq-1
+    ω_k = (φ²)^{-k}    for k = 0, 1, ..., n_freq-1
 
-La base de Fourier associe à chaque token id t et chaque fréquence k la paire
+La base de Fourier associe a each token id t et each frequence k la paire
 (sin, cos) de ω_k · t :
     M[t, 2k]   = sin(ω_k · t)
     M[t, 2k+1] = cos(ω_k · t)
 
-On stocke n_freq fréquences ; la matrice produite a 2·n_freq colonnes
-(sin+cos par fréquence). Le caller (FractalEmbedding) gère la projection finale.
+On stocke n_freq frequences ; la matrix produite a 2·n_freq colonnes
+(sin+cos par frequence). Le caller (FractalEmbedding) gere la projection finale.
 
-AUCUN paramètre entraînable ici : tout est déterministe, précalculé une fois.
+AUCUN parameter entrainable ici : tout est deterministe, precalcule une fois.
 """
 
 import math
@@ -28,17 +28,17 @@ import torch
 
 
 class MandelbrotFourierBasis:
-    """Base de Fourier déterministe avec décroissance (φ²)^{-k}.
+    """Base de Fourier deterministe with decroissance (φ²)^{-k}.
 
     Attributs :
-        vocab_size   : nombre de token ids couverts (0 .. vocab_size-1)
-        n_frequencies : nombre de fréquences ω_k
+        vocab_size   : number de token ids couverts (0 .. vocab_size-1)
+        n_frequencies : number de frequences ω_k
         frequencies  : tenseur (n_frequencies,) des ω_k, en float32
     """
 
     def __init__(self, vocab_size: int, n_frequencies: int):
         if vocab_size <= 0 or n_frequencies <= 0:
-            raise ValueError("vocab_size et n_frequencies doivent être > 0")
+            raise ValueError("vocab_size et n_frequencies must etre > 0")
         self.vocab_size = vocab_size
         self.n_frequencies = n_frequencies
 
@@ -48,11 +48,11 @@ class MandelbrotFourierBasis:
         # ω_k = (φ²)^{-k}
         self.frequencies = phi_sq ** (-ks)
 
-        # Précalcul de la matrice (vocab_size, 2·n_frequencies).
+        # Precalcul de la matrix (vocab_size, 2·n_frequencies).
         self._matrix = self._build_matrix()
 
     def _build_matrix(self) -> torch.Tensor:
-        """Construit la matrice M[t, :] = [sin(ω_k·t), cos(ω_k·t)] pour tout k."""
+        """Construit la matrix M[t, :] = [sin(ω_k·t), cos(ω_k·t)] for tout k."""
         t = torch.arange(self.vocab_size, dtype=torch.float32).unsqueeze(1)  # (V, 1)
         omega = self.frequencies.unsqueeze(0)  # (1, K)
         phases = omega * t  # (V, K) broadcast
@@ -65,5 +65,5 @@ class MandelbrotFourierBasis:
         return M
 
     def matrix(self) -> torch.Tensor:
-        """Retourne la matrice précalculée (vocab_size, 2·n_frequencies)."""
+        """Retourne la matrix precalculee (vocab_size, 2·n_frequencies)."""
         return self._matrix

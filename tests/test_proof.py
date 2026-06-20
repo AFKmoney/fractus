@@ -1,4 +1,4 @@
-"""Tests du pipeline preuves : générateur, vérificateur exact, récompense."""
+"""Tests du pipeline preuves : generateur, verify exact, recompense."""
 
 import torch
 import pytest
@@ -7,14 +7,14 @@ import pytest
 # --- InferenceRule ---
 
 def test_inference_rules_count_20():
-    """Il y a exactement 20 règles (FNN proof.rs:14-36)."""
+    """Il y a exactement 20 regles (FNN proof.rs:14-36)."""
     from fractus.reasoning.proof import InferenceRule, all_rules
     assert InferenceRule.n_rules() == 20
     assert len(all_rules()) == 20
 
 
 def test_inference_rule_names_consistent():
-    """Index et nom cohérents."""
+    """Index et nom coherents."""
     from fractus.reasoning.proof import InferenceRule
     assert InferenceRule.name(0) == "AddBothSides"
     assert InferenceRule.name(19) == "ProofByInduction"
@@ -23,7 +23,7 @@ def test_inference_rule_names_consistent():
 # --- ProofGenerator ---
 
 def test_generator_produces_proof():
-    """generate(target) retourne une preuve avec max_steps étapes."""
+    """generate(target) returns une preuve with max_steps etapes."""
     from fractus.reasoning.proof import ProofGenerator
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     proof, info = gen.generate(target=5.0)
@@ -35,38 +35,38 @@ def test_generator_produces_proof():
 
 
 def test_generator_backward_every_param():
-    """CRITÈRE L5 : backward propage un gradient fini ET non-nul à CHAQUE paramètre.
+    """CRITERE L5 : backward propage un gradient fini ET non-nul a CHAQUE parameter.
 
-    La loss doit toucher À LA FOIS les logits de règles (w_rule) ET les valeurs
-    prédites (w_value), sinon w_value ne reçoit pas de gradient. On construit
-    donc une loss qui combine les deux : REINFORCE-like.
+    La loss must toucher A LA FOIS les logits de regles (w_rule) ET les valeurs
+    predites (w_value), sinon w_value ne recoit pas de gradient. On construit
+    therefore une loss qui combine les deux : REINFORCE-like.
     """
     from fractus.reasoning.proof import ProofGenerator
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     proof, info = gen.generate(target=3.0)
     # Loss = somme des logits (touche w_rule) + somme des value_preds (touche w_value).
-    # Les deux sont des tenseurs dans le graphe autodiff.
+    # Les deux sont des tenseurs in le graphe autodiff.
     loss = sum(logits.sum() for logits in info["logits_per_step"])
     loss = loss + sum(vp for vp in info["value_preds_per_step"])
     loss.backward()
 
     for name, p in gen.named_parameters():
-        assert p.requires_grad, f"{name} devrait requires_grad=True"
-        assert p.grad is not None, f"{name} n'a reçu aucun gradient"
+        assert p.requires_grad, f"{name} should requires_grad=True"
+        assert p.grad is not None, f"{name} n'a recu no gradient"
         assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a reçu un gradient nul"
+        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
 
 
 # --- ProofVerifier ---
 
-def test_verifier_arithmetic_correct():
+def test_verify_arithmetic_correct():
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
     assert v.verify_arithmetic(2, 3, 5) is True
     assert v.verify_arithmetic(2, 3, 6) is False
 
 
-def test_verifier_primality():
+def test_verify_primality():
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
     assert v.verify_primality(7, True) is True
@@ -74,7 +74,7 @@ def test_verifier_primality():
     assert v.verify_primality(8, False) is True
 
 
-def test_verifier_fermat():
+def test_verify_fermat():
     """Fermat petit : 2^(7-1) ≡ 1 mod 7."""
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
@@ -82,7 +82,7 @@ def test_verifier_fermat():
     assert v.verify_fermat(3, 7) is True
 
 
-def test_verifier_wilson():
+def test_verify_wilson():
     """Wilson : 6! ≡ 6 mod 7."""
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
@@ -90,14 +90,14 @@ def test_verifier_wilson():
     assert v.verify_wilson(4) is False  # 4 non premier
 
 
-def test_verifier_gcd():
+def test_verify_gcd():
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
     assert v.verify_gcd(12, 18) is True  # gcd=6, lcm=36, 6*36=216=12*18
 
 
-def test_verifier_rejects_invalid_proof():
-    """Une preuve avec conclusion loin de la target doit être rejetée."""
+def test_verify_rejects_invalid_proof():
+    """Une preuve with conclusion loin de la target must etre rejetee."""
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()
     steps = [ProofStep(rule_index=0, rule_name="AddBothSides", premise_indices=[],
@@ -106,11 +106,11 @@ def test_verifier_rejects_invalid_proof():
     assert v.verify_proof(proof) is False
 
 
-def test_verifier_accepts_valid_proof():
-    """Une preuve dont la conclusion atteint la target doit être acceptée.
+def test_verify_accepts_valid_proof():
+    """Une preuve dont la conclusion atteint la target must etre acceptee.
 
-    Note : le seuil 1e-3 est strict (<, pas <=), donc |conclusion - target| doit
-    être STRICTEMENT inférieur à 0.001. On utilise 0.0005 pour être sûr.
+    Note : le seuil 1e-3 est strict (<, pas <=), therefore |conclusion - target| must
+    etre STRICTEMENT inferieur a 0.001. On utilise 0.0005 for etre sur.
     """
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()
@@ -123,7 +123,7 @@ def test_verifier_accepts_valid_proof():
 # --- ProofReward ---
 
 def test_reward_valid_proof_high():
-    """Une preuve valide a une récompense élevée."""
+    """Une preuve valide a une recompense elevee."""
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     r = ProofReward()
     steps = [ProofStep(rule_index=0, rule_name="AddBothSides", premise_indices=[],
@@ -134,7 +134,7 @@ def test_reward_valid_proof_high():
 
 
 def test_reward_diversity_increases_with_rules():
-    """Plus de règles distinctes → récompense diversity plus haute."""
+    """Plus de regles distinctes → recompense diversity plus haute."""
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     r = ProofReward()
     steps1 = [ProofStep(rule_index=0, rule_name="A", premise_indices=[], conclusion=5.0, confidence=1.0)]
@@ -146,7 +146,7 @@ def test_reward_diversity_increases_with_rules():
 
 
 def test_reward_weights_sum_to_one():
-    """Les poids par défaut somment à 1.0 (0.6 + 0.3 + 0.1)."""
+    """Les poids par defaut somment a 1.0 (0.6 + 0.3 + 0.1)."""
     from fractus.reasoning.proof import ProofReward
     r = ProofReward()
     total = r.correctness_weight + r.efficiency_weight + r.diversity_weight

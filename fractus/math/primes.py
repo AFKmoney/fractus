@@ -1,22 +1,22 @@
-"""Crible d'Ératosthène pour vérification de primalité.
+"""Crible d'Eratosthene for verification de primalite.
 
-Porté depuis FNN v5.0 (src/math/primes.rs). Le crible est précalculé une fois
-jusqu'à une limite, puis verify_prime(n) est O(1) pour n <= limite.
+Porte depuis the original architecture (src/math/primes.rs). Le crible est precalcule une fois
+jusqu'a une limite, then verify_prime(n) est O(1) for n <= limite.
 """
 
 from typing import List
 
 
 class PrimeSieve:
-    """Crible d'Ératosthène précalculé.
+    """Crible d'Eratosthene precalcule.
 
     Args:
-        limit : borne supérieure (inclusive) du crible.
+        limit : borne superieure (inclusive) du crible.
     """
 
     def __init__(self, limit: int):
         if limit < 0:
-            raise ValueError("limit doit être >= 0")
+            raise ValueError("limit must etre >= 0")
         self.limit = limit
         # is_prime[i] = True si i est premier.
         self.is_prime: List[bool] = [True] * (limit + 1)
@@ -33,12 +33,12 @@ class PrimeSieve:
             i += 1
 
     def verify_prime(self, n: int) -> bool:
-        """Retourne True si n est premier (n <= limit), sinon vérifie par essai de division."""
+        """Retourne True si n est premier (n <= limit), sinon verifies par essai de division."""
         if n < 2:
             return False
         if n <= self.limit:
             return self.is_prime[n]
-        # n > limit : essai de division jusqu'à sqrt(n).
+        # n > limit : essai de division jusqu'a sqrt(n).
         d = 2
         while d * d <= n:
             if n % d == 0:

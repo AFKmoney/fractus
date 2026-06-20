@@ -1,10 +1,10 @@
-"""Tests de do_intervention : vrai do-calculus Pearl, pas column-zeroing."""
+"""Tests de do_intervention : true do-calculus Pearl, pas column-zeroing."""
 
 import torch
 
 
 def test_do_intervention_clamps_value():
-    """do(X_i = v) doit fixer la colonne i à v pour toutes les lignes."""
+    """do(X_i = v) must fixer la colonne i a v for toutes les lignes."""
     from fractus.causal.do import do_intervention
     x = torch.randn(4, 3)
     intervened = do_intervention(x, var_idx=1, value=5.0)
@@ -38,10 +38,10 @@ def test_do_intervention_is_differentiable():
 
 
 def test_do_intervention_not_zeroing():
-    """CRITÈRE L4 : do(X_i = v) ne doit PAS zerorer la colonne (le faux OMNI)."""
+    """CRITERE L4 : do(X_i = v) ne must PAS zerorer la colonne (le false OMNI)."""
     from fractus.causal.do import do_intervention
     x = torch.randn(4, 3)
     intervened = do_intervention(x, var_idx=1, value=7.7)
     assert not torch.allclose(intervened[:, 1], torch.zeros(4)), \
-        "do(X_i=v) ne doit pas zerorer la colonne (le faux OMNI mettait à 0)"
+        "do(X_i=v) ne must pas zerorer la colonne (le false OMNI mettait a 0)"
     assert torch.allclose(intervened[:, 1], torch.full((4,), 7.7))

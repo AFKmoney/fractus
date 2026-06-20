@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-"""Script d'entraînement fractus sur datasets HuggingFace.
+"""Script d'entrainement fractus sur datasets HuggingFace.
 
 Supporte n'importe quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
-FineWeb, ...) avec des presets adaptés à différents hardwares.
+FineWeb, ...) with des presets adaptes a differents hardwares.
 
-⚠️ HONNÊTETÉ HARDWARE :
+⚠️ HONNETETE HARDWARE :
     - cpu-tiny / cpu-small : fonctionnent sur CPU laptop/desktop.
-    - gpu-* : nécessitent un GPU CUDA (ou MPS sur Apple Silicon).
-    - gpu-1b : nécessite A100 80GB ou H100. IMPOSSIBLE sur CPU ou GPU consumer.
-      Le bottleneck principal est le Kuramoto RK4 (non vectorisé) + SIREN.
+    - gpu-* : necessitent un GPU CUDA (ou MPS sur Apple Silicon).
+    - gpu-1b : necessite A100 80GB ou H100. IMPOSSIBLE sur CPU ou GPU consumer.
+      Le bottleneck principal est le Kuramoto RK4 (non vectorise) + SIREN.
 
 Usage :
-    # Petit modèle sur tinyshakespeare (CPU, ~2 min)
+    # Petit modele sur tinyshakespeare (CPU, ~2 min)
     python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare
 
     # Medium sur wikitext-2 (GPU)
@@ -44,7 +44,7 @@ from fractus.metrics.perplexity import honest_perplexity
 
 
 # ---------------------------------------------------------------------------
-# Presets (tailles de modèle + hyperparamètres par hardware)
+# Presets (tailles de modele + hyperparametres par hardware)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -66,7 +66,7 @@ class Preset:
     description: str
 
     def n_params_approx(self, vocab: int) -> int:
-        """Estimation grossière du nombre de paramètres."""
+        """Estimation grossiere du number de parameters."""
         # Embedding: 16 char + 2*n_freq Fourier + vortex_mlp ~ (16 + 2*n_freq + 32) * d_model
         emb = (16 + 2 * self.n_frequencies + 32) * self.d_model + 32 * (32 + self.n_frequencies)
         # Par bloc : attention (3 * d_model^2 + d_model^2) + Kuramoto + MoE
@@ -126,7 +126,7 @@ PRESETS = {
 
 # Alias de datasets locaux vs HF.
 LOCAL_DATASETS = {
-    "tinyshakespeare": None,  # spécial : fichier local.
+    "tinyshakespeare": None,  # special : fichier local.
 }
 
 HF_DATASET_DEFAULTS = {
@@ -141,11 +141,11 @@ def load_text_dataset(
     text_field: str,
     max_samples: int,
 ) -> tuple[str, dict]:
-    """Charge un dataset et retourne (texte_complet, vocab_char_to_id).
+    """Charge un dataset et returns (texte_complete, vocab_char_to_id).
 
-    Niveau caractère (comme tinyshakespeare).
+    Niveau caractere (comme tinyshakespeare).
     """
-    # tinyshakespeare local (déjà téléchargé).
+    # tinyshakespeare local (deja telecharge).
     if dataset_name == "tinyshakespeare":
         local_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -170,7 +170,7 @@ def load_text_dataset(
             from datasets import load_dataset
         except ImportError as e:
             raise RuntimeError(
-                "Library `datasets` non installée. Lance : pip install datasets"
+                "Library `datasets` non installee. Lance : pip install datasets"
             ) from e
 
         # Parser "name" ou "name:config".
@@ -195,19 +195,19 @@ def load_text_dataset(
     if max_samples and len(text) > max_samples * 1000:  # heuristique : ~1000 chars/sample.
         text = text[:max_samples * 1000]
 
-    # Vocabulaire niveau caractère.
+    # Vocabulaire niveau caractere.
     chars = sorted(set(text))
     char_to_id = {c: i for i, c in enumerate(chars)}
-    print(f"Texte : {len(text):,} caractères, vocabulaire : {len(chars)} caractères")
+    print(f"Texte : {len(text):,} caracteres, vocabulaire : {len(chars)} caracteres")
     return text, char_to_id
 
 
 # ---------------------------------------------------------------------------
-# Modèle
+# Modele
 # ---------------------------------------------------------------------------
 
 class FractalLM(nn.Module):
-    """Modèle de langage fractal : Embedding + N×FractalBlockFull + head."""
+    """Modele de langage fractal : Embedding + N×FractalBlockFull + head."""
 
     def __init__(self, vocab, preset: Preset):
         super().__init__()
@@ -242,7 +242,7 @@ class FractalLM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Tokenizer niveau caractère
+# Tokenizer niveau caractere
 # ---------------------------------------------------------------------------
 
 class CharTokenizer:
@@ -262,7 +262,7 @@ class CharTokenizer:
 
 
 # ---------------------------------------------------------------------------
-# Boucle d'entraînement
+# Boucle d'entrainement
 # ---------------------------------------------------------------------------
 
 def train(args):
@@ -314,11 +314,11 @@ def train(args):
         print("\n" + "=" * 70)
         print("⚠️  AVERTISSEMENT CRITIQUE")
         print("=" * 70)
-        print("Vous tentez d'entraîner un modèle ~1B paramètres sur CPU.")
+        print("Vous tentez d'entrainer un modele ~1B parameters sur CPU.")
         print("C'est IMPOSSIBLE en pratique :")
-        print("  - Mémoire : ~16 GB minimum requis, vous avez probablement < 16 GB RAM.")
-        print("  - Temps : semaines à mois par epoch.")
-        print("Le preset gpu-1b nécessite A100 80GB ou H100.")
+        print("  - Memoire : ~16 GB minimum requis, vous avez probablement < 16 GB RAM.")
+        print("  - Temps : semaines a mois par epoch.")
+        print("Le preset gpu-1b necessite A100 80GB ou H100.")
         print("Abandon. Utilisez --preset cpu-small ou --preset gpu-small.")
         sys.exit(1)
 
@@ -332,17 +332,17 @@ def train(args):
 
     # Estimation params.
     n_params_est = preset.n_params_approx(vocab)
-    print(f"Paramètres estimés : {n_params_est:,} ({n_params_est/1e6:.1f}M)")
+    print(f"Parametres estimes : {n_params_est:,} ({n_params_est/1e6:.1f}M)")
     if n_params_est > 100_000_000 and device.type == "cpu":
-        print(f"\n⚠️  {n_params_est/1e6:.0f}M params sur CPU va être TRES lent.")
-        print("Considérez --preset cpu-small ou un GPU.")
+        print(f"\n⚠️  {n_params_est/1e6:.0f}M params sur CPU va etre TRES lent.")
+        print("Considerez --preset cpu-small ou un GPU.")
 
     # Encoder.
     all_ids = tokenizer.encode(text)
     seq_len = preset.seq_len
     n_seqs = (len(all_ids) - 1) // seq_len
     all_ids = all_ids[:n_seqs * seq_len + 1]
-    print(f"Séquences : {n_seqs:,} de longueur {seq_len}")
+    print(f"Sequences : {n_seqs:,} de longueur {seq_len}")
 
     # Split train/val (95/5).
     n_train = int(0.95 * n_seqs)
@@ -361,10 +361,10 @@ def train(args):
         for i in range(0, n - batch_size + 1, batch_size):
             yield seqs[i:i+batch_size].to(device), targets[i:i+batch_size].to(device)
 
-    # Modèle.
+    # Modele.
     model = FractalLM(vocab, preset).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"Paramètres réels : {n_params:,} ({n_params/1e6:.2f}M)")
+    print(f"Parametres reels : {n_params:,} ({n_params/1e6:.2f}M)")
 
     opt = torch.optim.AdamW(model.parameters(), lr=preset.lr, weight_decay=0.01)
 
@@ -375,7 +375,7 @@ def train(args):
     os.makedirs(ckpt_dir, exist_ok=True)
 
     # Boucle.
-    print(f"\nEntraînement : {preset.epochs} epochs, lr={preset.lr}")
+    print(f"\nEntrainement : {preset.epochs} epochs, lr={preset.lr}")
     best_val_ppl = float("inf")
     for epoch in range(preset.epochs):
         model.train()
@@ -428,10 +428,10 @@ def train(args):
                 "epoch": epoch + 1,
                 "val_ppl": val_ppl,
             }, ckpt_path)
-            print(f"  → Checkpoint sauvegardé : {ckpt_path}")
+            print(f"  → Checkpoint sauvegarde : {ckpt_path}")
 
-    # Génération finale.
-    print("\n=== Génération (greedy) ===")
+    # Generation finale.
+    print("\n=== Generation (greedy) ===")
     model.eval()
     prompt = args.prompt or "The "
     if all(c in char_to_id for c in prompt[:3]):
@@ -447,7 +447,7 @@ def train(args):
             ctx = torch.cat([ctx, torch.tensor([[nxt]], device=device)], dim=1)
     print(tokenizer.decode(ctx[0]))
 
-    print(f"\nTerminé. Meilleure perplexité validation : {best_val_ppl:.2f}")
+    print(f"\nTermine. Meilleure perplexite validation : {best_val_ppl:.2f}")
 
 
 # ---------------------------------------------------------------------------
@@ -456,7 +456,7 @@ def train(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="Entraînement fractus sur datasets HuggingFace.",
+        description="Entrainement fractus sur datasets HuggingFace.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Presets disponibles :
@@ -467,7 +467,7 @@ Presets disponibles :
   gpu-large   ~300M params, A100 40GB
   gpu-1b      ~1B params, A100 80GB/H100 (IMPOSSIBLE sur CPU)
 
-Datasets prédéfinis :
+Datasets predefinis :
   tinyshakespeare  (local, 1.1 MB)
   wikitext-2       (HF, ~5 MB)
   wikitext-103     (HF, ~500 MB)
@@ -480,17 +480,17 @@ Exemples :
 """,
     )
     p.add_argument("--preset", choices=list(PRESETS.keys()), default=None,
-                   help="Preset de taille/hardware (défaut : cpu-tiny).")
+                   help="Preset de taille/hardware (defaut : cpu-tiny).")
     p.add_argument("--dataset", default="tinyshakespeare",
                    help="Dataset : tinyshakespeare, wikitext-2, ou nom HF.")
     p.add_argument("--text-field", default=None,
-                   help="Champ texte du dataset HF (défaut : selon dataset).")
+                   help="Champ texte du dataset HF (defaut : selon dataset).")
     p.add_argument("--max-samples", type=int, default=0,
-                   help="Max échantillons (0 = tout).")
+                   help="Max echantillons (0 = tout).")
     p.add_argument("--prompt", default=None,
-                   help="Prompt pour la génération finale.")
+                   help="Prompt for la generation finale.")
     p.add_argument("--checkpoint-dir", default=None,
-                   help="Dossier de checkpoints (défaut : ./checkpoints).")
+                   help="Dossier de checkpoints (defaut : ./checkpoints).")
     # Overrides custom.
     p.add_argument("--d-model", type=int, default=None)
     p.add_argument("--n-blocks", type=int, default=None)

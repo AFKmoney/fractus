@@ -4,7 +4,7 @@ import torch
 
 
 def test_act_output_shape():
-    """ACT préserve la forme (B, L, d)."""
+    """ACT preserve la shape (B, L, d)."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
@@ -33,7 +33,7 @@ def test_act_ponder_loss_nonneg():
 
 
 def test_act_backward_every_param():
-    """CRITÈRE L5 : backward propage un gradient fini ET non-nul à CHAQUE paramètre."""
+    """CRITERE L5 : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
@@ -45,10 +45,10 @@ def test_act_backward_every_param():
     loss = out.pow(2).sum()
     loss.backward()
     for name, p in reasoner.named_parameters():
-        assert p.requires_grad, f"{name} devrait requires_grad=True"
-        assert p.grad is not None, f"{name} n'a reçu aucun gradient"
+        assert p.requires_grad, f"{name} should requires_grad=True"
+        assert p.grad is not None, f"{name} n'a recu no gradient"
         assert torch.isfinite(p.grad).all()
-        assert p.grad.abs().sum().item() > 0, f"{name} a reçu un gradient nul"
+        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
 
 
 def test_self_consistency_candidates_count():
@@ -63,7 +63,7 @@ def test_self_consistency_candidates_count():
 
 
 def test_self_consistency_select_best():
-    """select_best retourne un idx valide et un score dans [-1, 1]."""
+    """select_best returns un idx valide et un score in [-1, 1]."""
     from fractus.reasoning.self_consistency import SelfConsistencyCheck
     scc = SelfConsistencyCheck(n_candidates=3, noise_scale=0.05)
     ref = torch.randn(2, 4, 16)

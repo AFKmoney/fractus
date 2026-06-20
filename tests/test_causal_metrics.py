@@ -1,4 +1,4 @@
-"""Tests de structural_hamming_distance : mesure honnête, pas de clamp à 0.98."""
+"""Tests de structural_hamming_distance : mesure honnete, pas de clamp a 0.98."""
 
 import inspect
 import torch
@@ -56,17 +56,17 @@ def test_shd_threshold_filters_small_values():
 
 
 def test_shd_no_clamp_to_098():
-    """CRITÈRE L4 : le code EXÉCUTABLE ne doit pas contenir de clamp à 0.98
-    (le mensonge d'OMNI benchmarks.py:43-46 : min(causal_acc, 0.98)).
+    """CRITERE L4 : le code EXECUTABLE ne must pas contenir de clamp a 0.98
+    (le falsehood d'OMNI benchmarks.py:43-46 : min(causal_acc, 0.98)).
 
-    On tolère '0.98' dans les docstrings (qui expliquent le mensonge corrigé),
-    mais on l'interdit dans les expressions Python hors-commentaires."""
+    On tolere '0.98' in les docstrings (qui expliquent le falsehood corrige),
+    but on l'interdit in les expressions Python hors-commentaires."""
     import ast
     from fractus.metrics import causal as causal_mod
 
     src = inspect.getsource(causal_mod)
     tree = ast.parse(src)
-    # Chercher tout littéral Constant de valeur 0.98 qui n'est pas dans un
+    # Chercher tout litteral Constant de valeur 0.98 qui n'est pas in un
     # docstring (ast.Expr → Constant str).
     docstring_nodes = set()
     for node in ast.walk(tree):
@@ -76,16 +76,16 @@ def test_shd_no_clamp_to_098():
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and node.value == 0.98:
-            # Vérifier que ce n'est pas dans un docstring.
+            # Verifier que ce n'est pas in un docstring.
             parent_in_doc = any(id(node) in docstring_nodes for _ in [0])
             if not parent_in_doc:
-                # Le littéral 0.98 apparaît dans une expression exécutable.
-                # On vérifie qu'il n'est pas dans un docstring en remontant.
+                # Le litteral 0.98 apparait in une expression executable.
+                # On verifies qu'il n'est pas in un docstring en remontant.
                 # (Simplification : on interdit tout 0.98 hors docstring.)
                 # ast ne donne pas le parent direct ; on accepte si le node est
-                # un Argument/default ou dans une fonction docstring.
+                # un Argument/default ou in une function docstring.
                 pass
-    # Méthode plus simple : extraire le code hors docstring par lignes.
+    # Methode plus simple : extraire le code hors docstring par lignes.
     code_lines = []
     in_docstring = False
     for line in src.split('\n'):
@@ -102,11 +102,11 @@ def test_shd_no_clamp_to_098():
         code_lines.append(line)
     code_only = '\n'.join(code_lines)
     assert "0.98" not in code_only, \
-        "Le littéral 0.98 est interdit dans le code exécutable (mensonge OMNI)"
+        "Le litteral 0.98 est interdit in le code executable (falsehood OMNI)"
 
 
 def test_causal_accuracy_no_clamp():
-    """causal_accuracy ne doit pas être clampée."""
+    """causal_accuracy ne must pas etre clampee."""
     from fractus.metrics.causal import causal_accuracy
     true_W = torch.eye(3)
     pred_W = torch.eye(3) * 2.0

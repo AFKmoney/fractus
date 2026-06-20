@@ -1,7 +1,7 @@
-"""Démo L4+ : NOTEARS sur SCM non-linéaire avec ordre topologique INCONNU.
+"""Demo L4+ : NOTEARS sur SCM non-lineaire with ordre topologique INCONNU.
 
-VALIDATION SÉRIEUSE au-delà du cas jouet L4 (linéaire + triangulaire).
-Si NOTEARS récupère le DAG ici, on a une vraie preuve de compétence.
+VALIDATION SERIEUSE au-dela du cas jouet L4 (lineaire + triangulaire).
+Si NOTEARS recupere le DAG ici, on a une vraie preuve de competence.
 
 Run :
     python scripts/demo_causal_hard.py
@@ -21,16 +21,16 @@ from data.causal.generate_scm_hard import generate_nonlinear_scm
 def main():
     torch.manual_seed(42)
 
-    print("=== SCM non-linéaire avec ordre topologique INCONNU ===")
+    print("=== SCM non-lineaire with ordre topologique INCONNU ===")
     W_true, X = generate_nonlinear_scm(n_vars=5, n_samples=2000, edge_prob=0.5, seed=11)
     n_edges = int((W_true != 0).sum())
-    print(f"Variables : {W_true.shape[0]}, échantillons : {X.shape[0]}")
-    print(f"Arêtes vraies : {n_edges}")
-    print(f"W_true (NON triangulaire — ordre topo caché) :")
+    print(f"Variables : {W_true.shape[0]}, echantillons : {X.shape[0]}")
+    print(f"Aretes vraies : {n_edges}")
+    print(f"W_true (NON triangulaire — ordre topo cache) :")
     print((W_true != 0).int())
 
     print()
-    print("=== NOTEARS linéaire sur données non-linéaires ===")
+    print("=== NOTEARS lineaire sur donnees non-lineaires ===")
     n_vars = W_true.shape[0]
     W_pred = torch.zeros(n_vars, n_vars, requires_grad=True)
     torch.nn.init.normal_(W_pred, std=0.1)
@@ -51,21 +51,21 @@ def main():
     n_correct = int(((W_true.abs() > 0.3) & (W_pred.detach().abs() > 0.3)).sum())
 
     print()
-    print(f"SHD = {shd} (sur {n_vars*n_vars} entrées)")
-    print(f"Arêtes : vraies={n_edges}, prédites={n_pred}, correctes={n_correct}")
+    print(f"SHD = {shd} (sur {n_vars*n_vars} entrees)")
+    print(f"Aretes : vraies={n_edges}, predites={n_pred}, correctes={n_correct}")
     print(f"W_pred appris :")
     print((W_pred.detach().abs() > 0.3).int())
 
     print()
     if shd <= 2:
-        print(f"OK : NOTEARS récupère le DAG non-linéaire à ordre inconnu (SHD <= 2).")
-        print(f"  Validation au-delà du cas jouet L4 : NOTEARS est compétent.")
-        print(f"  Note : NOTEARS linéaire est robuste à la non-linéarité modérée")
-        print(f"  (tanh ≈ identité pour petites entrées). Pour une non-linéarité")
-        print(f"  forte, il faudrait NOTEARS non-linéaire (future work).")
+        print(f"OK : NOTEARS recupere le DAG non-lineaire a ordre inconnu (SHD <= 2).")
+        print(f"  Validation au-dela du cas jouet L4 : NOTEARS est competent.")
+        print(f"  Note : NOTEARS lineaire est robuste a la non-linearite moderee")
+        print(f"  (tanh ≈ identite for petites entrees). Pour une non-linearite")
+        print(f"  forte, il faudrait NOTEARS non-lineaire (future work).")
     else:
-        print(f"~ : SHD = {shd} > 2. NOTEARS linéaire a du mal sur ces données.")
-        print(f"  Considérer : plus d'échantillons, NOTEARS non-linéaire.")
+        print(f"~ : SHD = {shd} > 2. NOTEARS lineaire a du mal sur ces donnees.")
+        print(f"  Considerer : plus d'echantillons, NOTEARS non-lineaire.")
 
 
 if __name__ == "__main__":

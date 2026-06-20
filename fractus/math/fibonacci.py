@@ -1,21 +1,21 @@
-"""Suite de Fibonacci précalculée + formule de Binet pour grands n.
+"""Suite de Fibonacci precalculee + formula de Binet for grands n.
 
-Porté depuis FNN v5.0 (src/math/fibonacci.rs).
+Porte depuis the original architecture (src/math/fibonacci.rs).
 """
 
 from typing import List
 
 
 class FibonacciSequence:
-    """Suite de Fibonacci précalculée.
+    """Suite de Fibonacci precalculee.
 
     Args:
-        n : nombre de termes à précalculer.
+        n : number de termes a precalculer.
     """
 
     def __init__(self, n: int):
         if n < 0:
-            raise ValueError("n doit être >= 0")
+            raise ValueError("n must etre >= 0")
         self.n = n
         self.values: List[int] = []
         if n >= 1:
@@ -26,9 +26,9 @@ class FibonacciSequence:
             self.values.append(self.values[i - 1] + self.values[i - 2])
 
     def get(self, i: int) -> int:
-        """Retourne F(i). Pour i < n : table. Pour i >= n : formule de Binet."""
+        """Retourne F(i). Pour i < n : table. Pour i >= n : formula de Binet."""
         if i < 0:
-            raise ValueError("i doit être >= 0")
+            raise ValueError("i must etre >= 0")
         if i < len(self.values):
             return self.values[i]
         # Binet : F(n) = (φ^n - ψ^n) / √5, ψ = -1/φ.

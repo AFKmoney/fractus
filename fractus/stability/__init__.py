@@ -1,8 +1,8 @@
-"""Sous-package stability : Lyapunov honnête (sous-système Kuramoto).
+"""Sous-package stability : Lyapunov honnete (under-system Kuramoto).
 
-L6 : fonction de Lyapunov du sous-système Kuramoto (le seul vrai système
-dynamique du modèle). Corrige le faux Lyapunov d'OMNI (lyapunov_shield.py
-trackait ||y||² sans système dynamique défini).
+L6 : function de Lyapunov du under-system Kuramoto (le seul true system
+dynamique du modele). Corrige le false Lyapunov d'OMNI (lyapunov_shield.py
+trackait ||y||² without system dynamique defini).
 """
 
 from .lyapunov import KuramotoLyapunov

@@ -4,7 +4,7 @@ import torch
 
 
 def test_shaped_reward_continuous():
-    """shaped_reward doit être continu et décroissant avec l'erreur."""
+    """shaped_reward must etre continu et decroissant with the error."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     rf = ProofReward()
@@ -14,7 +14,7 @@ def test_shaped_reward_continuous():
         proof = Proof(steps=steps, target=5.0, conclusion=5.0 + err, is_valid=(err < 0.001))
         r = shaped_reward(proof, err < 0.001, rf)
         rewards.append(r)
-    # Doit décroître.
+    # Doit decroitre.
     for i in range(len(rewards) - 1):
         assert rewards[i] >= rewards[i + 1], \
             f"reward(err={[0.0,0.1,0.5,1.0,2.0,5.0,10.0][i]})={rewards[i]} < " \
@@ -22,19 +22,19 @@ def test_shaped_reward_continuous():
 
 
 def test_shaped_reward_nonzero_for_large_error():
-    """CRITÈRE L5+ : shaped_reward doit être > 0 même pour grande erreur
-    (contrairement à correctness_reward de FNN qui s'écrase à 0)."""
+    """CRITERE L5+ : shaped_reward must etre > 0 meme for grande error
+    (contrairement a correctness_reward de FNN qui s'ecrase a 0)."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     rf = ProofReward()
     steps = [ProofStep(0, "A", [], 5.0, 0.9)]
     proof = Proof(steps=steps, target=5.0, conclusion=10.0, is_valid=False)  # err=5
     r = shaped_reward(proof, False, rf)
-    assert r > 0.0, f"shaped_reward doit être > 0 même pour err=5, eu {r}"
+    assert r > 0.0, f"shaped_reward must etre > 0 meme for err=5, eu {r}"
 
 
 def test_trainer_train_step_runs():
-    """Une étape d'entraînement tourne sans crash."""
+    """Une etape d'entrainement tourne without crash."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer
     gen = ProofGenerator(hidden_dim=16, max_steps=4)
@@ -47,7 +47,7 @@ def test_trainer_train_step_runs():
 
 
 def test_trainer_baseline_updates():
-    """La baseline doit évoluer après quelques steps (EMA du reward)."""
+    """La baseline must evoluer after quelques steps (EMA du reward)."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer
     torch.manual_seed(0)
@@ -57,12 +57,12 @@ def test_trainer_baseline_updates():
     initial_baseline = trainer.baseline
     for _ in range(10):
         trainer.train_step(target_range=0.5)
-    # La baseline doit avoir changé (non-nulle si rewards non-nuls).
+    # La baseline must avoir change (non-nulle si rewards non-nuls).
     assert trainer.baseline != initial_baseline
 
 
 def test_trainer_evaluates_median_error():
-    """_evaluate_median_error retourne un float >= 0."""
+    """_evaluate_median_error returns un float >= 0."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer
     gen = ProofGenerator(hidden_dim=16, max_steps=4)
@@ -74,14 +74,14 @@ def test_trainer_evaluates_median_error():
 
 
 def test_trainer_curriculum_improves_or_runs():
-    """CRITÈRE L5+ : après entraînement curriculum, l'erreur à ±5 doit baisser
-    OU au moins ne pas exploser (preuve que ça apprend ou stagne, pas diverge)."""
+    """CRITERE L5+ : after entrainement curriculum, the error a ±5 must baisser
+    OU au moins ne pas exploser (preuve que ca apprend ou stagne, pas diverge)."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer, CurriculumLevel
     torch.manual_seed(42)
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     ver = ProofVerifier()
-    # Curriculum court pour le test (sinon trop long).
+    # Curriculum court for le test (sinon trop long).
     short_curriculum = [
         CurriculumLevel(0.1, 0.30, 50),
         CurriculumLevel(0.5, 0.25, 50),
@@ -89,7 +89,7 @@ def test_trainer_curriculum_improves_or_runs():
     ]
     trainer = ProofTrainer(gen, ver, curriculum=short_curriculum, lr=1e-2)
     metrics = trainer.train(verbose=False)
-    # L'erreur à ±5 doit avoir baissé d'au moins 10% (critère test, plus souple
-    # que la démo qui vise 30%).
+    # L'error a ±5 must avoir baisse d'au moins 10% (critere test, plus souple
+    # que la demo qui vise 30%).
     assert metrics["final_error"] <= metrics["initial_error"] * 1.5, \
-        f"L'erreur a explosé : {metrics['initial_error']} -> {metrics['final_error']}"
+        f"L'error a explose : {metrics['initial_error']} -> {metrics['final_error']}"

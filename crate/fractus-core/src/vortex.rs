@@ -1,16 +1,16 @@
 //! # Vortex 2-adique
 //!
-//! Port depuis OMNI-FRACTAL (rust/src/vortex.rs), avec corrections :
-//! - L'import `HashMap` inutilisé a été retiré.
-//! - Le test tautologique `assert!(d1 <= d2.max(d1))` a été remplacé par un vrai
-//!   test d'ultramétrie : `d(x,z) <= max(d(x,y), d(y,z))` sur données aléatoires.
+//! Port depuis the original design (rust/src/vortex.rs), with corrections :
+//! - L'import `HashMap` inutilise a ete retire.
+//! - Le test tautologique `assert!(d1 <= d2.max(d1))` a ete remplace par un true
+//!   test d'ultrametrie : `d(x,z) <= max(d(x,y), d(y,z))` sur donnees aleatoires.
 //!
-//! Nommage honnête : on parle de "hash Collatz" (pas "flot ergodique" — l'ergodicité
-//! de Collatz est non démontrée, problème ouvert), de "distance ultramétrique" et de
+//! Nommage honnete : on parle de "hash Collatz" (pas "flot ergodique" — l'ergodicite
+//! de Collatz est non demontree, problem ouvert), de "distance ultrametrique" et de
 //! "norme 2-adique" (termes exacts).
 
 /// Valuation 2-adique v_2(x) = max{k : 2^k divise x}.
-/// Pour x=0, on retourne 64 (convention pour u64).
+/// Pour x=0, on returns 64 (convention for u64).
 pub fn valuation_2(x: u64) -> u32 {
     if x == 0 {
         return 64;
@@ -20,13 +20,13 @@ pub fn valuation_2(x: u64) -> u32 {
 
 /// Valuation 3-adique v_3(x) = max{k : 3^k divise x}.
 ///
-/// Non utilisée en L0 (aucun appelant de production). Conservée car le spec L1
-/// (cascade duale 2^n·3^k) en aura besoin ; marquée `allow(dead_code)` pour
-/// éviter le warning.
+/// Non utilisee en L0 (no appelant de production). Conservee because le spec L1
+/// (cascade duale 2^n·3^k) en aura besoin ; marquee `allow(dead_code)` for
+/// eviter le warning.
 #[allow(dead_code)]
 pub fn valuation_3(x: u64) -> u32 {
     if x == 0 {
-        return 0; // convention : v_3(0) = infini, on borne à 0 pour u64
+        return 0; // convention : v_3(0) = infini, on borne a 0 for u64
     }
     let mut val = 0u32;
     let mut n = x;
@@ -37,8 +37,8 @@ pub fn valuation_3(x: u64) -> u32 {
     val
 }
 
-/// Hash Collatz d'un entier. Utilisé comme hachage d'état déterministe.
-/// Note : "ergodicité de Collatz" non démontrée — on l'appelle juste "hash".
+/// Hash Collatz d'un integer. Utilise comme hachage d'etat deterministe.
+/// Note : "ergodicite de Collatz" non demontree — on l'appelle juste "hash".
 pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
     for _ in 0..steps {
         if x == 0 {
@@ -53,17 +53,17 @@ pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
     x
 }
 
-/// Distance ultramétrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
+/// Distance ultrametrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
 ///
-/// À comparer avec le module source OMNI-FRACTAL d'origine
-/// (rust/src/vortex.rs, fonction `distance`), qui utilisait `2^{+v_2(a ⊕ b)}`
+/// A comparer with le module source the original design d'origine
+/// (rust/src/vortex.rs, function `distance`), qui utilisait `2^{+v_2(a ⊕ b)}`
 /// — l'inverse de la norme p-adique canonique `|x|_2 = 2^{-v_2(x)}`. Ici on
-/// applique la formule canonique. Le test `test_ultrametric_strong_triangle_inequality`
-/// (qui contient le triplet (7, 56, 13)) discrimine les deux formules : il
-/// échouerait avec la version `+v_2` d'OMNI, tandis que le test équivalent dans
-/// OMNI (`assert!(d1 <= d2.max(d1))`, tautologie) ne détectait rien.
+/// applique la formula canonique. Le test `test_ultrametric_strong_triangle_inequality`
+/// (qui contient le triplet (7, 56, 13)) discrimine les deux formulas : il
+/// echouerait with la version `+v_2` d'OMNI, tandis que le test equivalent in
+/// OMNI (`assert!(d1 <= d2.max(d1))`, tautologie) ne detectait rien.
 ///
-/// Retourne un f64 dans [0, 1] (0 si a == b).
+/// Retourne un f64 in [0, 1] (0 si a == b).
 pub fn ultrametric_distance(a: u64, b: u64) -> f64 {
     let diff = a ^ b;
     if diff == 0 {
@@ -74,7 +74,7 @@ pub fn ultrametric_distance(a: u64, b: u64) -> f64 {
 }
 
 /// Norme 2-adique : ||x||_2 = 2^{-v_2(x)}.
-/// Retourné en f64 (peut être très petit pour les grands x pairs).
+/// Retourne en f64 (can etre tres petit for les grands x pairs).
 pub fn norm_2adic(x: u64) -> f64 {
     if x == 0 {
         return 0.0; // ||0|| = 0 par convention (v_2(0) = infini)
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_collatz_hash_deterministic() {
-        // Même entrée → même sortie (déterministe).
+        // Meme entree → meme sortie (deterministe).
         assert_eq!(collatz_hash(7, 10), collatz_hash(7, 10));
         // 0 reste 0.
         assert_eq!(collatz_hash(0, 10), 0);
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_ultrametric_strong_triangle_inequality() {
-        // La vraie propriété ultramétrique : d(x,z) <= max(d(x,y), d(y,z)).
+        // La vraie property ultrametrique : d(x,z) <= max(d(x,y), d(y,z)).
         // CORRECTION du test tautologique d'OMNI.
         let triples: [(u64, u64, u64); 8] = [
             (1, 2, 4),
@@ -147,7 +147,7 @@ mod tests {
             let d_xz = ultrametric_distance(x, z);
             assert!(
                 d_xz <= d_xy.max(d_yz),
-                "Échec ultramétrie : d({},{})={} > max(d({},{})={}, d({},{})={})",
+                "Echec ultrametrie : d({},{})={} > max(d({},{})={}, d({},{})={})",
                 x, z, d_xz, x, y, d_xy, y, z, d_yz
             );
         }
@@ -164,8 +164,8 @@ mod tests {
 
     #[test]
     fn test_norm_2adic_in_unit_interval() {
-        // Sur entrées fixes (pas du fuzz, juste un échantillon), la norme
-        // p-adique ||x||_2 = 2^{-v_2(x)} doit être dans (0, 1] pour x != 0.
+        // Sur entrees fixes (pas du fuzz, juste un echantillon), la norme
+        // p-adique ||x||_2 = 2^{-v_2(x)} must etre in (0, 1] for x != 0.
         for x in [1u64, 3, 5, 7, 9, 11, 42, 137, 1023, 65535] {
             let n = norm_2adic(x);
             assert!(n > 0.0 && n <= 1.0, "norm_2adic({}) = {} hors [0,1]", x, n);

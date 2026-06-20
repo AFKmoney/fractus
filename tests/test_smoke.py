@@ -1,19 +1,19 @@
 """Test fume : prouve que la plomberie Python → PyTorch → Rust tient.
 
-Ces tests ne valident aucune logique mathématique — juste que les briques
-communiquent. Si un de ces tests échoue, rien d'autre ne peut marcher.
+Ces tests ne valident no logical mathematical — juste que les briques
+communiquent. Si un de ces tests echoue, rien d'autre ne can marcher.
 """
 
 
 def test_torch_available():
-    """PyTorch est installé et fonctionnel."""
+    """PyTorch est installe et fonctionnel."""
     import torch
     t = torch.tensor([1.0, 2.0, 3.0])
     assert t.sum().item() == 6.0
 
 
 def test_numpy_available():
-    """NumPy est installé (nécessaire pour le pont tenseurs)."""
+    """NumPy est installe (necessaire for le pont tenseurs)."""
     import numpy as np
     a = np.array([1, 2, 3])
     assert a.sum() == 6
@@ -26,14 +26,14 @@ def test_rust_bridge_import():
 
 
 def test_rust_bridge_add():
-    """Python peut appeler du Rust et récupérer le bon résultat."""
+    """Python can appeler du Rust et recuperer le bon result."""
     from fractus import _core
     assert _core.add(2, 3) == 5
     assert _core.add(-10, 4) == -6
 
 
 def test_torch_numpy_interop():
-    """PyTorch et numpy s'échangent des tenseurs (nécessaire pour le pont Rust)."""
+    """PyTorch et numpy s'echangent des tenseurs (necessaire for le pont Rust)."""
     import numpy as np
     import torch
     arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)

@@ -1,18 +1,18 @@
 """Utilitaires : sigmoid, cosine_similarity.
 
-Portés depuis FNN v5.0 (src/math/stats.rs). PyTorch pur.
+Portes depuis the original architecture (src/math/stats.rs). PyTorch pur.
 """
 
 import torch
 
 
 def sigmoid(x: torch.Tensor) -> torch.Tensor:
-    """σ(x) = 1 / (1 + exp(-x)). Stable numériquement pour grands x négatifs."""
+    """σ(x) = 1 / (1 + exp(-x)). Stable numeriquement for grands x negatifs."""
     return torch.sigmoid(x)
 
 
 def cosine_similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Similarité cosinus : dot(a,b) / (||a|| · ||b||). 0 si une norme < 1e-10."""
+    """Similarite cosinus : dot(a,b) / (||a|| · ||b||). 0 si une norme < 1e-10."""
     dot = (a * b).sum()
     norm_a = a.norm()
     norm_b = b.norm()

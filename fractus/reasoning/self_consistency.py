@@ -1,13 +1,13 @@
-"""SelfConsistencyCheck : débat interne par bruit et vote.
+"""SelfConsistencyCheck : debat interne par bruit et vote.
 
-Porté depuis FNN v5.0 (src/reasoning.rs:194-279) en PyTorch pur.
+Porte depuis the original architecture (src/reasoning.rs:194-279) en PyTorch pur.
 
 Algorithme :
-    generate_candidates(h, n, noise_scale) : produit n versions bruitées de h.
+    generate_candidates(h, n, noise_scale) : produit n versions bruitees de h.
         Bruit uniforme U(-noise_scale, +noise_scale) (FNN dit "Gaussian-like"
-        mais utilise uniforme — on est fidèle à l'implémentation).
-    score_candidates(cands, ref) : pour chaque candidat, moyenne de la similarité
-        cosinus avec la référence sur tous les (batch, position).
+        but utilise uniforme — on est faithful a l'implementation).
+    score_candidates(cands, ref) : for each candidat, moyenne de la similarite
+        cosinus with la reference sur all les (batch, position).
     select_best : argmax des scores.
 """
 
@@ -20,10 +20,10 @@ from ..math.stats import cosine_similarity
 
 
 class SelfConsistencyCheck(nn.Module):
-    """Débat interne : génère des candidats bruités et vote le plus cohérent.
+    """Debat interne : generated des candidats bruites et vote le plus coherent.
 
     Args:
-        n_candidates : nombre de candidats bruités.
+        n_candidates : number de candidats bruites.
         noise_scale  : amplitude du bruit uniforme.
     """
 
@@ -33,7 +33,7 @@ class SelfConsistencyCheck(nn.Module):
         self.noise_scale = noise_scale
 
     def generate_candidates(self, h: torch.Tensor) -> List[torch.Tensor]:
-        """Produit n_candidates versions bruitées de h.
+        """Produit n_candidates versions bruitees de h.
 
         Bruit uniforme U(-noise_scale, +noise_scale), comme FNN reasoning.rs:211-220.
         """

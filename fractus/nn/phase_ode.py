@@ -1,12 +1,12 @@
-"""KuramotoLayer : oscillateurs de Kuramoto couplés bas-rang, STATELESS.
+"""KuramotoLayer : oscillateurs de Kuramoto couples bas-rang, STATELESS.
 
-Porté depuis FNN v5.0 (src/phase_ode.rs) en PyTorch pur.
+Porte depuis the original architecture (src/phase_ode.rs) en PyTorch pur.
 
-Mathématique (forme bas-rang K = UΛUᵀ, intégration RK4) :
+Mathematique (shape bas-rang K = UΛUᵀ, integration RK4) :
 
     dθ_i/dt = ω_i − damping·θ_i + Σ_j K_ij sin(θ_j − θ_i)
 
-    Réécrit en exploitant K = UΛUᵀ (O(N·r) au lieu de O(N²)) :
+    Reecrit en exploitant K = UΛUᵀ (O(N·r) au lieu de O(N²)) :
         p = Uᵀ sin(θ) ∈ R^r
         q = Uᵀ cos(θ) ∈ R^r
         u_p = U (Λ ⊙ p)  ∈ R^N
@@ -15,17 +15,17 @@ Mathématique (forme bas-rang K = UΛUᵀ, intégration RK4) :
 
     (coupling_strength = 1.0, comme FNN integrate_with_config.)
 
-    RK4 standard (4 sous-steps), puis wrap θ_i mod 2π → [0, 2π) après CHAQUE step.
+    RK4 standard (4 under-steps), then wrap θ_i mod 2π → [0, 2π) after CHAQUE step.
 
-STATELESS : pas d'état persistant entre forwards. Les phases initiales sont
-dérivées des hidden states à chaque appel (encode_from_hidden). U, Λ, ω sont
-des nn.Parameter (le couplage s'apprend).
+STATELESS : pas d'etat persistant between forwards. Les phases initiales sont
+derivees des hidden states a each appel (encode_from_hidden). U, Λ, ω sont
+des nn.Parameter (le courange s'apprend).
 
 Corrections vs FNN :
-- FNN gardait un état `phases` mutable → ici STATELESS pour reproductibilité
-  et testabilité.
-- Le terme `-damping·θ_i` est conservé tel quel (non-standard Kuramoto mais
-  fidèle à FNN).
+- FNN gardait un etat `phases` mutable → ici STATELESS for reproductibilite
+  et testabilite.
+- Le terme `-damping·θ_i` est conserve tel quel (non-standard Kuramoto but
+  faithful a FNN).
 """
 
 import math
@@ -37,12 +37,12 @@ class KuramotoLayer(nn.Module):
     """Couche d'oscillateurs de Kuramoto bas-rang, STATELESS.
 
     Args:
-        d_model       : dimension d'entrée (hidden).
-        n_oscillators : nombre d'oscillateurs N.
-        rank          : rang r du couplage bas-rang K = UΛUᵀ.
-        n_steps       : nombre de pas RK4 par forward.
+        d_model       : dimension d'entree (hidden).
+        n_oscillators : number d'oscillateurs N.
+        rank          : rang r du courange bas-rang K = UΛUᵀ.
+        n_steps       : number de pas RK4 par forward.
         dt            : taille de pas RK4.
-        damping       : amortissement linéaire (terme -damping·θ).
+        damping       : amortissement lineaire (terme -damping·θ).
     """
 
     def __init__(
@@ -65,13 +65,13 @@ class KuramotoLayer(nn.Module):
         self.damping = damping
         self.TWO_PI = 2.0 * math.pi
 
-        # Paramètres entraînables (init comme FNN phase_ode.rs:38-57).
+        # Parametres entrainables (init comme FNN phase_ode.rs:38-57).
         self.omega = nn.Parameter(torch.empty(n_oscillators).uniform_(-0.05, 0.05))
         self.coupling_u = nn.Parameter(torch.empty(n_oscillators, rank).uniform_(-1.0, 1.0))
         self.coupling_lambda = nn.Parameter(torch.empty(rank).uniform_(0.01, 0.51))
 
     def _derivative(self, theta: torch.Tensor) -> torch.Tensor:
-        """dθ/dt pour des phases theta de forme (..., N). Forme bas-rang O(N·r)."""
+        """dθ/dt for des phases theta de shape (..., N). Forme bas-rang O(N·r)."""
         sin_t = torch.sin(theta)
         cos_t = torch.cos(theta)
         p = torch.einsum("...n,nr->...r", sin_t, self.coupling_u)
@@ -87,7 +87,7 @@ class KuramotoLayer(nn.Module):
         return dtheta
 
     def _rk4_integrate(self, theta: torch.Tensor) -> torch.Tensor:
-        """Intègre n_steps pas RK4 depuis theta (..., N). Wrap mod 2π après chaque step."""
+        """Integre n_steps pas RK4 depuis theta (..., N). Wrap mod 2π after each step."""
         dt = self.dt
         for _ in range(self.n_steps):
             k1 = self._derivative(theta)
@@ -107,16 +107,16 @@ class KuramotoLayer(nn.Module):
         return torch.remainder(theta_init, self.TWO_PI)
 
     def forward(self, hidden: torch.Tensor) -> torch.Tensor:
-        """hidden : (B, L, d_model) → phases (B, L, N) après RK4."""
+        """hidden : (B, L, d_model) → phases (B, L, N) after RK4."""
         theta = self._encode_from_hidden(hidden)
         return self._rk4_integrate(theta)
 
     def phase_loss(self, phases: torch.Tensor) -> torch.Tensor:
-        """L = -(1/N²)·[cosθᵀK·cosθ + sinθᵀK·sinθ] (bas-rang), moyennée par token.
+        """L = -(1/N²)·[cosθᵀK·cosθ + sinθᵀK·sinθ] (bas-rang), moyennee par token.
 
-        Normalisation : on divise par (B·L·N/N) = B·L (un scalaire par token,
-        pas la formule 1/N² stricte de FNN qui supposait un seul token). C'est
-        cohérent avec l'usage batché.
+        Normalisation : on divise par (B·L·N/N) = B·L (un scalar par token,
+        pas la formula 1/N² stricte de FNN qui supposait un seul token). C'est
+        coherent with l'usage batche.
         """
         cos_t = torch.cos(phases)
         sin_t = torch.sin(phases)
@@ -129,11 +129,11 @@ class KuramotoLayer(nn.Module):
         return -(term_cos + term_sin) / scale
 
     def decode_to_bias(self, phases: torch.Tensor, d_model: int) -> torch.Tensor:
-        """Encodage positionnel sinusoïdal depuis les phases. (B,L,N) → (B,L,d_model).
+        """Encodage positionnel sinusoidal depuis les phases. (B,L,N) → (B,L,d_model).
 
-        Non câblée dans FractalBlockFull.forward (L2b) — méthode utilitaire
-        exposée pour usage futur (ex. injecter un biais positionnel Kuramoto
-        dans une couche donnée). Testée séparément.
+        Non câblee in FractalBlockFull.forward (L2b) — methode utilitaire
+        exposee for usage futur (ex. injecter un biais positionnel Kuramoto
+        in une couche donnee). Testee separement.
         """
         B, L, N = phases.shape
         idx = torch.arange(d_model, device=phases.device) % N

@@ -1,8 +1,8 @@
-"""Génération de Structural Causal Models synthétiques.
+"""Generation de Structural Causal Models synthetiques.
 
-On génère un DAG aléatoire (topological ordering garanti), on échantillonne
-des données selon ce DAG (chaque variable = fonction linéaire de ses parents +
-bruit gaussien), puis on fournit le vrai W pour évaluer NOTEARS.
+On generated un DAG aleatoire (topological ordering garanti), on echantillonne
+des donnees selon ce DAG (each variable = function lineaire de ses parents +
+bruit gaussien), then on fournit le true W for evaluer NOTEARS.
 """
 
 import torch
@@ -15,9 +15,9 @@ def generate_linear_scm(
     noise_std: float = 0.5,
     seed: int = 42,
 ):
-    """Génère un SCM linéaire : X_j = Σ_i W[i,j] · X_i + ε_j.
+    """Genere un SCM lineaire : X_j = Σ_i W[i,j] · X_i + ε_j.
 
-    Garantit un DAG en échantillonnant W triangulaire supérieur.
+    Garantit un DAG en echantillonnant W triangulaire superieur.
     """
     g = torch.Generator().manual_seed(seed)
     W_true = torch.zeros(n_vars, n_vars)

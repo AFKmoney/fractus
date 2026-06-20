@@ -1,6 +1,6 @@
-"""Sous-package metrics : mesures honnêtes (compression, causal, perplexité).
+"""Sous-package metrics : mesures honnetes (compression, causal, perplexite).
 
-L3 : compression (mesure réelle, pas de hardcode).
+L3 : compression (mesure real, pas de hardcode).
 L4 : causal (SHD, causal accuracy, pas de clamp).
 L6 : perplexity (vraie exp(val_loss), pas proxy norme-embedding).
 """

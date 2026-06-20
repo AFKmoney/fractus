@@ -1,1 +1,1 @@
-"""Datasets causaux synthétiques (DAGs connus pour évaluer NOTEARS)."""
+"""Datasets causaux synthetiques (DAGs connus for evaluer NOTEARS)."""

@@ -1,6 +1,6 @@
 """Sous-package reasoning : preuves, conjectures, ACT, self-consistency.
 
-L5 : raisonnement mathématique avec vérification exacte (soundness garantie).
+L5 : raisonnement mathematical with verification exact (soundness garantie).
 """
 
 from .proof import (
