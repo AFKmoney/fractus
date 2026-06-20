@@ -18,7 +18,7 @@ class FractalBlock(nn.Module):
     Args:
         d_model  : dimension modele.
         n_heads  : number of tetes d'attention.
-        d_head   : dimension by tete (n_heads·d_head == d_model requis).
+        d_head   : dimension per head (n_heads·d_head == d_model requis).
         n_levels : niveaux fractals of l'attention.
         dropout  : taux of dropout (0 by defaut en L2a, on ajoutera en L7).
     """
@@ -53,7 +53,7 @@ class FractalBlockFull(nn.Module):
               → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
     Retourne (output, loss_aux) or loss_aux est the load_balance_loss MoE
-    (a ajouter a the loss principale by the caller).
+    (a ajouter a the loss maine by the caller).
     """
 
     def __init__(

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """Script d'training fractus on datasets HuggingFace.
 
-Supported n'imported quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
+Supportedd n'importedd quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
 FineWeb, ...) with presets adaptes a differents hardwares.
 
 ⚠️ HONNETETE HARDWARE :
-    - cpu-tiny / cpu-small : fonctionnent on CPU laptop/desktop.
+    - cpu-tiny / cpu-small : functionnent on CPU laptop/desktop.
     - gpu-* : necessitent a GPU CUDA (ou MPS on Apple Silicon).
     - gpu-1b : necessite A100 80GB or H100. IMPOSSIBLE on CPU or GPU consumer.
       Le bottleneck main est the Kuramoto RK4 (non vectorise) + SIREN.
@@ -145,7 +145,7 @@ def load_text_dataset(
 
     Niveau caractere (comme tinyshakespeare).
     """
-    # tinyshakespeare local (deja telecharge).
+    # tinyshakespeare local (already telecharge).
     if dataset_name == "tinyshakespeare":
         local_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -417,7 +417,7 @@ def train(args):
               f"val_ce={val_ce:.4f} (ppl={val_ppl:.2f})  "
               f"temps={elapsed:.0f}s")
 
-        # Checkpoint si meilleur.
+        # Checkpoint si better.
         if val_ppl < best_val_ppl:
             best_val_ppl = val_ppl
             ckpt_path = os.path.join(ckpt_dir, f"fractal_{preset.name}_best.pt")
@@ -471,7 +471,7 @@ Datasets predefinis :
   tinyshakespeare  (local, 1.1 MB)
   wikitext-2       (HF, ~5 MB)
   wikitext-103     (HF, ~500 MB)
-  Ou n'imported quel dataset HF : --dataset name --text-field field
+  Ou n'importedd quel dataset HF : --dataset name --text-field field
 
 Exemples :
   python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare

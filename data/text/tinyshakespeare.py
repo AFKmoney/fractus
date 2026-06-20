@@ -23,7 +23,7 @@ class TinyShakespeareDataset(Dataset):
     Args:
         seq_len  : longueur sequences.
         path     : chemin fichier texte (defaut : data/text/tinyshakespeare.txt).
-        vocab    : vocabulaire optionnel (sinon construit depuis the texte).
+        vocab    : vocabulaire optionnel (otherwise construit depuis the texte).
     """
 
     def __init__(

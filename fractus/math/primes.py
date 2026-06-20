@@ -11,14 +11,14 @@ class PrimeSieve:
     """Crible d'Eratosthene precomputatione.
 
     Args:
-        limit : borne superieure (inclusive) crible.
+        limit : borne superieure (inclusive) sieve.
     """
 
     def __init__(self, limit: int):
         if limit < 0:
             raise ValueError("limit must etre >= 0")
         self.limit = limit
-        # is_prime[i] = True si i est premier.
+        # is_prime[i] = True si i is prime.
         self.is_prime: List[bool] = [True] * (limit + 1)
         if limit >= 0:
             self.is_prime[0] = False
@@ -33,7 +33,7 @@ class PrimeSieve:
             i += 1
 
     def verify_prime(self, n: int) -> bool:
-        """Retourne True si n est premier (n <= limit), sinon verifiess by essai of division."""
+        """Returns True si n is prime (n <= limit), otherwise verifiesss by trial of division."""
         if n < 2:
             return False
         if n <= self.limit:

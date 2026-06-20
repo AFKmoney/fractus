@@ -5,19 +5,19 @@ was inatteignable with l'architecture GRU+EMA (prouve by 2 tentatives :
 REINFORCE pur, then curriculum+shaping+baseline, all deux ~0% of validity).
 
 NOUVELLE TACHE : produire integers which are PREMIERS. Le verify exact
-(PrimeSieve) teste the primalite — this is binary (true/false on integers concrets),
+(PrimeSieve) teste the primality — this is binary (true/false on integers concrets),
 pas a convergesnce numerique.
 
 Pourquoi cette tache est apprenable :
     - Densite of premiers in [2,100] = 25%. Un generateur aleatoire reussit
       already 1 fois on 4 → REINFORCE a a signal constant non-nul.
     - L'objective (maximiser the fraction of n premiers) est clair and mesurable.
-    - Le verify est SOUND : all n accepted est mathematicalment premier.
+    - Le verify est SOUND : all n acceptedd est mathematicalment premier.
 
 Architecture : MLP simple. Entree = a contexte (vector aleatoire or target).
 Sortie = logits on N classes (n ∈ [2, N]). argmax = n predit.
 
-Note honestete : this is a tache SYMBOLIQUE simple (produire a premier), pas
+Note honesty : this is a tache SYMBOLIQUE simple (produire a premier), pas
 une proof logical structuree. This is the niveau atteignable with REINFORCE sur
 un verify exact. Une vraie "proof" au sens derivation logical necessite
 un arbre of recherche + verification structurelle (future work).
@@ -67,8 +67,8 @@ class PrimeGenerator(nn.Module):
         return indices + 2  # n = index + 2
 
     def is_prime_pred(self, n: torch.Tensor) -> torch.Tensor:
-        """Verifie the primalite n predits. Retourne bool tensor (B,)."""
-        # n est a tensor d'integers ; on verifiess via the crible.
+        """Verifie the primality n predits. Retourne bool tensor (B,)."""
+        # n est a tensor d'integers ; on verifiesss via the sieve.
         results = []
         for ni in n.tolist():
             results.append(self.sieve.verify_prime(int(ni)))

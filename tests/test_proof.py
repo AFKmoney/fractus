@@ -29,7 +29,7 @@ def test_generator_produces_proof():
     proof, info = gen.generate(target=5.0)
     assert len(proof.steps) == 6
     assert proof.target == 5.0
-    # Chaque step a a rule_index valid.
+    # Each step a a rule_index valid.
     for step in proof.steps:
         assert 0 <= step.rule_index < 20
 
@@ -38,7 +38,7 @@ def test_generator_backward_every_param():
     """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter.
 
     La loss must toucher A LA FOIS the logits of regles (w_rule) ET the values
-    predites (w_value), sinon w_value not recoit not of gradient. On construit
+    predites (w_value), otherwise w_value not recoit not of gradient. On construit
     therefore a loss which combine the deux : REINFORCE-like.
     """
     from fractus.reasoning.proof import ProofGenerator
@@ -97,7 +97,7 @@ def test_verify_gcd():
 
 
 def test_verify_rejects_invalid_proof():
-    """Une proof with conclusion loin of the target must etre rejetee."""
+    """Une proof with conclusion loin of the target must be rejetee."""
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()
     steps = [ProofStep(rule_index=0, rule_name="AddBothSides", premise_indices=[],
@@ -107,10 +107,10 @@ def test_verify_rejects_invalid_proof():
 
 
 def test_verify_accepts_valid_proof():
-    """Une proof dont the conclusion atteint the target must etre acceptede.
+    """Une proof dont the conclusion atteint the target must be acceptedde.
 
-    Note : the seuil 1e-3 est strict (<, not <=), therefore |conclusion - target| must
-    etre STRICTEMENT inferieur a 0.001. On utilise 0.0005 for etre sur.
+    Note : the threshold 1e-3 est strict (<, not <=), therefore |conclusion - target| must
+    be STRICTEMENT inferieur a 0.001. On utilise 0.0005 for be sur.
     """
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()
@@ -134,7 +134,7 @@ def test_reward_valid_proof_high():
 
 
 def test_reward_diversity_increases_with_rules():
-    """Plus of regles distinctes → reward diversity more haute."""
+    """Plus of regles distinctes → reward diversity more highe."""
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     r = ProofReward()
     steps1 = [ProofStep(rule_index=0, rule_name="A", premise_indices=[], conclusion=5.0, confidence=1.0)]

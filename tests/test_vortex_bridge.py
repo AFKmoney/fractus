@@ -21,7 +21,7 @@ def test_collatz_hash_zero_stays_zero():
 
 
 def test_collatz_hash_returns_u64():
-    """Le hash must etre a integer positif compatible with PyTorch indexing."""
+    """Le hash must be a integer positif compatible with PyTorch indexing."""
     from fractus import _core
     h = _core.collatz_hash(42, 5)
     assert isinstance(h, int)
@@ -50,7 +50,7 @@ def test_ultrametric_distance_in_unit_interval():
 
 
 def test_norm_2adic_basic():
-    """||x||_2 = 2^{-v_2(x)}, verifiess on quelques values connues."""
+    """||x||_2 = 2^{-v_2(x)}, verifiesss on quelques values conbares."""
     from fractus import _core
     assert _core.norm_2adic(0) == 0.0
     assert _core.norm_2adic(1) == 1.0   # v_2(1)=0 → 2^0
@@ -59,7 +59,7 @@ def test_norm_2adic_basic():
 
 
 def test_ultrametric_strong_triangle_in_python():
-    """La property ultrametrique forte must tenir via the pont Python.
+    """La property ultrametrique stronge must tenir via the pont Python.
     This is the test-pivot which distingue 2^{-v} (correct) of 2^{+v} (bug the original)."""
     from fractus import _core
     # Le triplet (7, 56, 13) discrimine : passe with -v, echoue with +v.

@@ -1,12 +1,12 @@
 """Test fume : prouve that the plomberie Python → PyTorch → Rust tient.
 
 Ces tests not validnt no logical mathematical — juste that the briques
-communiquent. Si a of these tests echoue, rien d'autre not can marcher.
+communiquent. Si a of these tests echoue, nothing d'other not can marcher.
 """
 
 
 def test_torch_available():
-    """PyTorch est installe and fonctionnel."""
+    """PyTorch est installe and functionnel."""
     import torch
     t = torch.tensor([1.0, 2.0, 3.0])
     assert t.sum().item() == 6.0

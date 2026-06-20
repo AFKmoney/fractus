@@ -2,11 +2,11 @@
 
 Portes depuis the original architecture (src/math/stats.rs) en PyTorch pur, differentiables.
 
-elu_plus_one : feature map strictement positive for linear attention.
+elu_more_one : feature map strictement positive for linear attention.
     φ(x, α) = x + 1              si x > 0
-            = α(e^x - 1) + 1     sinon
+            = α(e^x - 1) + 1     otherwise
     Avec α=1 (defaut), φ est strictement positive (min e^x > 0 for x→-∞,
-    = 1 en x=0). Cette positivite guaranteedt that the denominateur of l'attention
+    = 1 en x=0). Cette positifast guaranteedt that the denominateur of l'attention
     lineaire causale reste well defini.
 
 stable_softmax : softmax with soustraction max (pas d'overflow).
@@ -35,11 +35,11 @@ def stable_softmax(logits: torch.Tensor, dim: int = -1) -> torch.Tensor:
     """Softmax numeriquement stable (soustraction max).
 
     Si the somme exponentielles est < 1e-10, returns l'uniforme 1/N
-    (comportedment aux limites herite of the original stats.rs:56-57).
+    (comporteddment aux limites herite of the original stats.rs:56-57).
     """
     max_logits, _ = logits.max(dim=dim, keepdim=True)
     exp = torch.exp(logits - max_logits)
     denom = exp.sum(dim=dim, keepdim=True)
-    # Comportedment aux limites : uniforme si denom ~ 0.
+    # Comporteddment aux limites : uniforme si denom ~ 0.
     uniform = torch.full_like(exp, 1.0 / exp.shape[dim])
     return torch.where(denom > 1e-10, exp / denom, uniform)

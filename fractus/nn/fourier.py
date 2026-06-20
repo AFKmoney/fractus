@@ -1,7 +1,7 @@
 """Base of Fourier a Mandelbrot decay for l'embedding fractal.
 
 Inspire of the original architecture (src/math/mandelbrot.rs + src/embedding.rs) but renomme
-honestetement : the original appelait ca "Mandelbrot frequencies" en reference a l'ensemble
+honestyment : the original called these "Mandelbrot frequencies" en reference a l'ensemble
 de Mandelbrot, alors qu'il s'agit juste d'une decroissance geometrique of base
 φ2 (le carre number d'or). On appelle therefore ca "Mandelbrot-decayed Fourier
 basis" — the decroissance est real and justifiee (separation d'echelles
@@ -20,7 +20,7 @@ La Fourier basis associe a each token id t and each frequence k the paire
 On stocke n_freq frequences ; the matrix produite a 2·n_freq colonnes
 (sin+cos by frequence). Le caller (FractalEmbedding) gere the projection finale.
 
-AUCUN parameter entrainable ici : all est deterministic, precomputatione a fois.
+AUCUN parameter trainable here : all est deterministic, precomputatione a fois.
 """
 
 import math
@@ -31,7 +31,7 @@ class MandelbrotFourierBasis:
     """Base of Fourier deterministic with decroissance (φ2)^{-k}.
 
     Attributs :
-        vocab_size   : number of token ids couverts (0 .. vocab_size-1)
+        vocab_size   : number of token ids copens (0 .. vocab_size-1)
         n_frequencies : number of frequences ω_k
         frequencies  : tenseur (n_frequencies,) ω_k, en float32
     """

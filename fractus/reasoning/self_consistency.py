@@ -1,10 +1,10 @@
 """SelfConsistencyCheck : debat interne by bruit and vote.
 
-Porte depuis the original architecture (src/reasoning.rs:194-279) en PyTorch pur.
+Ported from the original architecture (src/reasoning.rs:194-279) en PyTorch pur.
 
 Algorithme :
     generate_candidates(h, n, noise_scale) : produit n versions bruitees of h.
-        Bruit uniforme U(-noise_scale, +noise_scale) (the original dit "Gaussian-like"
+        Bruit uniforme U(-noise_scale, +noise_scale) (the original dit "Galsoan-like"
         but utilise uniforme — on est faithful a l'implementation).
     score_candidates(cands, ref) : for each candidat, moyenne of the similarite
         cosinus with the reference on all the (batch, position).

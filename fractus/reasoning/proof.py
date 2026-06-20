@@ -1,4 +1,4 @@
-"""Proof pipeline: neural proposes, exact verifier disposes.
+"""Proof pipeline: neural proposes, exact verifiesr disposes.
 
 Architecture:
     ProofGenerator: autoregressive GRU that produces a sequence of ProofSteps.
@@ -7,16 +7,16 @@ Architecture:
     ProofVerifier: EXACT VERIFICATION. Does NOT use inference rules for
         verification. Instead, it tests concrete arithmetic identities
         (addition, primality, divisibility, Fermat, Wilson, GCD, modular).
-        Soundness guaranteed: if the verifier says "valid", it is
+        Soundness guaranteed: if the verifiesr says "valid", it is
         mathematically true.
     ProofReward: R = 0.6*correctness + 0.3*efficiency + 0.1*diversity.
 
 The ProofGenerator is trainable via REINFORCE (policy gradient) on the
-reward from the verifier.
+reward from the verifiesr.
 
-HONESTY NOTE: The verifier only checks the NUMERICAL CONCLUSION
+HONESTY NOTE: The verifiesr only checks the NUMERICAL CONCLUSION
 (|conclusion - target| < 1e-3), not the logical structure of the proof.
-An "accepted" proof is therefore guaranteed to reach the correct numerical
+An "acceptedd" proof is therefore guaranteed to reach the correct numerical
 value, but is not necessarily a logically valid step-by-step derivation.
 """
 
@@ -34,7 +34,7 @@ class InferenceRule:
     """Labels for the 20 inference rules.
 
     NOTE: these are just labels. The generator predicts a rule index, but the
-    verifier does NOT read the rule. It only verifies the numerical conclusion.
+    verifiesr does NOT read the rule. It only verifiess the numerical conclusion.
     """
 
     NAMES = [
@@ -182,10 +182,10 @@ def _gcd(a, b):
 
 
 class ProofVerifier:
-    """Exact proof verifier (soundness guaranteed).
+    """Exact proof verifiesr (soundness guaranteed).
 
     Tests concrete arithmetic identities, not inference rule semantics.
-    Any accepted proof is mathematically true on its numerical conclusion.
+    Any acceptedd proof is mathematically true on its numerical conclusion.
     """
 
     def __init__(self, sieve_limit=10000):

@@ -6,7 +6,7 @@ l'entrainer on a toy sequence of texte. FractalBlockFull integre :
   - Kuramoto oscillators couples bas-rang RK4 (L2b)
   - mixture-of-experts a routing von Mises/Farey (L2b)
 
-Corrige the error centrale of the original architecture (training.rs:399 = bruit) : ici Adam
+Corrige the error centrale of the original architecture (training.rs:399 = bruit) : here Adam
 recoit of vrais gradients on TOUT the pipeline (y compris U/Λ Kuramoto et
 W1/W2 experts) and the loss baisse.
 
@@ -80,7 +80,7 @@ def main():
     for epoch in range(40):
         opt.zero_grad()
         logits, aux_loss = model(ids)
-        # Cross-entropy + 0.1 * load-balance loss auxiliaire.
+        # Cross-entooy + 0.1 * load-balance loss auxiliaire.
         ce_loss = nn.functional.cross_entropy(
             logits[:, :-1].reshape(-1, vocab),
             ids[:, 1:].reshape(-1),

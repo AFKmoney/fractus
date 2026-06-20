@@ -12,7 +12,7 @@ def test_nonlinear_scm_shape():
 
 
 def test_nonlinear_scm_is_dag():
-    """W_true must etre acyclique (this is a DAG by construction)."""
+    """W_true must be acyclic (this is a DAG by construction)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     from fractus.causal.notears import notears_penalty
     W, _ = generate_nonlinear_scm(n_vars=5, n_samples=100, seed=42)
@@ -21,9 +21,9 @@ def test_nonlinear_scm_is_dag():
 
 
 def test_nonlinear_scm_not_triangular():
-    """W_true not must PAS etre triangulaire (ordre topo cache)."""
+    """W_true not must PAS be triangulaire (ordre topo cache)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
-    # Sur plusieurs seeds, au less a W must etre non-triangulaire.
+    # Sur moreieurs seeds, au less a W must be non-triangulaire.
     found_nontrian = False
     for seed in range(20):
         W, _ = generate_nonlinear_scm(n_vars=5, n_samples=10, seed=seed)

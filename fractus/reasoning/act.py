@@ -1,6 +1,6 @@
 """RecursiveReasoner : Adaptive Computation Time (Graves 2016).
 
-Porte depuis the original architecture (src/reasoning.rs:15-187) en PyTorch pur.
+Ported from the original architecture (src/reasoning.rs:15-187) en PyTorch pur.
 
 ACT : the modele "reflechit" a number variable of steps by position. A each
 step, a probabilite d'arret p_t est computationee. L'output est a moyenne ponderee
@@ -11,7 +11,7 @@ Algorithme exact (the original reasoning.rs:78-176) :
     remaining = 1.0  (budget by position)
     for step in range(max_steps):
         halt_p = σ(w_halt · h + b_halt)   # b_halt init a 1.0 (favorise l'arret)
-        for positions non encore arretees :
+        for positions non still arretees :
             p_actual = min(halt_p, remaining)   # not not depasser the budget
             output += p_actual · h
             remaining -= p_actual
@@ -36,7 +36,7 @@ class RecursiveReasoner(nn.Module):
 
     Args:
         d_model    : dimension modele.
-        epsilon    : seuil d'arret (0.01 by defaut, the original act_epsilon).
+        epsilon    : threshold d'arret (0.01 by defaut, the original act_epsilon).
         max_steps  : number max of steps (6 by defaut, the original max_act_steps).
     """
 

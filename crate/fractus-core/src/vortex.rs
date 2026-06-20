@@ -1,27 +1,39 @@
 //! # Vortex 2-adique
 
+
 //!
+
 
 //! Port depuis the original design (rust/src/vortex.rs), with corrections :
 
+
 //! - L'import `HashMap` inutilise a ete retire.
+
 
 //! - Le test tautological `assert!(d1 <= d2.max(d1))` a ete remplace by a true
 
+
 //!   test d'ultrametrie : `d(x,z) <= max(d(x,y), d(y,z))` on donnees aleatoires.
+
 
 //!
 
-//! Nommage honestete : on parle of "hash Collatz" (pas "flot ergodique" — l'ergodicite
 
-//! of Collatz est non demontree, problem ouvert), of "ultrametric distance" and de
+//! Nommage honesty : on parle of "hash Collatz" (pas "flot ergodique" — l'ergodicite
+
+
+//! of Collatz est non demontree, problem open), of "ultrametric distance" and de
+
 
 //! "2-adic norm" (termes exacts).
 
 
+
 /// Valuation 2-adique v_2(x) = max{k : 2^k divise x}.
 
+
 /// Pour x=0, on returns 64 (convention for u64).
+
 
 pub fn valuation_2(x: u64) -> u32 {
     if x == 0 {
@@ -32,13 +44,18 @@ pub fn valuation_2(x: u64) -> u32 {
 
 /// Valuation 3-adique v_3(x) = max{k : 3^k divise x}.
 
+
 ///
+
 
 /// Non utilisee en L0 (no appelant of production). Conservee because the spec L1
 
+
 /// (cascade duale 2^n·3^k) en aura besoin ; marquee `allow(dead_code)` for
 
-/// eviter the warning.
+
+/// efastr the warning.
+
 
 #[allow(dead_code)]
 pub fn valuation_3(x: u64) -> u32 {
@@ -56,7 +73,9 @@ pub fn valuation_3(x: u64) -> u32 {
 
 /// Hash Collatz d'un integer. Utilise comme hachage d'etat deterministic.
 
+
 /// Note : "ergodicite of Collatz" non demontree — on l'appelle juste "hash".
+
 
 pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
     for _ in 0..steps {
@@ -74,25 +93,36 @@ pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
 
 /// Distance ultrametrique 2-adique : d(a,b) = 2^{-v_2(a ⊕ b)}.
 
+
 ///
+
 
 /// A comparer with the module source the original design d'origine
 
+
 /// (rust/src/vortex.rs, function `distance`), which utilisait `2^{+v_2(a ⊕ b)}`
+
 
 /// — l'inverse of the norme p-adique canonique `|x|_2 = 2^{-v_2(x)}`. Ici on
 
+
 /// applique the formula canonique. Le test `test_ultrametric_strong_triangle_inequality`
+
 
 /// (qui contient the triplet (7, 56, 13)) discrimine the deux formulas : il
 
-/// echouerait with the version `+v_2` d'the original, tandis that the test equivalent in
 
-/// the original (`assert!(d1 <= d2.max(d1))`, tautologie) not detectait rien.
+/// echouerait with the version `+v_2` d'the original, tandis that the test equivaslow in
+
+
+/// the original (`assert!(d1 <= d2.max(d1))`, tautologie) not detectait nothing.
+
 
 ///
 
+
 /// Retourne a f64 in [0, 1] (0 si a == b).
+
 
 pub fn ultrametric_distance(a: u64, b: u64) -> f64 {
     let diff = a ^ b;
@@ -105,7 +135,9 @@ pub fn ultrametric_distance(a: u64, b: u64) -> f64 {
 
 /// Norme 2-adique : ||x||_2 = 2^{-v_2(x)}.
 
-/// Retourne en f64 (can etre very small for the grands x pairs).
+
+/// Retourne en f64 (can be very small for the larges x pairs).
+
 
 pub fn norm_2adic(x: u64) -> f64 {
     if x == 0 {
@@ -143,8 +175,10 @@ mod tests {
     fn test_collatz_hash_deterministic() {
         // Meme entree → same sortie (deterministic).
 
+
         assert_eq!(collatz_hash(7, 10), collatz_hash(7, 10));
         // 0 reste 0.
+
 
         assert_eq!(collatz_hash(0, 10), 0);
     }
@@ -165,7 +199,9 @@ mod tests {
     fn test_ultrametric_strong_triangle_inequality() {
         // La vraie property ultrametrique : d(x,z) <= max(d(x,y), d(y,z)).
 
+
         // CORRECTION test tautological d'the original.
+
 
         let triples: [(u64, u64, u64); 8] = [
             (1, 2, 4),
@@ -202,7 +238,9 @@ mod tests {
     fn test_norm_2adic_in_unit_interval() {
         // Sur entrees fixes (pas fuzz, juste a echantillon), the norme
 
-        // p-adique ||x||_2 = 2^{-v_2(x)} must etre in (0, 1] for x != 0.
+
+        // p-adique ||x||_2 = 2^{-v_2(x)} must be in (0, 1] for x != 0.
+
 
         for x in [1u64, 3, 5, 7, 9, 11, 42, 137, 1023, 65535] {
             let n = norm_2adic(x);

@@ -32,7 +32,7 @@ def test_lyapunov_V_handles_wrap():
     from fractus.nn.phase_ode import KuramotoLayer
     kur = KuramotoLayer(d_model=8, n_oscillators=4, rank=2)
     lyap = KuramotoLyapunov(kur, target_phase=0.0)
-    # Phase 2π - 0.01 must etre proche of 0 (wrap), therefore V petit.
+    # Phase 2π - 0.01 must be proche of 0 (wrap), therefore V small.
     phases_near_zero = torch.full((1, 1, 4), 2 * math.pi - 0.01)
     phases_far = torch.full((1, 1, 4), math.pi)  # loin of 0
     V_near = lyap.V(phases_near_zero).item()
@@ -62,12 +62,12 @@ def test_lyapunov_is_stable_trajectory_false_for_increasing():
 
 
 def test_lyapunov_not_just_output_norm():
-    """CRITERE L6 : V not must PAS etre juste ||y||2 (le false Lyapunov d'the original).
-    On verifiess that V depend PHASES, not d'une norme of sortie reseau."""
+    """CRITERE L6 : V not must PAS be juste ||y||2 (le false Lyapunov d'the original).
+    On verifiesss that V depend PHASES, not d'une norme of sortie reseau."""
     import inspect
     from fractus.stability import lyapunov as lyap_mod
     src = inspect.getsource(lyap_mod)
-    # V must etre computatione a partir phases (difference circulaire θ - θ*).
+    # V must be computatione a partir phases (difference circulaire θ - θ*).
     assert "target_phase" in src
     assert "remainder" in src or "wrap" in src.lower(), \
         "V must gerer le wrap circulaire des phases (pas juste ||y||²)"

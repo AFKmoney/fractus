@@ -7,7 +7,7 @@ import torch
 
 
 def sigmoid(x: torch.Tensor) -> torch.Tensor:
-    """σ(x) = 1 / (1 + exp(-x)). Stable numeriquement for grands x negatifs."""
+    """σ(x) = 1 / (1 + exp(-x)). Stable numeriquement for larges x negatifs."""
     return torch.sigmoid(x)
 
 

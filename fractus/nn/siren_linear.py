@@ -8,7 +8,7 @@ obtenir W, then on does y = x @ W + b. Tout est in the graphe autodiff.
 
 Usage : remplacer certaines nn.Linear by SirenLinear for compresser leurs
 poids via SIREN. Le trade-off : less of params (compression) but a forward
-plus cher (evaluation SIREN a each appel) and a expressivite potentiellement
+more cher (evaluation SIREN a each appel) and a expressifast potentiellement
 reduite (les poids SIREN are lisses, not denses — voir demo L3).
 """
 
@@ -25,7 +25,7 @@ class SirenLinear(nn.Module):
         in_features, out_features : dimensions (comme nn.Linear).
         hidden : width of the SIREN which produit W.
         omega0 : frequence SIREN.
-        bias   : si True, ajoute a biais entrainable.
+        bias   : si True, ajoute a biais trainable.
     """
 
     def __init__(
@@ -44,7 +44,7 @@ class SirenLinear(nn.Module):
         self.siren = TorusSirenWeight(
             out_h=in_features, out_w=out_features, hidden=hidden, omega0=omega0
         )
-        # Biais entrainable separe (pas compresse — this is a vector, not a matrix).
+        # Biais trainable separe (pas compresse — this is a vector, not a matrix).
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features))
         else:

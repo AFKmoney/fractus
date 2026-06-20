@@ -2,17 +2,17 @@
 
 AVERTISSEMENT D'HONNETETE : cette demo utilise a SCM LINEAIRE and triangulaire
 superieur (topological order trivial). This is the cas-jouet ideal for NOTEARS —
-il a ete concu exactment for this reglage. SHD=0 ici prouve that the PIPELINE
-tourne (les modules communiquent, NOTEARS s'optimise, the penalty fonctionne),
+il a ete concu exactment for this reglage. SHD=0 here prouve that the PIPELINE
+tourne (les modules communiquent, NOTEARS s'optimise, the penalty functionne),
 PAS that NOTEARS est competent on donnees realles. Un SCM non-lineaire with
 topological order inconnu serait nettement more dur (future work).
 
 Etapes :
     1. Genere a SCM lineaire a 5 variables (DAG connu W_true + donnees X).
-    2. Initialise W_pred aleatoire (entrainable).
+    2. Initialise W_pred aleatoire (trainable).
     3. Optimise W_pred for minimiser :
            reconstruction loss + λ · |notears_penalty(W_pred)|
-       La penalty NOTEARS force W_pred a etre acyclique.
+       La penalty NOTEARS force W_pred a be acyclic.
     4. Mesure the SHD between W_pred and W_true.
 
 Critere : SHD <= 3 on 5 variables (cas jouet ideal — must passer).
@@ -44,7 +44,7 @@ def main():
     print(f"Donnees X : {X.shape}")
     print()
 
-    # 2. W_pred aleatoire, entrainable.
+    # 2. W_pred aleatoire, trainable.
     n_vars = W_true.shape[0]
     W_pred = torch.zeros(n_vars, n_vars, requires_grad=True)
     torch.nn.init.normal_(W_pred, std=0.1)

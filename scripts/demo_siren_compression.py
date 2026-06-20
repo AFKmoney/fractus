@@ -5,8 +5,8 @@ On construit deux variantes d'un mini-MLP :
     (B) Couches cachees en SirenLinear, derniere couche dense.
 
 On mesure :
-    - Le ratio of compression (params SIREN vs dense equivalent).
-    - La capacite d'learning : can-on surfit a target with (B) also bien
+    - Le ratio of compression (params SIREN vs dense equivaslow).
+    - La capacite d'learning : can-on surfit a target with (B) also well
       qu'with (A) ?
 
 POSITION SCIENTIFIQUE HONNETE :

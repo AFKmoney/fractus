@@ -1,13 +1,13 @@
 """fractus — refonte unifiee of the original + the original design.
 
 L0 : seul the pont natif `_core` est expose (lazily, voir more bas). Les modules
-nn/, causal/, reasoning/ seront ajoutes in the couches ulterieures (L1+).
+nn/, causal/, reasoning/ will be ajoutes in the couches ulterieures (L1+).
 
 Conception : the under-modules purs-Python (fractus.nn, etc.) must rester
 importables same si the module natif Rust n'est not construit (utile for les
 tests unitaires PyTorch). On n'import therefore PAS `_core` au niveau module — on
 l'expose via __getattr__ paresseux, which not leve that si quelqu'un y accede
-reallement without avoir lance `maturin develop`.
+reallement without have lance `maturin develop`.
 """
 
 __version__ = "0.1.0"

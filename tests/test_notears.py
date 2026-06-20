@@ -4,7 +4,7 @@ import torch
 
 
 def test_notears_zero_for_dag():
-    """h(W) ≈ 0 si W est a DAG evident (triangulaire inferieur strict)."""
+    """h(W) ≈ 0 si W est a DAG eemptynt (triangulaire inferieur strict)."""
     from fractus.causal.notears import notears_penalty
     W = torch.tensor([
         [0.0, 0.0, 0.0],
@@ -28,7 +28,7 @@ def test_notears_positive_for_cycle():
 
 
 def test_notears_zero_for_zero_matrix():
-    """h(0) = 0 (matrix nulle trivialement acyclique)."""
+    """h(0) = 0 (matrix nulle trivialement acyclic)."""
     from fractus.causal.notears import notears_penalty
     W = torch.zeros(4, 4)
     h = notears_penalty(W)
@@ -36,7 +36,7 @@ def test_notears_zero_for_zero_matrix():
 
 
 def test_notears_is_differentiable():
-    """h(W) must etre differentiable."""
+    """h(W) must to be differentiable."""
     from fractus.causal.notears import notears_penalty
     W = torch.randn(3, 3, requires_grad=True)
     h = notears_penalty(W)
@@ -53,11 +53,11 @@ def test_notears_shape_scalar():
 
 
 def test_notears_larger_cycle_detected():
-    """Cycle of taille 4 must etre detecte.
+    """Cycle of taille 4 must be detecte.
 
     Note : NOTEARS est sensible a l'AMPLITUDE poids cycle (h mesure
     l'intensite, not juste the presence). Avec poids 1.0, h ≈ 0.17 ; with
-    poids 2.0, h ≈ 49. On utilise therefore poids 1.5 and seuil > 0.1.
+    poids 2.0, h ≈ 49. On utilise therefore poids 1.5 and threshold > 0.1.
     """
     from fractus.causal.notears import notears_penalty
     W = torch.zeros(4, 4)

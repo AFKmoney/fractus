@@ -10,7 +10,7 @@ REINFORCE ni l'architecture, but the TACHE TROP DURE DES LE DEPART.
 Solution (3 ingredients combines) :
 
 1. REWARD SHAPING continu : penalty -log(1 + err) instead of max(0, 1-err/max).
-   Plus informative same for grandes errors (gradient non-nul partout).
+   Plus informative same for largees errors (gradient non-nul parall).
 
 2. BASELINE SUBTRACTION : on soustrait a moyenne mobile reward for
    reduire the variance of REINFORCE. ∇J = E[(R - b) · ∇log π], b = EMA(R).
@@ -19,7 +19,7 @@ Solution (3 ingredients combines) :
 3. CURRICULUM : on entraine by paliers of difficulte croissante.
    Palier 0 : targets ±0.1 (generateur reussit already a ~10% without training).
    Palier 1 : ±0.5, Palier 2 : ±1, Palier 3 : ±2, Palier 4 : ±5.
-   On passe au palier superieur quand the taux of validity > seuil (ex: 30%).
+   On passe au palier superieur when the taux of validity > threshold (ex: 30%).
 
 L'idee : the generateur apprend d'abord on the tache easy (ou il y a signal),
 then generalise progressivement toward the taches dures.
@@ -61,7 +61,7 @@ def shaped_reward(
 
     Contrairement a correctness_reward of the original (max(0, 1-err/max_err) qui
     s'ecrase a 0 for err > max_err), cette shape a a gradient non-nul
-    partout : same a grosse error donne a signal (faible but non-nul).
+    parall : same a grosse error donne a signal (weak but non-nul).
 
     Args:
         proof : the proof generatede.
@@ -204,7 +204,7 @@ class ProofTrainer:
                 status = "OK" if final_vr >= level.min_valid_rate else "~"
                 print(f"  -> valid_rate final palier : {final_vr:.1%} {status} "
                       f"(objective {level.min_valid_rate:.0%})")
-            # Si on rate largement the palier, on continuous quand same au suivant
+            # Si on rate largement the palier, on continuous when same au suivant
             # (le curriculum reste progressif, on not bloque pas).
 
         # Evaluer after.

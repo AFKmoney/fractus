@@ -2,14 +2,14 @@
 
 Le spec disait (L7) : 3 demos demontrables — texte, raisonnement mathematical,
 inference causale. Cette demo orchestre the 3 en a seul script, and utilise
-les metriques honestetes of fractus.metrics.
+les metriques honestys of fractus.metrics.
 
-Ce which marche (deja valid in the demos L2b, L4) :
+Ce which marche (already valid in the demos L2b, L4) :
     - Texte : TinyFractalLM apprend 'hello world', loss 4.73 → 0.65.
     - Causal : NOTEARS recupere a DAG synthetique, SHD = 0.
-Ce which not marche not (decouvert en L5) :
+Ce which not marche not (decopen en L5) :
     - Preuves : REINFORCE pur n'apprend not (error stagne). On documente
-      honestetement instead of pretendre.
+      honestyment instead of pretendre.
 
 Run :
     python scripts/demo_full.py
@@ -93,7 +93,7 @@ def demo_text():
         opt.step()
     final_loss = ce.item()
 
-    # Perplexite honestete (pas proxy).
+    # Perplexite honesty (pas proxy).
     ppl = honest_perplexity(model, ids[:, :-1], ids[:, 1:])
 
     print(f"\nCE Loss : {initial_loss:.4f} -> {final_loss:.4f} ({(1-final_loss/initial_loss)*100:.0f}% baisse)")
@@ -120,7 +120,7 @@ def demo_proofs():
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier, ProofReward
     from fractus.reasoning.conjecture import ConjectureDiscoveryLoop
 
-    # 2a. Le verify exact est SOUND : all this qu'il accepted est true.
+    # 2a. Le verify exact est SOUND : all this qu'il acceptedd est true.
     verify = ProofVerifier()
     examples = [
         ("7 est premier", lambda: verify.verify_primality(7, True)),
@@ -134,7 +134,7 @@ def demo_proofs():
         result = fn()
         print(f"  [{'OK' if result else 'KO'}] {desc}")
 
-    # 2b. Decouverte of conjectures (Popper).
+    # 2b. Decopene of conjectures (Popper).
     print("\nDecouverte de conjectures (falsification popperienne) :")
     loop = ConjectureDiscoveryLoop(state_dim=32, n_trials=50, seed=42)
     for _ in range(30):

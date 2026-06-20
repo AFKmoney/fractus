@@ -8,13 +8,13 @@ def test_siren_uses_sin_not_silu():
     """CRITERE L3 : the SIREN must utiliser torch.sin comme non-linearite,
     PAS nn.SiLU. This is exactment the falsehood d'the original (torus_siren.py:15,17).
 
-    On verifiess via l'inspection REELLE modules code source (AST),
+    On verifiesss via l'inspection REELLE modules code source (AST),
     not via recherche of chaine (qui matcherait the docstring which explique
     the correction)."""
     import ast
     from fractus.nn import siren as siren_mod
 
-    # 1. torch.sin must etre appele in the forward.
+    # 1. torch.sin must be appele in the forward.
     src = inspect.getsource(siren_mod)
     assert 'torch.sin(' in src, "La SIREN must utiliser torch.sin(ω₀·)"
 
@@ -70,7 +70,7 @@ def test_siren_backward_propagates():
 
 
 def test_siren_fewer_params_than_dense():
-    """La SIREN must avoir MOINS of parameters that the matrix dense equivalente."""
+    """La SIREN must have MOINS of parameters that the matrix dense equivaslowe."""
     from fractus.nn.siren import TorusSirenWeight
     s = TorusSirenWeight(out_h=32, out_w=32, hidden=16)
     n_siren = sum(p.numel() for p in s.parameters())

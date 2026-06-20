@@ -14,7 +14,7 @@ def test_kuramoto_output_shape():
 
 
 def test_kuramoto_phases_in_unit_circle():
-    """Toutes the phases ∈ [0, 2π) (wrapping modulaire after RK4)."""
+    """Toutes the phases ∈ [0, 2π) (wrapping modular after RK4)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16) * 10

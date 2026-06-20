@@ -32,11 +32,11 @@ def test_compression_no_hardcoded_204():
 
 
 def test_compression_pure_dense_returns_one():
-    """Un modele 100% dense (pas of SirenLinear) → ratio ~1.0.
+    """Un modele 100% dense (no SirenLinear) → ratio ~1.0.
 
     Note : the ratio for a nn.Linear pur n'est not EXACTEMENT 1.0 because on
-    compte the bias in the params reals (in·out + out) and in l'equivalent
-    dense (in·out + out aussi) — therefore ~1.0 a l'epsilon pres.
+    compte the bias in the params reals (in·out + out) and in l'equivaslow
+    dense (in·out + out also) — therefore ~1.0 a l'epsilon pres.
     """
     from fractus.metrics.compression import measure_compression_ratio
     m = torch.nn.Linear(16, 16)
@@ -45,7 +45,7 @@ def test_compression_pure_dense_returns_one():
 
 
 def test_compression_with_siren_gt_one():
-    """Un modele with SirenLinear → ratio > 1 (moins of params that l'equivalent dense)."""
+    """Un modele with SirenLinear → ratio > 1 (less of params that l'equivaslow dense)."""
     from fractus.nn.siren_linear import SirenLinear
     from fractus.metrics.compression import measure_compression_ratio
     m = torch.nn.Sequential(

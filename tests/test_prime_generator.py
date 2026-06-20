@@ -42,14 +42,14 @@ def test_prime_generator_learns_reinforce():
 
     This is LE test pivot of the correction L5+. the original pretendait produire proofs
     valids but did not learn. Ici on prouve that the pipeline 'neural proposes,
-    exact verify disposes' APPREND quand the tache est atteignable.
+    exact verify disposes' APPREND when the tache est atteignable.
     """
     from fractus.reasoning.prime_generator import PrimeGenerator
     torch.manual_seed(42)
     gen = PrimeGenerator(max_n=100, context_dim=16, hidden=64)
     opt = torch.optim.Adam(gen.parameters(), lr=1e-2)
 
-    # Entrainement court (150 steps).
+    # Entrainement short (150 steps).
     for step in range(150):
         opt.zero_grad()
         ctx = torch.randn(16, gen.context_dim)
@@ -78,7 +78,7 @@ def test_prime_generator_learns_reinforce():
 
 
 def test_prime_generator_soundness():
-    """Tout n predit after training must etre VRAIMENT premier (soundness)."""
+    """Tout n predit after training must be VRAIMENT premier (soundness)."""
     from fractus.reasoning.prime_generator import PrimeGenerator
     torch.manual_seed(42)
     gen = PrimeGenerator(max_n=100, context_dim=16, hidden=64)
@@ -93,7 +93,7 @@ def test_prime_generator_soundness():
         loss = -(rewards * chosen).mean()
         loss.backward()
         opt.step()
-    # Verifier with a crible INDEPENDANT (re-verification).
+    # Verifier with a sieve INDEPENDANT (re-verification).
     from fractus.math.primes import PrimeSieve
     independent_sieve = PrimeSieve(1000)
     gen.eval()
@@ -101,6 +101,6 @@ def test_prime_generator_soundness():
         for _ in range(100):
             ctx = torch.randn(1, gen.context_dim)
             n = int(gen.predict(ctx).item())
-            # Le verify of PrimeGenerator and the crible independent must
-            # etre d'accord (soundness guaranteed by the crible exact).
+            # Le verify of PrimeGenerator and the sieve independent must
+            # be d'accord (soundness guaranteed by the sieve exact).
             assert independent_sieve.verify_prime(n) == gen.is_prime_pred(torch.tensor([n]))[0].item()

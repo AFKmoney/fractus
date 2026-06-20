@@ -51,12 +51,12 @@ def test_generator_backward_every_param():
     """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter.
 
     La loss must toucher w_template (logits), w_params (parameters generateds) ET
-    w_novelty (score nouveaute). Sinon certains poids not recoivent not of gradient.
+    w_novelty (score newte). Sinon certains poids not recoivent not of gradient.
     """
     from fractus.reasoning.conjecture import ConjectureGenerator
     gen = ConjectureGenerator(state_dim=32)
     state = torch.randn(32)
-    # Recomputationer the 3 tenseurs for avoir the graphe complete.
+    # Recomputationer the 3 tenseurs for have the graphe complete.
     logits = state @ gen.w_template
     params_logits = state @ gen.w_params
     novelty = state @ gen.w_novelty
@@ -70,14 +70,14 @@ def test_generator_backward_every_param():
 
 
 def test_memory_add_and_evict():
-    """La memory evince the non-survivantes quand pleine."""
+    """La memory evince the non-survivantes when fulle."""
     from fractus.reasoning.conjecture import ConjectureMemory, Conjecture
     mem = ConjectureMemory(max_size=3)
     for i in range(3):
         c = Conjecture(template_index=i, template_name=str(i), survived=False)
         mem.add(c)
     assert len(mem.discovered) == 3
-    # Ajout d'une 4e : eviction of the more ancienne non-survivante.
+    # Ajout d'une 4e : eviction of the more oldne non-survivante.
     c4 = Conjecture(template_index=3, template_name="3", survived=True)
     mem.add(c4)
     assert len(mem.discovered) == 3
@@ -93,13 +93,13 @@ def test_memory_is_novel():
     # Une nouvelle conjecture same template survivant n'est not nouvelle.
     c2 = Conjecture(template_index=0, template_name="A")
     assert mem.is_novel(c2) is False
-    # Un other template est nouveau.
+    # Un other template est new.
     c3 = Conjecture(template_index=1, template_name="B")
     assert mem.is_novel(c3) is True
 
 
 def test_discovery_loop_runs():
-    """La boucle complete tourne without crash."""
+    """La full loop tourne without crash."""
     from fractus.reasoning.conjecture import ConjectureDiscoveryLoop
     loop = ConjectureDiscoveryLoop(state_dim=32, n_trials=20, seed=42)
     discoveries = 0
@@ -107,6 +107,6 @@ def test_discovery_loop_runs():
         result = loop.discover_step()
         if result is not None:
             discoveries += 1
-    # Au less a decouverte (SumIdentity, FermatLittle, etc. are vraies).
+    # Au less a discovery (SumIdentity, FermatLittle, etc. are vraies).
     assert discoveries >= 1, f"Aucune decouverte en 20 steps, eu {discoveries}"
     assert 0.0 <= loop.discovery_rate() <= 1.0

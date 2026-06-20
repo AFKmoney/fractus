@@ -2,7 +2,7 @@
 
 On generated a DAG aleatoire (topological ordering guaranteed), on echantillonne
 des donnees selon this DAG (each variable = function lineaire of its parents +
-bruit gaussien), then on fournit the true W for evaluer NOTEARS.
+bruit galsoen), then on fournit the true W for evaluer NOTEARS.
 """
 
 import torch

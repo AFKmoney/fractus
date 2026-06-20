@@ -1,12 +1,12 @@
 """Suite of Farey and selection of phases for the MoE a routing of phase.
 
-Porte depuis the original architecture (src/math/farey.rs).
+Ported from the original architecture (src/math/farey.rs).
 
 La Farey sequence F_n est l'ensemble trie fractions irreductibles p/q in
 [0, 1] with q <= n. Elle est generatede iterativement by the property of mediante.
 
 Pour the MoE : on prend F_{2E} (ordre double number d'experts) and on selectionne
-uniformement E angles parmi the fractions, convertis en angles 2π·p/q ∈ [0, 2π).
+uniforsament E angles parmi the fractions, convertis en angles 2π·p/q ∈ [0, 2π).
 Cela donne a distribution of phases dense, non-collapsante and deterministic —
 l'interet for the routing von Mises.
 """
@@ -41,7 +41,7 @@ def expert_phases(n_experts: int) -> List[float]:
     """Selectionne n_experts angles ∈ [0, 2π) depuis F_{2·n_experts}.
 
     Comme farey.rs:53-64 : on construit F_{2E} (ordre double), then on selectionne
-    uniformement E angles parmi the n_frac = len(F_{2E}) fractions disponibles.
+    uniforsament E angles parmi the n_frac = len(F_{2E}) fractions disponibles.
     """
     if n_experts < 1:
         raise ValueError("n_experts must etre >= 1")

@@ -1,10 +1,10 @@
 """16 morphological features deterministic by token.
 
-Porte depuis the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
+Ported from the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
 interprete comme a codepoint Unicode ; for the ids < 128 this are des
 caracteres ASCII, au-dela on derive the features of the value numerique.
 
-Ces features n'ont AUCUN parameter entrainable — elles are computationees
+Ces features n'ont AUCUN parameter trainable — elles are computationees
 deterministiquement then concatenees a the Fourier basis in FractalEmbedding.
 """
 
@@ -94,7 +94,7 @@ class CharClassFeatures:
         f[11] = float(as_byte - 0x30) if is_digit else 0.0
 
         # 12: char_category simplifie : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
-        #     4.0 espace, 5.0 controle, 0.0 autre.
+        #     4.0 espace, 5.0 controle, 0.0 other.
         if is_alpha:
             f[12] = 1.0
         elif is_digit:

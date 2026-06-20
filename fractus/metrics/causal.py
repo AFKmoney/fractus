@@ -16,7 +16,7 @@ def structural_hamming_distance(
     Args:
         true_W : vraie matrix d'adjacence (n, n).
         pred_W : matrix predite (n, n).
-        threshold : seuil of binarisation (|W_ij| > threshold → arete presente).
+        threshold : threshold of binarisation (|W_ij| > threshold → edge present).
     Returns:
         shd : integer >= 0. 0 = prediction parfaite.
     """
@@ -36,7 +36,7 @@ def causal_accuracy(
 
     Args:
         true_W, pred_W : matrixs (n, n).
-        threshold : seuil of binarisation.
+        threshold : threshold of binarisation.
     Returns:
         accuracy ∈ [0, 1].
     """

@@ -1,6 +1,6 @@
 """Tests d'equivalence : attention vectorisee == attention bouclee.
 
-CRITERE : the version vectorisee must donner EXACTEMENT the memes sorties que
+CRITERE : the version vectorisee must donner EXACTEMENT the sames sorties que
 la version bouclee (a 1e-5 pres), for guaranteedr qu'on n'introduit not of bug
 en optimisant.
 """
@@ -17,7 +17,7 @@ def test_vectorized_matches_looped_small():
     x = torch.randn(2, 8, 8)
     out_looped = attn(x)
     # La version vectorisee est appelee via _linear_attention_causal_vectorized.
-    # On the compare a the bouclee on the memes q,k,v.
+    # On the compare a the bouclee on the sames q,k,v.
     # Pour cela on reproduit the projection + feature map.
     from fractus.nn.stats import elu_plus_one
     B, L, _ = x.shape
@@ -74,7 +74,7 @@ def test_vectorized_preserves_causality():
 
 
 def test_vectorized_faster_than_looped():
-    """La version vectorisee must etre more rapide that the bouclee.
+    """La version vectorisee must be more rapide that the bouclee.
     On not does not a benchmark strict, juste a verification that this is
     significativement more rapide (facteur > 2)."""
     import time

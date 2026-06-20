@@ -47,7 +47,7 @@ class KuramotoLayer(nn.Module):
         self.damping = damping
         self.TWO_PI = 2.0 * math.pi
 
-        # Parametres entrainables (init comme the original phase_ode.rs:38-57).
+        # Paramevery trainables (init comme the original phase_ode.rs:38-57).
         self.omega = nn.Parameter(torch.empty(n_oscillators).uniform_(-0.05, 0.05))
         self.coupling_u = nn.Parameter(torch.empty(n_oscillators, rank).uniform_(-1.0, 1.0))
         self.coupling_lambda = nn.Parameter(torch.empty(rank).uniform_(0.01, 0.51))

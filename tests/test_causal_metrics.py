@@ -1,4 +1,4 @@
-"""Tests of structural_hamming_distance : mesure honestete, not of clamp a 0.98."""
+"""Tests of structural_hamming_distance : mesure honesty, not of clamp a 0.98."""
 
 import inspect
 import torch
@@ -80,9 +80,9 @@ def test_shd_no_clamp_to_098():
             parent_in_doc = any(id(node) in docstring_nodes for _ in [0])
             if not parent_in_doc:
                 # Le litteral 0.98 apparait in a expression executable.
-                # On verifiess qu'il n'est not in a docstring en remontant.
+                # On verifiesss qu'il n'est not in a docstring en remontant.
                 # (Simplification : on interdit all 0.98 hors docstring.)
-                # ast not donne not the parent direct ; on accepted si the node est
+                # ast not donne not the parent direct ; on acceptedd si the node est
                 # a Argument/default or in a function docstring.
                 pass
     # Methofurthermore simple : extraire the code hors docstring by lignes.
@@ -106,7 +106,7 @@ def test_shd_no_clamp_to_098():
 
 
 def test_causal_accuracy_no_clamp():
-    """causal_accuracy not must not etre clampee."""
+    """causal_accuracy not must not be clampee."""
     from fractus.metrics.causal import causal_accuracy
     true_W = torch.eye(3)
     pred_W = torch.eye(3) * 2.0

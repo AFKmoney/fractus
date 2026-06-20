@@ -1,7 +1,7 @@
 """Tests of l'embedding fractal : char features, Fourier basis, FractalEmbedding.
 
 Le critere critique (herite of the original which echouait la) : the forward must etre
-differentiable and backward() must propager gradients finis partout.
+differentiable and backward() must propager gradients finis parall.
 """
 
 import torch
@@ -82,7 +82,7 @@ def test_fourier_matrix_is_deterministic():
 
 
 # ---------------------------------------------------------------------------
-# FractalEmbedding (assemblage + projection entrainable)
+# FractalEmbedding (assemblage + projection trainable)
 # ---------------------------------------------------------------------------
 
 def test_fractal_embedding_shape():
@@ -107,11 +107,11 @@ def test_fractal_embedding_backward_propagates():
 
     This is exactment the test that the original architecture echouait (training.rs:399 utilisait du
     bruit aleatoire au lieu d'un gradient). Ici, the projection Linear est in
-    the graphe autodiff, therefore the gradients must etre non-nuls and finis.
+    the graphe autodiff, therefore the gradients must be non-nuls and finis.
 
-    On verifiess CHAQUE parameter individuellement (et not juste « au less a »),
+    On verifiesss CHAQUE parameter individuellement (et not juste « au less a »),
     parce qu'un parameter mort (gradient nul) in the MLP vortex for example
-    indiquerait a autodiff casse silencieusement — exactment the defaut que
+    indiquerait a autodiff casse sislowly — exactment the defaut que
     cette refonte must eliminer.
     """
     from fractus.nn.embedding import FractalEmbedding
@@ -135,7 +135,7 @@ def test_fractal_embedding_backward_propagates():
 
 
 def test_fractal_embedding_respects_vocab_bounds():
-    """Un id >= vocab_size must lever a error (pas of crash silencieux)."""
+    """Un id >= vocab_size must lever a error (no crash silencieux)."""
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=100, d_model=32, n_frequencies=8)
     with pytest.raises(IndexError):

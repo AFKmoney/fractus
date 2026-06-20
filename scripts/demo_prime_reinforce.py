@@ -1,13 +1,13 @@
 """Demo L5+ v2 : PrimeGenerator apprend a produire numbers premiers.
 
 REDESIGN : the tache 'convergesr toward target a 1e-3' (L5 original) was
-inatteignable. Nouvelle tache : produire integers premiers, verifiess par
-le crible exact (soundness guaranteed).
+inatteignable. Nouvelle tache : produire integers premiers, verifiesss par
+le sieve exact (soundness guaranteed).
 
-REINFORCE : reward = 1 si n predit est premier, 0 sinon. Loss = -reward · log_prob.
+REINFORCE : reward = 1 si n predit is prime, 0 otherwise. Loss = -reward · log_prob.
 Comme 25% integers in [2,100] are premiers, the signal n'est not sparse.
 
-Critere honestete : valid_rate must depasser 25% (le hasard) after training,
+Critere honesty : valid_rate must depasser 25% (le hasard) after training,
 idealement atteindre >70%.
 
 Run :
@@ -50,7 +50,7 @@ def main():
         logits = gen(ctx)
         indices = logits.argmax(dim=-1)
         n_pred = indices + 2
-        # Reward = 1 si premier, 0 sinon.
+        # Reward = 1 si premier, 0 otherwise.
         rewards = gen.is_prime_pred(n_pred).float()  # (16,)
         # REINFORCE : on veut maximiser E[reward]. Loss = -reward · log_prob(n).
         log_probs = torch.log_softmax(logits, dim=-1)

@@ -1,7 +1,7 @@
 """Tests of FractalLinearAttention : shape, causalite, differentiabilite.
 
 L'attention lineaire causale of Katharopoulos (O(L·d2) instead of O(L2·d)).
-Portee faithfully depuis the original architecture src/attention.rs.
+Ported faithfully depuis the original architecture src/attention.rs.
 """
 
 import torch
@@ -38,7 +38,7 @@ def test_attention_causality():
     x_modified = x.clone()
     x_modified[0, 4:] = torch.randn(2, 16)  # briser the positions 4 and 5
     out2 = attn(x_modified)
-    # Les 4 premieres positions must etre identiques (causalite stricte).
+    # Les 4 premieres positions must be identiques (causalite stricte).
     assert torch.allclose(out1[0, :4], out2[0, :4], atol=1e-5), \
         "L'attention n'est pas causale : un token futur a affecte une sortie passee"
 
@@ -68,8 +68,8 @@ def test_attention_multi_levels_changes_output():
 
     Idee : with n_levels=2, si on force level_logits = [+inf, -inf] (therefore le
     softmax met all the poids on the niveau 0, no on the niveau 1), the sortie
-    must etre EXACTEMENT celle d'un module n_levels=1 with the same offset de
-    niveau 0. Et inversement with [-inf, +inf] (tout on the niveau 1).
+    must be EXACTEMENT celle d'un module n_levels=1 with the same offset de
+    niveau 0. Et inversement with [-inf, +inf] (all on the niveau 1).
     Cela isole l'effet offsets multi-niveaux independamment of l'init aleatoire.
     """
     from fractus.nn.attention import FractalLinearAttention
@@ -107,7 +107,7 @@ def test_attention_multi_levels_changes_output():
 
 
 def test_attention_d_model_constraint():
-    """d_model must etre divisible by n_heads (sinon error)."""
+    """d_model must be divisible by n_heads (otherwise error)."""
     from fractus.nn.attention import FractalLinearAttention
     with pytest.raises(ValueError):
         FractalLinearAttention(d_model=30, n_heads=4, d_head=8, n_levels=1)

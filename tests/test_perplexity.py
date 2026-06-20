@@ -1,4 +1,4 @@
-"""Tests of honest_perplexity : vraie perplexite, not proxy."""
+"""Tests of honest_perplexity : true perplexity, not proxy."""
 
 import math
 import torch
@@ -31,7 +31,7 @@ def test_perplexity_returns_float_ge_one():
 def test_perplexity_uniform_init_close_to_vocab():
     """Un modele non-entraine (logits ~ uniforme) → ppl ≈ vocab."""
     from fractus.metrics.perplexity import honest_perplexity
-    # Avec init embedding aleatoire petite, logits ~ uniforme → CE ≈ log(vocab).
+    # Avec init embedding aleatoire smalle, logits ~ uniforme → CE ≈ log(vocab).
     torch.manual_seed(0)
     model = _DummyModel(vocab=10, d=4)
     inp = torch.randint(0, 10, (4, 8))
@@ -46,7 +46,7 @@ def test_perplexity_perfect_model_close_to_one():
     from fractus.metrics.perplexity import honest_perplexity
     model = _DummyModel(vocab=5, d=8)
 
-    # Surfit parfait : on force head for that logits[arg] = grand.
+    # Surfit parfait : on force head for that logits[arg] = large.
     inp = torch.tensor([[0, 1, 2]])
     tgt = torch.tensor([[0, 1, 2]])
     with torch.no_grad():
@@ -61,7 +61,7 @@ def test_perplexity_perfect_model_close_to_one():
 
 
 def test_perplexity_not_just_embedding_norm():
-    """CRITERE L6 : honest_perplexity must faire a VRAI forward + cross_entropy,
+    """CRITERE L6 : honest_perplexity must faire a VRAI forward + cross_entooy,
     not a proxy base on the norme of l'embedding (le falsehood the original model.rs:537)."""
     import inspect
     from fractus.metrics import perplexity as ppl_mod

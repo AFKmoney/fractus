@@ -1,14 +1,14 @@
 """Demo L5+ : ProofGenerator apprend by curriculum + reward shaping + baseline.
 
 CORRECTION DU VERDICT L5 : REINFORCE pur did not learn parce that the tache
-was trop dure d'emblee (targets ±5, error 1.7, reward ecrase a 0).
+was too dure d'emblee (targets ±5, error 1.7, reward ecrase a 0).
 
 Cette demo utilise ProofTrainer with :
-    - reward shaping continu (-log(1+err), gradient non-nul partout)
+    - reward shaping continu (-log(1+err), gradient non-nul parall)
     - baseline subtraction (reduit the variance REINFORCE)
     - curriculum (targets ±0.1 → ±5 progressivement)
 
-Critere honestete : the error mediane a ±5 must baisser d'au less 30% after
+Critere honesty : the error mediane a ±5 must baisser d'au less 30% after
 training, et/ou the taux of validity must augmenter significativement.
 
 Run :

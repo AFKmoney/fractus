@@ -39,7 +39,7 @@ class KuramotoLyapunov(nn.Module):
         """Verifie that V decroit the long of the trajectoire.
 
         phases_trajectory : liste of tenseurs (..., N), a by not of temps.
-        Retourne True si V est monotone non-croissante (a epsilon pres).
+        Returns True si V est monotone non-croissante (a epsilon pres).
         """
         if len(phases_trajectory) < 2:
             return True

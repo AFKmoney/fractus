@@ -4,7 +4,7 @@ import torch
 
 
 def test_shaped_reward_continuous():
-    """shaped_reward must etre continu and decroissant with the error."""
+    """shaped_reward must be continu and decroissant with the error."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     rf = ProofReward()
@@ -22,7 +22,7 @@ def test_shaped_reward_continuous():
 
 
 def test_shaped_reward_nonzero_for_large_error():
-    """CRITERE L5+ : shaped_reward must etre > 0 same for grande error
+    """CRITERE L5+ : shaped_reward must be > 0 same for largee error
     (contrairement a correctness_reward of the original which s'ecrase a 0)."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
@@ -57,7 +57,7 @@ def test_trainer_baseline_updates():
     initial_baseline = trainer.baseline
     for _ in range(10):
         trainer.train_step(target_range=0.5)
-    # La baseline must avoir change (non-nulle si rewards non-nuls).
+    # La baseline must have change (non-nulle si rewards non-nuls).
     assert trainer.baseline != initial_baseline
 
 
@@ -81,7 +81,7 @@ def test_trainer_curriculum_improves_or_runs():
     torch.manual_seed(42)
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     ver = ProofVerifier()
-    # Curriculum court for the test (sinon trop long).
+    # Curriculum short for the test (otherwise too long).
     short_curriculum = [
         CurriculumLevel(0.1, 0.30, 50),
         CurriculumLevel(0.5, 0.25, 50),
@@ -89,7 +89,7 @@ def test_trainer_curriculum_improves_or_runs():
     ]
     trainer = ProofTrainer(gen, ver, curriculum=short_curriculum, lr=1e-2)
     metrics = trainer.train(verbose=False)
-    # L'error a ±5 must avoir baisse d'au less 10% (critere test, more souple
+    # L'error a ±5 must have baisse d'au less 10% (critere test, more souple
     # that the demo which vise 30%).
     assert metrics["final_error"] <= metrics["initial_error"] * 1.5, \
         f"L'error a explose : {metrics['initial_error']} -> {metrics['final_error']}"

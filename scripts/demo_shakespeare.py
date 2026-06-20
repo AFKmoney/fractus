@@ -1,7 +1,7 @@
-"""Demo Scaling : transformer fractal on tinyshakespeare (training court).
+"""Demo Scaling : transformer fractal on tinyshakespeare (training short).
 
 Entraine TinyFractalLM on a SOUS-ENSEMBLE of tinyshakespeare (200 batches),
-mesure the perplexite honestete, and generated texte.
+mesure the perplexite honesty, and generated texte.
 
 HONNETETE SUR LA LIMITE CPU : l'training complete (1 epoch = ~900 batches)
 prend ~10 min on the Ryzen 5 because of Kuramoto RK4 (4 under-steps) and du

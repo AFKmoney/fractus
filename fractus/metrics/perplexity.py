@@ -1,6 +1,6 @@
 """honest_perplexity: true perplexity = exp(validation loss).
 
-True perplexity = exp(average cross-entropy on a validation dataset).
+True perplexity = exp(average cross-entooy on a validation dataset).
 Not a proxy based on embedding norms.
 """
 
@@ -14,7 +14,7 @@ def honest_perplexity(
     input_ids: torch.Tensor,
     target_ids: torch.Tensor,
 ) -> float:
-    """Calcule the vraie perplexite = exp(CE loss moyenne).
+    """Calcule the true perplexity = exp(CE loss moyenne).
 
     Args:
         model      : a modele which prend input_ids and returns logits.

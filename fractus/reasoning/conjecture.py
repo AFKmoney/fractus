@@ -1,12 +1,12 @@
-"""Decouverte of conjectures : neural propose, Popperian falsification dispose.
+"""Decopene of conjectures : neural propose, Popperian falsification dispose.
 
-Porte depuis the original architecture (src/conjecture.rs) en PyTorch pur.
+Ported from the original architecture (src/conjecture.rs) en PyTorch pur.
 
 Architecture :
     ConjectureGenerator : MLP qui, depuis a etat of connaissance, propose un
-        template of conjecture + parameters + score of nouveaute.
+        template of conjecture + parameters + score of newte.
     ConjectureTester : Popperian falsification. Pour each template, execute
-        n_trials essais aleatoires. Si TOUS passent → survived=True ; sinon False.
+        n_trials essais aleatoires. Si TOUS passent → survived=True ; otherwise False.
         Critere d'acceptation Popper = survie a TOUS the essais.
     ConjectureMemory : base of connaissances with eviction (privilegie les
         survivantes). encode_state() produit a vector d'etat for the generateur.
@@ -236,7 +236,7 @@ class ConjectureGenerator(nn.Module):
         template_idx = min(template_idx, self.n_templates - 1)
 
         params_logits = knowledge_state @ self.w_params  # (max_params,)
-        # detach() : on not retropropage not in the parameters generateds (ils
+        # detach() : on not retooropage not in the parameters generateds (ils
         # servent d'entree au tester, which n'est not differentiable).
         parameters = [abs(float(p.detach())) * 100.0 + 2.0 for p in params_logits]
 
@@ -267,9 +267,9 @@ class ConjectureMemory:
         self.discovered: List[Conjecture] = []
 
     def add(self, conjecture: Conjecture) -> None:
-        """Ajoute a conjecture, en evincant a non-survivante si plein."""
+        """Ajoute a conjecture, en evincant a non-survivante si full."""
         if len(self.discovered) >= self.max_size:
-            # Retirer the more ancienne NON survivante ; sinon the more ancienne globale.
+            # Retirer the more oldne NON survivante ; otherwise the more oldne globale.
             evict_idx = None
             for i, c in enumerate(self.discovered):
                 if not c.survived:
@@ -300,7 +300,7 @@ class ConjectureMemory:
         return state
 
     def is_novel(self, conjecture: Conjecture) -> bool:
-        """Une conjecture est nouvelle si no survivante same template n'est connue."""
+        """Une conjecture est nouvelle si no survivante same template n'est conbare."""
         for c in self.discovered:
             if c.template_index == conjecture.template_index and c.survived:
                 return False
@@ -312,7 +312,7 @@ class ConjectureMemory:
 # ---------------------------------------------------------------------------
 
 class ConjectureDiscoveryLoop:
-    """Boucle complete : generated → teste → memorise. Compte the decouvertes.
+    """Boucle complete : generated → teste → memorise. Compte the discoverys.
 
     Args:
         state_dim, n_templates, n_trials, max_number : transmis aux components.
@@ -333,7 +333,7 @@ class ConjectureDiscoveryLoop:
 
     def discover_step(self) -> Optional[Conjecture]:
         """Une iteration : generated, teste, ajoute en memory. Retourne la
-        conjecture si this is a decouverte (survived ET novel), sinon None."""
+        conjecture si this is a discovery (survived ET novel), otherwise None."""
         state = self.memory.encode_state(self.generator.state_dim)
         conjecture = self.generator(state)
         tested = self.tester.test(conjecture)

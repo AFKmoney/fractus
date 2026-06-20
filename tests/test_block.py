@@ -19,7 +19,7 @@ def test_block_shape():
 def test_block_is_finite():
     from fractus.nn.block import FractalBlock
     block = FractalBlock(d_model=32, n_heads=4, d_head=8, n_levels=2)
-    x = torch.randn(2, 10, 32) * 3  # values a peu grandes
+    x = torch.randn(2, 10, 32) * 3  # values a peu largees
     out = block(x)
     assert torch.isfinite(out).all()
 
@@ -33,8 +33,8 @@ def test_block_residual_connection():
     block.eval()
     x = torch.randn(1, 8, 32)
     out = block(x)
-    # La residuelle guaranteedt out ≈ x + small attn(x). On verifiess juste que
-    # the sortie est same ordre of grandeur (pas d'explosion).
+    # La residuelle guaranteedt out ≈ x + small attn(x). On verifiesss juste que
+    # the sortie est same ordre of largeeur (pas d'explosion).
     assert out.std().item() < 10.0 * x.std().item()
 
 
@@ -78,7 +78,7 @@ def test_block_full_shape_and_finite():
 
 def test_block_full_backward_every_param():
     """CRITERE L2b : FractalBlockFull (attn + Kuramoto + MoE) must propager un
-    gradient fini ET non-nul a CHAQUE parameter. La proof ultime that tout
+    gradient fini ET non-nul a CHAQUE parameter. La proof ultime that all
     the pipeline fractal est differentiable end-to-end."""
     from fractus.nn.block import FractalBlockFull
     block = FractalBlockFull(

@@ -1,6 +1,6 @@
 """TorusSirenWeight: a true SIREN sin(omega0*x) to represent a weight matrix.
 
-Uses torch.sin(omega0*(Wx+b)) as nonlinearity (Sitzmann et al. 2020), omega0=30.
+Uses torch.sin(omega0*(Wx+b)) as nonlinearity (Sitzmann and al. 2020), omega0=30.
 Not SiLU, not ReLU. Init follows Sitzmann section 3.2.
 Compression ratio is MEASURED, never hardcoded.
 """
@@ -46,7 +46,7 @@ class TorusSirenWeight(nn.Module):
         self.register_buffer("grid", grid)
 
     def _init_siren_weights(self):
-        """Init SIREN specifique (Sitzmann 2020, section 3.2)."""
+        """Init SIREN specific (Sitzmann 2020, section 3.2)."""
         with torch.no_grad():
             # Premiere couche : U(-1/ω0, 1/ω0).
             nn.init.uniform_(self.fc1.weight, -1.0 / self.omega0, 1.0 / self.omega0)
@@ -63,7 +63,7 @@ class TorusSirenWeight(nn.Module):
         """Grille of coords (u,v) ∈ [0,1)2 on the tore, shape (h·w, 2).
 
         Sur the tore T2=[0,1)2, the point 1 ≡ 0 (identification). On exclut therefore
-        l'extremite 1 for eviter the duplication bord (i/h for i=0..h-1).
+        l'extremite 1 for efastr the duplication bord (i/h for i=0..h-1).
         """
         u = torch.arange(h, dtype=torch.float32) / h
         v = torch.arange(w, dtype=torch.float32) / w
@@ -80,6 +80,6 @@ class TorusSirenWeight(nn.Module):
         x = torch.sin(self.omega0 * self.fc1(x))
         # Couche 2 + sin(ω0·).
         x = torch.sin(self.omega0 * self.fc2(x))
-        # Couche of sortie : lineaire (pas of sin).
+        # Couche of sortie : lineaire (no sin).
         x = self.fc3(x)  # (h·w, 1)
         return x.squeeze(-1).reshape(self.out_h, self.out_w)

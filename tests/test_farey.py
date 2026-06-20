@@ -17,7 +17,7 @@ def test_farey_sequence_order_1():
 
 
 def test_farey_sequence_sorted():
-    """Les fractions must etre croissantes (property of Farey)."""
+    """Les fractions must be croissantes (property of Farey)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(5)
     values = [p / q for (p, q) in seq]
@@ -49,7 +49,7 @@ def test_expert_phases_in_unit_circle():
 
 
 def test_expert_phases_distinct():
-    """Les phases expert must etre distinctes (sinon the routing degenerated)."""
+    """Les phases expert must be distinctes (otherwise the routing degenerated)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for i in range(len(phases)):

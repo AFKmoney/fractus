@@ -7,7 +7,7 @@ Pipeline "neural propose, exact verify disposes" :
     4. On met a jour the generateur by REINFORCE (policy gradient).
 
 POSITION SCIENTIFIQUE HONNETE (mise a jour after diagnostic) :
-Le seuil of validity the original (|conclusion - target| < 1e-3) est INACCESSIBLE for
+Le threshold of validity the original (|conclusion - target| < 1e-3) est INACCESSIBLE for
 cette architecture : a GRU a 6 steps d'EMA 0.8/0.2 not can not convergesr vers
 une target arbitraire a 1e-3 pres. Erreur mediane without training ≈ 1.72
 (sur range [-5,5] of width 10). the original never measured it (no autodiff).
@@ -17,7 +17,7 @@ target| on 200 targets, before/after training. Critere of succes : the error
 mediane must baisser d'au less 30% after 500 steps REINFORCE.
 
 Honnetete supplementaire : the verify n'impose no structure logical.
-Une "proof valid" ici = the GRU a converges toward the target numerique. Pas une
+Une "proof valid" here = the GRU a converges toward the target numerique. Pas une
 derivation logical au sens inference rules. Fidele a the original (proof.rs:341-360).
 
 Run :

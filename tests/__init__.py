@@ -1,1 +1,1 @@
-# Package tests. Les tests are decouverts by pytest a the racine repo.
+# Package tests. Les tests are decopens by pytest a the racine repo.
