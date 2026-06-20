@@ -1,13 +1,13 @@
-"""Tests du pont Python for les functions 2-adiques du vortex.
+"""Tests pont Python for the functions 2-adiques vortex.
 
-Verifie que les wrappers Rust sont bien exposes et return des valeurs
-correctes. Ces tests ne font PAS de mathematical avancee (ca, c'est en Rust) —
-ils valident juste le pont PyO3.
+Verifie that the wrappers Rust are well exposes and return values
+correctes. Ces tests not font PAS of mathematical avancee (ca, this is en Rust) —
+ils validnt juste the pont PyO3.
 """
 
 
 def test_collatz_hash_is_deterministic():
-    """Meme entree → meme sortie (property requise for le conditionnement)."""
+    """Meme entree → same sortie (property requise for the conditionnement)."""
     from fractus import _core
     h1 = _core.collatz_hash(7, 10)
     h2 = _core.collatz_hash(7, 10)
@@ -21,7 +21,7 @@ def test_collatz_hash_zero_stays_zero():
 
 
 def test_collatz_hash_returns_u64():
-    """Le hash must etre un integer positif compatible with PyTorch indexing."""
+    """Le hash must etre a integer positif compatible with PyTorch indexing."""
     from fractus import _core
     h = _core.collatz_hash(42, 5)
     assert isinstance(h, int)
@@ -50,7 +50,7 @@ def test_ultrametric_distance_in_unit_interval():
 
 
 def test_norm_2adic_basic():
-    """||x||_2 = 2^{-v_2(x)}, verifies sur quelques valeurs connues."""
+    """||x||_2 = 2^{-v_2(x)}, verifiess on quelques values connues."""
     from fractus import _core
     assert _core.norm_2adic(0) == 0.0
     assert _core.norm_2adic(1) == 1.0   # v_2(1)=0 → 2^0
@@ -59,8 +59,8 @@ def test_norm_2adic_basic():
 
 
 def test_ultrametric_strong_triangle_in_python():
-    """La property ultrametrique forte must tenir via le pont Python.
-    C'est le test-pivot qui distingue 2^{-v} (correct) de 2^{+v} (bug OMNI)."""
+    """La property ultrametrique forte must tenir via the pont Python.
+    This is the test-pivot which distingue 2^{-v} (correct) of 2^{+v} (bug the original)."""
     from fractus import _core
     # Le triplet (7, 56, 13) discrimine : passe with -v, echoue with +v.
     x, y, z = 7, 56, 13

@@ -1,10 +1,10 @@
-# Fractus L4 — NOTEARS causal + RKHS RFF + do-calculus Implementation Plan
+# Fractus L4 — NOTEARS causal + RKHS RFF + do-computationus Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Corriger le « false RKHS » d'OMNI (juste une projection bas-rang `x@U@Vᵀ`, pas de noyau) et le « do-calculus trivial » (column-zeroing). Implementer un **true** pipeline de decouverte causale : (1) penalty d'acyclicite NOTEARS `h(A) = tr(e^{A⊙A}) − n` differentiable (portee faithfully de FNN `causal.rs`), (2) operateur causal RKHS via **Random Fourier Features** (Rahimi-Recht 2007), (3) **true** do-calculus de Pearl (echantillonnage post-intervention), (4) metrique **Structural Hamming Distance** mesuree sur un DAG synthetique connu.
+**Goal:** Corriger the « false RKHS » d'the original (juste a projection bas-rang `x@U@VT`, not of noyau) and the « do-computationus trivial » (column-zeroing). Implementer a **true** pipeline of decouverte causale : (1) penalty d'acyclicite NOTEARS `h(A) = tr(e^{A⊙A}) − n` differentiable (portede faithfully of the original `causal.rs`), (2) causal operator RKHS via **Random Fourier Features** (Rahimi-Recht 2007), (3) **true** do-computationus of Pearl (echantillonnage post-intervention), (4) metrique **Structural Hamming Distance** mesuree on a DAG synthetique connu.
 
-**Architecture :** (1) `fractus/causal/notears.py` — `notears_penalty(W)` : scalar differentiable, =0 ssi W est un DAG. (2) `fractus/causal/rkhs.py` — `RKHSCausalOperator` : noyau gaussien approxime par RFF, operateur L in l'espace des features. (3) `fractus/causal/do.py` — `do_intervention` : true do-calculus Pearl (clamp + propagation). (4) `fractus/metrics/causal.py` — `structural_hamming_distance` : SHD mesuree, pas de clamp a 0.98. (5) `data/causal/generate_scm.py` — generated des Structural Causal Models synthetiques (DAG connu + donnees). (6) Demo : NOTEARS recupere un DAG synthetique a 5 noeuds.
+**Architecture :** (1) `fractus/causal/notears.py` — `notears_penalty(W)` : scalar differentiable, =0 ssi W est a DAG. (2) `fractus/causal/rkhs.py` — `RKHSCausalOperator` : noyau gaussien approxime by RFF, operateur L in l'espace features. (3) `fractus/causal/do.py` — `do_intervention` : true do-computationus Pearl (clamp + propagation). (4) `fractus/metrics/causal.py` — `structural_hamming_distance` : SHD mesuree, not of clamp a 0.98. (5) `data/causal/generate_scm.py` — generated Structural Causal Models synthetiques (DAG connu + donnees). (6) Demo : NOTEARS recupere a DAG synthetique a 5 noeuds.
 
 **Tech Stack:** PyTorch 2.12 CPU, numpy, pytest.
 
@@ -12,10 +12,10 @@
 
 **Prerequis :** L3 termine (76 tests passent).
 
-**Maths de reference :**
-- NOTEARS (Zheng 2018) : `h(W) = tr(e^{W⊙W}) − n` ou e^{·} = exponentielle matricielle (Taylor 20 termes). h(W)=0 ssi W est acyclique. Differentiable.
-- RKHS via RFF (Rahimi-Recht 2007) : noyau gaussien `k(x,y) = exp(-||x-y||²/(2σ²))` ≈ `φ(x)·φ(y)` ou `φ(x) = [cos(ω_k·x), sin(ω_k·x)] / √K`, `ω_k ~ N(0, 1/σ²)`.
-- do-calculus Pearl : `P(Y | do(X=x))` ≠ `P(Y | X=x)`. L'intervention fixe X=x (clamp), then propage.
+**Maths of reference :**
+- NOTEARS (Zheng 2018) : `h(W) = tr(e^{W⊙W}) − n` or e^{·} = matrix exponential (Taylor 20 termes). h(W)=0 ssi W est acyclique. Differentiable.
+- RKHS via RFF (Rahimi-Recht 2007) : noyau gaussien `k(x,y) = exp(-||x-y||2/(2σ2))` ≈ `φ(x)·φ(y)` or `φ(x) = [cos(ω_k·x), sin(ω_k·x)] / √K`, `ω_k ~ N(0, 1/σ2)`.
+- do-computationus Pearl : `P(Y | do(X=x))` = `P(Y | X=x)`. L'intervention fixe X=x (clamp), then propage.
 - SHD : number d'aretes mal predites (manquantes + supplementaires + orientation erronee).
 
 ---
@@ -31,7 +31,7 @@ C:/Users/PHIL/ZCodeProject/fractus/
 │   └── do.py                   # CREATE : do_intervention (Pearl)
 ├── fractus/metrics/
 │   ├── causal.py               # CREATE : structural_hamming_distance
-│   └── __init__.py             # MODIFY : exporte SHD
+│   └── __init__.py             # MODIFY : exported SHD
 ├── data/causal/
 │   └── generate_scm.py         # CREATE : SCM synthetique (DAG + donnees)
 └── tests/
@@ -49,29 +49,29 @@ C:/Users/PHIL/ZCodeProject/fractus/
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/__init__.py`
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/notears.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_notears.py` :
 ```python
-"""Tests de notears_penalty : differentiable, =0 for DAG, >0 for cycle."""
+"""Tests of notears_penalty : differentiable, =0 for DAG, >0 for cycle."""
 
 import torch
 
 
 def test_notears_zero_for_dag():
-    """h(W) ≈ 0 si W est un DAG evident (triangulaire inferieur strict)."""
+    """h(W) ≈ 0 si W est a DAG evident (triangulaire inferieur strict)."""
     from fractus.causal.notears import notears_penalty
     W = torch.tensor([
         [0.0, 0.0, 0.0],
         [0.5, 0.0, 0.0],
         [0.3, 0.4, 0.0],
-    ])  # DAG : 1<-2, 1<-3, 2<-3, pas de cycle
+    ])  # DAG : 1<-2, 1<-3, 2<-3, not of cycle
     h = notears_penalty(W)
     assert abs(h.item()) < 1e-3, f"h(DAG) should etre ~0, eu {h.item()}"
 
 
 def test_notears_positive_for_cycle():
-    """h(W) > 0 si W contient un cycle."""
+    """h(W) > 0 si W contient a cycle."""
     from fractus.causal.notears import notears_penalty
     W = torch.tensor([
         [0.0, 1.0, 0.0],
@@ -91,7 +91,7 @@ def test_notears_zero_for_zero_matrix():
 
 
 def test_notears_is_differentiable():
-    """h(W) must etre differentiable (gradient vers W)."""
+    """h(W) must etre differentiable (gradient toward W)."""
     from fractus.causal.notears import notears_penalty
     W = torch.randn(3, 3, requires_grad=True)
     h = notears_penalty(W)
@@ -101,7 +101,7 @@ def test_notears_is_differentiable():
 
 
 def test_notears_shape_scalar():
-    """h(W) est un scalar (somme sur la trace)."""
+    """h(W) est a scalar (somme on the trace)."""
     from fractus.causal.notears import notears_penalty
     W = torch.randn(5, 5)
     h = notears_penalty(W)
@@ -109,7 +109,7 @@ def test_notears_shape_scalar():
 
 
 def test_notears_larger_cycle_detected():
-    """Cycle de taille 4 must etre detecte."""
+    """Cycle of taille 4 must etre detecte."""
     from fractus.causal.notears import notears_penalty
     W = torch.zeros(4, 4)
     W[0, 1] = W[1, 2] = W[2, 3] = W[3, 0] = 1.0  # 0->1->2->3->0
@@ -117,7 +117,7 @@ def test_notears_larger_cycle_detected():
     assert h.item() > 0.5
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_notears.py -v
@@ -128,32 +128,32 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/__init__.py` :
 ```python
-"""Sous-package causal : NOTEARS, RKHS, do-calculus.
+"""Sous-package causal : NOTEARS, RKHS, do-computationus.
 
-L4 : decouverte causale with DAG garanti acyclique (NOTEARS), operateur RKHS
-via Random Fourier Features, et true do-calculus de Pearl.
+L4 : decouverte causale with DAG guaranteed acyclique (NOTEARS), operateur RKHS
+via Random Fourier Features, and true do-computationus of Pearl.
 """
 ```
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/notears.py` :
 ```python
-"""Penalite d'acyclicite NOTEARS : h(W) = tr(e^{W⊙W}) − n.
+"""Acyclicity penalty NOTEARS : h(W) = tr(e^{W⊙W}) − n.
 
 Portee faithfully depuis the original architecture (src/causal.rs:159-196) en PyTorch pur.
 
-Math (Zheng et al. 2018, "DAGs with NO TEARS") :
+Math (Zheng and al. 2018, "DAGs with NO TEARS") :
     h(W) = tr(expm(W ⊙ W)) − n
-    ou expm est l'exponentielle matricielle et ⊙ le produit d'Hadamard.
+    or expm est l'matrix exponential and ⊙ the Hadamard product.
 
     Propriete : h(W) = 0 ssi W est acyclique (DAG).
-    h(W) > 0 si W contient un cycle.
-    Differentiable → on can l'optimiser par gradient descent.
+    h(W) > 0 si W contient a cycle.
+    Differentiable → on can l'optimiser by gradient descent.
 
-Approximation : expm via serie de Taylor a 20 termes (comme FNN).
-    e^M = I + M + M²/2! + ... + M²⁰/20!
+Approximation : expm via Taylor series a 20 termes (comme the original).
+    e^M = I + M + M2/2! + ... + M20/20!
 
-CORRECTION vs OMNI : OMNI n'avait PAS de contrainte d'acyclicite du tout
-(rkhs_causal.py n'imposait no DAG). Ici on a un true NOTEARS differentiable.
+CORRECTION vs the original : the original did NOT have of contrainte d'acyclicite tout
+(rkhs_causal.py n'imposait no DAG). Ici on a a true NOTEARS differentiable.
 """
 
 import torch
@@ -164,9 +164,9 @@ def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
 
     Args:
         W : matrix d'adjacence (n, n), differentiable.
-        n_terms : number de termes de la serie de Taylor (20 par defaut).
+        n_terms : number of termes of the Taylor series (20 by defaut).
     Returns:
-        h : scalar. =0 si W est un DAG, >0 si W contient un cycle.
+        h : scalar. =0 si W est a DAG, >0 si W contient a cycle.
     """
     n = W.shape[0]
     assert W.shape == (n, n), f"W must etre carree, eu {W.shape}"
@@ -174,14 +174,14 @@ def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
     # M = W ⊙ W (element carre).
     M = W * W
 
-    # e^M = I + M + M²/2! + ... + M^k/k!  (serie de Taylor).
+    # e^M = I + M + M2/2! + ... + M^k/k!  (Taylor series).
     eye = torch.eye(n, dtype=W.dtype, device=W.device)
     result = eye.clone()
     term = eye.clone()  # term_k = M^k / k!, init a M^0/0! = I
     for k in range(1, n_terms + 1):
         term = (term @ M) / k  # term_k = term_{k-1} · M / k
         result = result + term
-        # Convergence anticipee (comme FNN).
+        # Convergence anticipee (comme the original).
         if term.norm() < 1e-10:
             break
 
@@ -190,7 +190,7 @@ def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
     return trace - n
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_notears.py -v
@@ -202,7 +202,7 @@ Expected: 6 passed.
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 git add fractus/causal/ tests/test_notears.py
-git commit -m "feat(causal): add notears_penalty (differentiable DAG acyclicity, ported from FNN)"
+git commit -m "feat(causal): add notears_penalty (differentiable DAG acyclicity, portedd from the original)"
 ```
 
 ---
@@ -212,11 +212,11 @@ git commit -m "feat(causal): add notears_penalty (differentiable DAG acyclicity,
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/rkhs.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_rkhs.py` :
 ```python
-"""Tests de RKHSCausalOperator : true RKHS via RFF, pas projection bas-rang nue."""
+"""Tests of RKHSCausalOperator : true RKHS via RFF, not projection bas-rang nue."""
 
 import torch
 
@@ -247,7 +247,7 @@ def test_rkhs_kernel_approx_positive():
 
 
 def test_rkhs_backward_every_param():
-    """CRITERE L4 : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
+    """CRITERE L4 : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.causal.rkhs import RKHSCausalOperator
     op = RKHSCausalOperator(dim=8, rank=4, n_rff=32)
     x = torch.randn(16, 8)
@@ -261,29 +261,29 @@ def test_rkhs_backward_every_param():
         assert p.requires_grad
         assert p.grad is not None, f"{name} n'a recu no gradient"
         assert torch.isfinite(p.grad).all()
-        # Note : les W_rff (features aleatoires RFF) sont intentionnellement
-        # figees (non entrainables) — c'est la methode Rahimi-Recht. On ne
-        # verifies le gradient non-nul que sur U, V (les params entrainables).
+        # Note : the W_rff (features aleatoires RFF) are intentionnellement
+        # figees (non entrainables) — this is the methode Rahimi-Recht. On ne
+        # verifiess the gradient non-nul that on U, V (les params entrainables).
         if name in ("U", "V"):
-            assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+            assert p.grad.abs().sum().item() > 0, f"{name} a recu a gradient nul"
 
 
 def test_rkhs_not_just_linear_projection():
-    """VRAI RKHS : la sortie must dependre du noyau (non-lineaire), pas juste x@U@Vᵀ.
-    On verifies que la sortie n'est pas egale a une projection lineaire simple."""
+    """VRAI RKHS : the sortie must dependre noyau (non-lineaire), not juste x@U@VT.
+    On verifiess that the sortie n'est not egale a a projection lineaire simple."""
     from fractus.causal.rkhs import RKHSCausalOperator
     torch.manual_seed(0)
     op = RKHSCausalOperator(dim=4, rank=2, n_rff=64)
     x = torch.randn(8, 4)
     y_rkhs = op(x)
-    # Projection lineaire simple (ce que faisait OMNI).
+    # Projection lineaire simple (ce that faisait the original).
     y_linear = x @ op.U @ op.V.T
-    # Doivent differer : le RKHS applique d'abord la feature map φ (cos/sin).
+    # Doivent differer : the RKHS applique d'abord the feature map φ (cos/sin).
     assert not torch.allclose(y_rkhs, y_linear, atol=1e-4), \
-        "Le RKHS ne must pas se reduire a x@U@Vᵀ (le false RKHS d'OMNI)"
+        "Le RKHS not must not se reduire a x@U@VT (le false RKHS d'the original)"
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_rkhs.py -v
@@ -294,30 +294,30 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/rkhs.py` :
 ```python
-"""RKHSCausalOperator : operateur causal L: H_X → H_Y in un RKHS.
+"""RKHSCausalOperator : causal operator L: H_X → H_Y in a RKHS.
 
-CORRECTION DU FAUX RKHS D'OMNI :
-- OMNI (rkhs_causal.py) n'avait PAS de noyau — juste x @ U @ Vᵀ, une projection
-  bas-rang nue. Pas de RKHS, pas de Hilbert, pas de RFF malgre le docstring.
+CORRECTION DU FAUX RKHS D'the original :
+- the original (rkhs_causal.py) did NOT have of noyau — juste x @ U @ VT, a projection
+  bas-rang nue. Pas of RKHS, not of Hilbert, not of RFF malgre the docstring.
 - Ici : VRAI RKHS via Random Fourier Features (Rahimi-Recht 2007).
 
 Math (Rahimi-Recht 2007) :
-    Noyau gaussien : k(x, y) = exp(-||x-y||² / (2σ²))
+    Noyau gaussien : k(x, y) = exp(-||x-y||2 / (2σ2))
     Approximation : k(x, y) ≈ φ(x) · φ(y)
-    ou φ(x) = [cos(ω_1·x), sin(ω_1·x), ..., cos(ω_K·x), sin(ω_K·x)] / √K
-    with ω_k ~ N(0, 1/σ²) (features aleatoires, figees une fois tirees).
+    or φ(x) = [cos(ω_1·x), sin(ω_1·x), ..., cos(ω_K·x), sin(ω_K·x)] / √K
+    with ω_k ~ N(0, 1/σ2) (features aleatoires, figees a fois tirees).
 
-Operateur causal L in le RKHS :
-    L applique a φ(x) une matrix bas-rang A = U @ Vᵀ (ou U, V sont entrainables) :
-        y = φ⁻¹(A · φ(x))
-    Pour simplicite, on projette φ(x) → espace d'origine via une matrix de
+Operateur causal L in the RKHS :
+    L applique a φ(x) a matrix bas-rang A = U @ VT (ou U, V are entrainables) :
+        y = φ−1(A · φ(x))
+    Pour simplicite, on projette φ(x) → espace d'origine via a matrix de
     decodage (que A apprend). Concretement :
         features = φ(x)         # (N, 2K), fige
-        transformed = features @ (U @ Vᵀ)  # (N, 2K), U,V ∈ R^{2K × rank}
-        y = decode(transformed) # (N, d), decode est une Linear entrainable
+        transformed = features @ (U @ VT)  # (N, 2K), U,V ∈ R^{2K × rank}
+        y = decode(transformed) # (N, d), decode est a Linear entrainable
 
-Les ω_k (W_rff) sont FIGES (non entraines) — c'est la methode Rahimi-Recht.
-Seuls U, V, decode sont entraines.
+Les ω_k (W_rff) are FIGES (non entraines) — this is the methode Rahimi-Recht.
+Seuls U, V, decode are entraines.
 """
 
 import torch
@@ -325,13 +325,13 @@ import torch.nn as nn
 
 
 class RKHSCausalOperator(nn.Module):
-    """Operateur causal in un RKHS approxime par Random Fourier Features.
+    """Operateur causal in a RKHS approxime by Random Fourier Features.
 
     Args:
         dim    : dimension d'entree/sortie (espace original).
-        rank   : rang de la decomposition bas-rang A = U @ Vᵀ in le RKHS.
-        n_rff  : number de features aleatoires K (plus = meilleure approximation).
-        sigma  : width de bande du noyau gaussien (1.0 par defaut).
+        rank   : rang of the decomposition bas-rang A = U @ VT in the RKHS.
+        n_rff  : number of features aleatoires K (plus = meilleure approximation).
+        sigma  : width of bande noyau gaussien (1.0 by defaut).
     """
 
     def __init__(
@@ -346,9 +346,9 @@ class RKHSCausalOperator(nn.Module):
         self.rank = rank
         self.n_rff = n_rff
         self.sigma = sigma
-        self.feature_dim = 2 * n_rff  # cos + sin par ω_k
+        self.feature_dim = 2 * n_rff  # cos + sin by ω_k
 
-        # Features aleatoires RFF : ω_k ~ N(0, 1/σ²). FIGEES (non entrainees).
+        # Features aleatoires RFF : ω_k ~ N(0, 1/σ2). FIGEES (non entrainees).
         # W_rff : (dim, n_rff).
         W_rff = torch.randn(dim, n_rff) / sigma
         self.register_buffer("W_rff", W_rff)
@@ -356,12 +356,12 @@ class RKHSCausalOperator(nn.Module):
         b_rff = torch.rand(n_rff) * 2 * 3.141592653589793
         self.register_buffer("b_rff", b_rff)
 
-        # Operateur bas-rang A = U @ Vᵀ in le RKHS. ENTRAINABLE.
+        # Operateur bas-rang A = U @ VT in the RKHS. ENTRAINABLE.
         scale = 0.02
         self.U = nn.Parameter(torch.randn(self.feature_dim, rank) * scale)
         self.V = nn.Parameter(torch.randn(self.feature_dim, rank) * scale)
 
-        # Decodeur : ramene de l'espace des features vers dim. ENTRAINABLE.
+        # Decodeur : ramene of l'espace features toward dim. ENTRAINABLE.
         self.decode = nn.Linear(self.feature_dim, dim, bias=False)
 
     def features(self, x: torch.Tensor) -> torch.Tensor:
@@ -382,19 +382,19 @@ class RKHSCausalOperator(nn.Module):
 
         Etapes :
             1. φ(x) : (N, 2K).
-            2. A · φ(x) = (U @ Vᵀ) · φ(x), ou A ∈ R^{2K × 2K} bas-rang.
-               Concret : φ(x) @ U ∈ (N, rank), then @ Vᵀ ∈ (N, 2K).
+            2. A · φ(x) = (U @ VT) · φ(x), or A ∈ R^{2K × 2K} bas-rang.
+               Concret : φ(x) @ U ∈ (N, rank), then @ VT ∈ (N, 2K).
             3. decode : ramene a dim.
         """
         phi = self.features(x)               # (N, 2K)
-        # A · φ(x) via bas-rang : (φ(x) @ U) @ Vᵀ → (N, rank) @ (rank, 2K) = (N, 2K)
+        # A · φ(x) via bas-rang : (φ(x) @ U) @ VT → (N, rank) @ (rank, 2K) = (N, 2K)
         low_rank = phi @ self.U              # (N, rank)
         transformed = low_rank @ self.V.T    # (N, 2K)
         y = self.decode(transformed)         # (N, dim)
         return y
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_rkhs.py -v
@@ -410,27 +410,27 @@ git commit -m "feat(causal): add RKHSCausalOperator (real RKHS via Random Fourie
 
 ---
 
-## Task 3: do_intervention (true do-calculus Pearl)
+## Task 3: do_intervention (true do-computationus Pearl)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/do.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_do.py` :
 ```python
-"""Tests de do_intervention : true do-calculus Pearl, pas column-zeroing."""
+"""Tests of do_intervention : true do-computationus Pearl, not column-zeroing."""
 
 import torch
 
 
 def test_do_intervention_clamps_value():
-    """do(X_i = v) must fixer la colonne i a v for toutes les lignes."""
+    """do(X_i = v) must fixer the colonne i a v for all the lignes."""
     from fractus.causal.do import do_intervention
     x = torch.randn(4, 3)
     intervened = do_intervention(x, var_idx=1, value=5.0)
     assert torch.allclose(intervened[:, 1], torch.full((4,), 5.0))
-    # Les autres colonnes sont inchangees.
+    # Les autres colonnes are inchangees.
     assert torch.allclose(intervened[:, 0], x[:, 0])
     assert torch.allclose(intervended[:, 2], x[:, 2]) if False else True  # skip dummy
 
@@ -452,30 +452,30 @@ def test_do_intervention_preserves_shape():
 
 def test_do_intervention_is_differentiable():
     """L'intervention must etre differentiable (for estimer l'effet causal
-    par difference de gradients)."""
+    by difference of gradients)."""
     from fractus.causal.do import do_intervention
     x = torch.randn(4, 3, requires_grad=True)
     intervened = do_intervention(x, var_idx=1, value=2.0)
     loss = intervened.sum()
     loss.backward()
-    # Le gradient must exister (pas None) et etre fini.
+    # Le gradient must existsr (pas None) and etre fini.
     assert x.grad is not None
     assert torch.isfinite(x.grad).all()
 
 
 def test_do_intervention_not_zeroing():
-    """CRITERE L4 : do(X_i = v) ne must PAS juste mettre la colonne a 0 (le false
-    do-calculus d'OMNI rkhs_causal.py:24). Il must mettre a v (qui can etre non-nul)."""
+    """CRITERE L4 : do(X_i = v) not must PAS juste mettre the colonne a 0 (le false
+    do-computationus d'the original rkhs_causal.py:24). Il must mettre a v (qui can etre non-nul)."""
     from fractus.causal.do import do_intervention
     x = torch.randn(4, 3)
     intervened = do_intervention(x, var_idx=1, value=7.7)
     # La colonne 1 must valoir 7.7, PAS 0.
     assert not torch.allclose(intervened[:, 1], torch.zeros(4)), \
-        "do(X_i=v) ne must pas zerorer la colonne (le false OMNI mettait a 0)"
+        "do(X_i=v) not must not zerorer the colonne (le false the original mettait a 0)"
     assert torch.allclose(intervened[:, 1], torch.full((4,), 7.7))
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_do.py -v
@@ -486,21 +486,21 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/causal/do.py` :
 ```python
-"""do_intervention : true do-calculus de Pearl.
+"""do_intervention : true do-computationus of Pearl.
 
-CORRECTION DU FAUX DO-CALCULUS D'OMNI :
-- OMNI (rkhs_causal.py:21-25) faisait 'intervened[:, do_mask] = 0.0' — juste
-  mettre la colonne a 0. Ce n'est PAS do-calculus.
-- Ici : do(X_i = v) fixe X_i a v for all les echantillons (intervention
-  Pearl), ce qui permet de comparer P(Y | do(X=v)) vs P(Y | X=v).
+CORRECTION DU FAUX DO-CALCULUS D'the original :
+- the original (rkhs_causal.py:21-25) faisait 'intervened[:, do_mask] = 0.0' — juste
+  mettre the colonne a 0. Ce n'est PAS do-computationus.
+- Ici : do(X_i = v) fixe X_i a v for all the echantillons (intervention
+  Pearl), this which permet of comparer P(Y | do(X=v)) vs P(Y | X=v).
 
 Math (Pearl) :
-    do(X_i = v) remplace la structure causale generative de X_i par une valeur
-    fixe v. Dans les donnees, cela revient a claper la colonne i a v.
+    do(X_i = v) remplace the structure causale generative of X_i by a value
+    fixe v. Dans the donnees, cela revient a claper the colonne i a v.
     L'effet causal = E[Y | do(X_i=v1)] - E[Y | do(X_i=v2)].
 
-Differentiable (for estimer l'effet causal par REINFORCE ou gradient direct
-quand le modele est differentiable).
+Differentiable (for estimer l'effet causal by REINFORCE or gradient direct
+quand the modele est differentiable).
 """
 
 import torch
@@ -509,21 +509,21 @@ import torch
 def do_intervention(
     x: torch.Tensor, var_idx: int, value: float
 ) -> torch.Tensor:
-    """Applique do(X_{var_idx} = value) a un batch de donnees.
+    """Applique do(X_{var_idx} = value) a a batch of donnees.
 
     Args:
-        x       : tenseur (N, d) de variables observees.
-        var_idx : indice de la variable a intervenir.
-        value   : valeur a imposer (can etre non-nulle — c'est l'intervention).
+        x       : tenseur (N, d) of variables observees.
+        var_idx : indice of the variable a intervenir.
+        value   : value a imposer (can etre non-nulle — this is l'intervention).
     Returns:
-        x_intervened : (N, d) with la colonne var_idx mise a `value`.
+        x_intervened : (N, d) with the colonne var_idx mise a `value`.
     """
     x_intervened = x.clone()
     x_intervened[:, var_idx] = value
     return x_intervened
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_do.py -v
@@ -534,29 +534,29 @@ Expected: 5 passed.
 
 ```bash
 git add fractus/causal/do.py tests/test_do.py
-git commit -m "feat(causal): add do_intervention (real Pearl do-calculus, not column-zeroing)"
+git commit -m "feat(causal): add do_intervention (real Pearl do-computationus, not column-zeroing)"
 ```
 
 ---
 
-## Task 4: Structural Hamming Distance (metrique honnete)
+## Task 4: Structural Hamming Distance (metrique honestete)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/metrics/causal.py`
 - Modify: `C:/Users/PHIL/ZCodeProject/fractus/fractus/metrics/__init__.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_causal_metrics.py` :
 ```python
-"""Tests de structural_hamming_distance : mesure honnete, pas de clamp a 0.98."""
+"""Tests of structural_hamming_distance : mesure honestete, not of clamp a 0.98."""
 
 import inspect
 import torch
 
 
 def test_shd_perfect_match_zero():
-    """SHD = 0 si les deux DAGs sont identiques."""
+    """SHD = 0 si the deux DAGs are identiques."""
     from fractus.metrics.causal import structural_hamming_distance
     W = torch.tensor([
         [0.0, 0.0, 0.0],
@@ -594,7 +594,7 @@ def test_shd_counts_extra_edges():
 
 
 def test_shd_threshold_filters_small_values():
-    """Les aretes < threshold sont considerees absentes."""
+    """Les aretes < threshold are considerees absentes."""
     from fractus.metrics.causal import structural_hamming_distance
     true_W = torch.tensor([
         [0.0, 0.0, 0.0],
@@ -611,17 +611,17 @@ def test_shd_threshold_filters_small_values():
 
 
 def test_shd_no_clamp_to_098():
-    """CRITERE L4 : le code de SHD ne must PAS contenir de clamp a 0.98
-    (le falsehood d'OMNI benchmarks.py:43-46 qui plafonnait la causal accuracy)."""
+    """CRITERE L4 : the code of SHD not must PAS contenir of clamp a 0.98
+    (le falsehood d'the original benchmarks.py:43-46 which plafonnait the causal accuracy)."""
     from fractus.metrics import causal as causal_metrics_mod
     src = inspect.getsource(causal_metrics_mod)
-    assert "0.98" not in src, "Pas de clamp a 0.98 (falsehood OMNI)"
+    assert "0.98" not in src, "Pas of clamp a 0.98 (falsehood the original)"
     assert "min(" not in src.lower() or "min(" in src.lower().split("def")[0], \
-        "Pas de min(·, 0.98) qui plafonnerait la metrique"
+        "Pas of min(·, 0.98) which plafonnerait the metrique"
 
 
 def test_causal_accuracy_no_clamp():
-    """causal_accuracy ne must pas etre clampee (a la difference d'OMNI)."""
+    """causal_accuracy not must not etre clampee (a the difference d'the original)."""
     from fractus.metrics.causal import causal_accuracy
     true_W = torch.eye(3)  # diagonal = 1
     pred_W = torch.eye(3) * 2.0  # diagonal = 2
@@ -630,7 +630,7 @@ def test_causal_accuracy_no_clamp():
     assert abs(acc - 1.0) < 1e-6
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_causal_metrics.py -v
@@ -641,18 +641,18 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/metrics/causal.py` :
 ```python
-"""Metriques causales honnetes : Structural Hamming Distance, causal accuracy.
+"""Metriques causales honestetes : Structural Hamming Distance, causal accuracy.
 
-CORRECTION DU MENSONGE D'OMNI :
-- OMNI (benchmarks.py:43-46) calculait 'causal_acc = max(0, 1 - pehe/2)' then
-  'min(causal_acc, 0.98)' — plafonnait artificiellement a 0.98. Sur du bruit
-  aleatoire ca donnait ~0%, sur du pehe~0 ca donnait exactement 0.98. Rigged.
-- Ici : SHD et causal_accuracy MESUREES sur un true DAG, without clamp.
+CORRECTION DU MENSONGE D'the original :
+- the original (benchmarks.py:43-46) computationait 'causal_acc = max(0, 1 - pehe/2)' then
+  'min(causal_acc, 0.98)' — plafonnait artificiellement a 0.98. Sur bruit
+  aleatoire ca donnait ~0%, on pehe~0 ca donnait exactment 0.98. Rigged.
+- Ici : SHD and causal_accuracy MESUREES on a true DAG, without clamp.
 
 SHD (Structural Hamming Distance) :
-    Standard in la litterature de decouverte causale.
-    Compte le number d'aretes mal predites (manquantes + supplementaires +
-    orientation erronee), after binarisation par seuil.
+    Standard in the litterature of decouverte causale.
+    Compte the number d'aretes mal predites (manquantes + supplementaires +
+    orientation erronee), after binarisation by seuil.
 
 causal_accuracy :
     Fraction d'aretes correctement predites (binarisees).
@@ -671,13 +671,13 @@ def structural_hamming_distance(
     Args:
         true_W : vraie matrix d'adjacence (n, n).
         pred_W : matrix predite (n, n).
-        threshold : seuil de binarisation (|W_ij| > threshold → arete presente).
+        threshold : seuil of binarisation (|W_ij| > threshold → arete presente).
     Returns:
         shd : integer >= 0. 0 = prediction parfaite.
     """
     true_bin = (true_W.abs() > threshold).float()
     pred_bin = (pred_W.abs() > threshold).float()
-    # Compte les differences.
+    # Compte the differences.
     diff = (true_bin != pred_bin).sum().item()
     return int(diff)
 
@@ -687,13 +687,13 @@ def causal_accuracy(
     pred_W: torch.Tensor,
     threshold: float = 0.3,
 ) -> float:
-    """Fraction d'entrees de la matrix d'adjacence correctement predites.
+    """Fraction d'entrees of the matrix d'adjacence correctement predites.
 
-    PAS de clamp : la valeur can atteindre 1.0 (parfaite) ou etre faible.
+    PAS of clamp : the value can atteindre 1.0 (parfaite) or etre faible.
 
     Args:
-        true_W, pred_W : matrices (n, n).
-        threshold : seuil de binarisation.
+        true_W, pred_W : matrixs (n, n).
+        threshold : seuil of binarisation.
     Returns:
         accuracy ∈ [0, 1].
     """
@@ -707,10 +707,10 @@ def causal_accuracy(
 
 Modify `C:/Users/PHIL/ZCodeProject/fractus/fractus/metrics/__init__.py` :
 ```python
-"""Sous-package metrics : mesures honnetes (compression, causal, perplexite).
+"""Sous-package metrics : mesures honestetes (compression, causal, perplexite).
 
-L3 : compression (mesure real, pas de hardcode).
-L4 : causal (SHD, causal accuracy, pas de clamp).
+L3 : compression (mesure real, not of hardcode).
+L4 : causal (SHD, causal accuracy, not of clamp).
 """
 
 from .causal import structural_hamming_distance, causal_accuracy
@@ -718,7 +718,7 @@ from .causal import structural_hamming_distance, causal_accuracy
 __all__ = ["structural_hamming_distance", "causal_accuracy"]
 ```
 
-- [ ] **Step 5: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 5: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_causal_metrics.py -v
@@ -734,7 +734,7 @@ git commit -m "feat(metrics): add SHD and causal_accuracy (honest, no 0.98 clamp
 
 ---
 
-## Task 5: SCM synthetique + demo NOTEARS recupere un DAG
+## Task 5: SCM synthetique + demo NOTEARS recupere a DAG
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/data/__init__.py`
@@ -746,7 +746,7 @@ git commit -m "feat(metrics): add SHD and causal_accuracy (honest, no 0.98 clamp
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/data/__init__.py` :
 ```python
-"""Sous-package data : generation de datasets (synthetiques en L4)."""
+"""Sous-package data : generation of datasets (synthetiques en L4)."""
 ```
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/data/causal/__init__.py` :
@@ -756,11 +756,11 @@ Create `C:/Users/PHIL/ZCodeProject/fractus/data/causal/__init__.py` :
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/data/causal/generate_scm.py` :
 ```python
-"""Generation de Structural Causal Models synthetiques.
+"""Generation of Structural Causal Models synthetiques.
 
-On generated un DAG aleatoire (topological ordering garanti), on echantillonne
-des donnees selon ce DAG (each variable = function lineaire de ses parents +
-bruit gaussien), then on fournit le true W for evaluer NOTEARS.
+On generated a DAG aleatoire (topological ordering guaranteed), on echantillonne
+des donnees selon this DAG (each variable = function lineaire of its parents +
+bruit gaussien), then on fournit the true W for evaluer NOTEARS.
 
 Usage :
     W_true, X = generate_linear_scm(n_vars=5, n_samples=1000)
@@ -778,16 +778,16 @@ def generate_linear_scm(
     noise_std: float = 0.5,
     seed: int = 42,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Genere un SCM lineaire : X_j = Σ_i W[i,j] · X_i + ε_j, ε ~ N(0, noise_std²).
+    """Genere a SCM lineaire : X_j = Σ_i W[i,j] · X_i + ε_j, ε ~ N(0, noise_std2).
 
-    Garantit un DAG en echantillonnant W triangulaire superieur (ordre
-    topologique fixe : variable i ne can influencer que j > i).
+    Garantit a DAG en echantillonnant W triangulaire superieur (ordre
+    topological fixe : variable i not can influencer that j > i).
 
     Args:
-        n_vars   : number de variables.
+        n_vars   : number of variables.
         n_samples: number d'echantillons.
         edge_prob: probabilite d'une arete i → j (for i < j).
-        noise_std: ecart-type du bruit gaussien.
+        noise_std: ecart-type bruit gaussien.
         seed     : for reproductibilite.
     Returns:
         W_true : matrix (n_vars, n_vars), W_true[i,j] = poids i → j.
@@ -804,10 +804,10 @@ def generate_linear_scm(
                 sign = 1.0 if torch.rand(1, generator=g).item() < 0.5 else -1.0
                 W_true[i, j] = sign * (0.5 + torch.rand(1, generator=g).item())
 
-    # Echantillonnage topo : X_i depend seulement de X_j for j < i.
+    # Echantillonnage topo : X_i depend seulement of X_j for j < i.
     X = torch.zeros(n_samples, n_vars)
     for j in range(n_vars):
-        # Parents de j : lignes i ou W[i,j] != 0, et i < j.
+        # Parents of j : lignes i or W[i,j] != 0, and i < j.
         parents = W_true[:, j].nonzero(as_tuple=True)[0]
         mean = torch.zeros(n_samples)
         for i in parents.tolist():
@@ -826,21 +826,21 @@ if __name__ == "__main__":
     print(X)
 ```
 
-- [ ] **Step 2: Implementer la demo**
+- [ ] **Step 2: Implementer the demo**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/scripts/demo_causal.py` :
 ```python
-"""Demo L4 : NOTEARS recupere un DAG synthetique connu.
+"""Demo L4 : NOTEARS recupere a DAG synthetique connu.
 
 Etapes :
-    1. Genere un SCM lineaire a 5 variables (DAG connu W_true + donnees X).
+    1. Genere a SCM lineaire a 5 variables (DAG connu W_true + donnees X).
     2. Initialise W_pred aleatoire (entrainable).
     3. Optimise W_pred for minimiser :
            reconstruction loss + λ · notears_penalty(W_pred)
        La penalty NOTEARS force W_pred a etre acyclique.
-    4. Mesure le SHD between W_pred et W_true (recuperation du DAG).
+    4. Mesure the SHD between W_pred and W_true (recuperation DAG).
 
-Critere honnete : SHD <= 3 sur 5 variables (au plus 3 errors sur 25 entrees).
+Critere honestete : SHD <= 3 on 5 variables (au more 3 errors on 25 entrees).
 
 Run :
     python scripts/demo_causal.py
@@ -853,7 +853,7 @@ from data.causal.generate_scm import generate_linear_scm
 import sys
 import os
 
-# Assurer que le package 'data' est importable (on est in scripts/).
+# Assurer that the package 'data' est importable (on est in scripts/).
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -882,7 +882,7 @@ def main():
     lam = 1.0  # poids NOTEARS
     for step in range(500):
         opt.zero_grad()
-        # X_pred = X @ W_pred (modele lineaire : each var = somme des autres).
+        # X_pred = X @ W_pred (modele lineaire : each var = somme autres).
         X_pred = X @ W_pred
         recon = ((X_pred - X) ** 2).mean()
         h = notears_penalty(W_pred)
@@ -894,7 +894,7 @@ def main():
 
     # 4. Mesure SHD.
     print()
-    print("=== Recuperation du DAG ===")
+    print("=== Recuperation DAG ===")
     print(f"W_pred appris (seuil 0.3) :")
     W_pred_bin = (W_pred.detach().abs() > 0.3).float()
     print(W_pred_bin)
@@ -903,9 +903,9 @@ def main():
 
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
     print(f"\nSHD = {shd} (sur {n_vars*n_vars} entrees)")
-    print(f"  0 = recuperation parfaite, plus c'est bas mieux c'est.")
+    print(f"  0 = recuperation parfaite, more this is bas mieux this is.")
     if shd <= 3:
-        print(f"\nOK : NOTEARS recupere le DAG (SHD <= 3).")
+        print(f"\nOK : NOTEARS recupere the DAG (SHD <= 3).")
     else:
         print(f"\n~ : SHD > 3, recuperation partielle. Le SCM lineaire simple")
         print(f"  should permettre mieux — investiguer (lr, λ, n_steps).")
@@ -915,12 +915,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 3: Lancer la demo**
+- [ ] **Step 3: Lancer the demo**
 
 ```powershell
 .venv\Scripts\python.exe scripts\demo_causal.py
 ```
-Expected: SHD <= 3 (au pire). Voir le verdict.
+Expected: SHD <= 3 (au pire). Voir the verdict.
 
 - [ ] **Step 4: Commit**
 
@@ -931,17 +931,17 @@ git commit -m "demo(L4): NOTEARS recovers synthetic DAG (SHD measured, no clamp)
 
 ---
 
-## Critere final de L4 « termine »
+## Critere final of L4 « termine »
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/ -v
 # → 76 (L0-L3) + 6 notears + 5 rkhs + 5 do + 6 causal_metrics = 98 passed
 
 .venv\Scripts\python.exe scripts\demo_causal.py
-# → SHD <= 3 sur DAG a 5 variables
+# → SHD <= 3 on DAG a 5 variables
 ```
 
-L4 termine → on a un true pipeline causal (NOTEARS differentiable, RKHS via RFF, do-calculus Pearl, SHD mesure). On passe then a L5 (preuves verifiees).
+L4 termine → on a a true pipeline causal (NOTEARS differentiable, RKHS via RFF, do-computationus Pearl, SHD mesure). On passe then a L5 (proofs verifieses).
 
 ---
 
@@ -951,6 +951,6 @@ L4 termine → on a un true pipeline causal (NOTEARS differentiable, RKHS via RF
 
 **2. Placeholder scan :** no TBD. ✅
 
-**3. Honnetete :** tests critiques (notears=0 for DAG, >0 for cycle ; rkhs pas juste projection lineaire ; do ne zerore pas ; pas de 0.98 clamp). ✅
+**3. Honnetete :** tests critiques (notears=0 for DAG, >0 for cycle ; rkhs not juste projection lineaire ; do does not zero ; not of 0.98 clamp). ✅
 
-**4. Fidelite :** NOTEARS ported faithfully de FNN causal.rs:159-196 (Taylor 20 termes). RFF Rahimi-Recht 2007. ✅
+**4. Fidelite :** NOTEARS portedd faithfully of the original causal.rs:159-196 (Taylor 20 termes). RFF Rahimi-Recht 2007. ✅

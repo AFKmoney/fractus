@@ -1,6 +1,6 @@
 """Sous-package math : utilitaires mathematics purs.
 
-L5 : PrimeSieve (crible d'Eratosthene), FibonacciSequence, cosine_similarity, sigmoid.
+L5 : PrimeSieve (Sieve of Eratosthenes), FibonacciSequence, cosine_similarity, sigmoid.
 """
 
 from .primes import PrimeSieve

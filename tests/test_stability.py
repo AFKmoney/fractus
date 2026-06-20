@@ -1,4 +1,4 @@
-"""Tests de KuramotoLyapunov : true Lyapunov sur under-system Kuramoto."""
+"""Tests of KuramotoLyapunov : true Lyapunov on under-system Kuramoto."""
 
 import math
 import torch
@@ -16,7 +16,7 @@ def test_lyapunov_V_positive_for_nonzero():
 
 
 def test_lyapunov_V_zero_at_target():
-    """V(θ*) = 0 (phase synchronisee a la cible)."""
+    """V(θ*) = 0 (phase synchronisee a the target)."""
     from fractus.stability.lyapunov import KuramotoLyapunov
     from fractus.nn.phase_ode import KuramotoLayer
     kur = KuramotoLayer(d_model=8, n_oscillators=4, rank=2)
@@ -27,32 +27,32 @@ def test_lyapunov_V_zero_at_target():
 
 
 def test_lyapunov_V_handles_wrap():
-    """V gere le wrap circulaire : θ = 2π - 0.01 ≈ θ* = 0.01."""
+    """V gere the wrap circulaire : θ = 2π - 0.01 ≈ θ* = 0.01."""
     from fractus.stability.lyapunov import KuramotoLyapunov
     from fractus.nn.phase_ode import KuramotoLayer
     kur = KuramotoLayer(d_model=8, n_oscillators=4, rank=2)
     lyap = KuramotoLyapunov(kur, target_phase=0.0)
-    # Phase 2π - 0.01 must etre proche de 0 (wrap), therefore V petit.
+    # Phase 2π - 0.01 must etre proche of 0 (wrap), therefore V petit.
     phases_near_zero = torch.full((1, 1, 4), 2 * math.pi - 0.01)
-    phases_far = torch.full((1, 1, 4), math.pi)  # loin de 0
+    phases_far = torch.full((1, 1, 4), math.pi)  # loin of 0
     V_near = lyap.V(phases_near_zero).item()
     V_far = lyap.V(phases_far).item()
     assert V_near < V_far, f"V(2π-0.01)={V_near} should etre < V(π)={V_far}"
 
 
 def test_lyapunov_is_stable_trajectory_true_for_decreasing():
-    """Une trajectoire ou V decroit → stable."""
+    """Une trajectoire or V decroit → stable."""
     from fractus.stability.lyapunov import KuramotoLyapunov
     from fractus.nn.phase_ode import KuramotoLayer
     kur = KuramotoLayer(d_model=8, n_oscillators=4, rank=2)
     lyap = KuramotoLyapunov(kur, target_phase=0.0)
-    # Trajectoire qui converge vers 0 : phases decroissantes vers 0.
+    # Trajectoire which converges toward 0 : phases decroissantes toward 0.
     traj = [torch.full((1, 2, 4), p) for p in [2.0, 1.5, 1.0, 0.5, 0.1]]
     assert lyap.is_stable_trajectory(traj) is True
 
 
 def test_lyapunov_is_stable_trajectory_false_for_increasing():
-    """Une trajectoire ou V croit → unstable."""
+    """Une trajectoire or V croit → unstable."""
     from fractus.stability.lyapunov import KuramotoLyapunov
     from fractus.nn.phase_ode import KuramotoLayer
     kur = KuramotoLayer(d_model=8, n_oscillators=4, rank=2)
@@ -62,12 +62,12 @@ def test_lyapunov_is_stable_trajectory_false_for_increasing():
 
 
 def test_lyapunov_not_just_output_norm():
-    """CRITERE L6 : V ne must PAS etre juste ||y||² (le false Lyapunov d'OMNI).
-    On verifies que V depend des PHASES, pas d'une norme de sortie reseau."""
+    """CRITERE L6 : V not must PAS etre juste ||y||2 (le false Lyapunov d'the original).
+    On verifiess that V depend PHASES, not d'une norme of sortie reseau."""
     import inspect
     from fractus.stability import lyapunov as lyap_mod
     src = inspect.getsource(lyap_mod)
-    # V must etre calcule a partir des phases (difference circulaire θ - θ*).
+    # V must etre computatione a partir phases (difference circulaire θ - θ*).
     assert "target_phase" in src
     assert "remainder" in src or "wrap" in src.lower(), \
         "V must gerer le wrap circulaire des phases (pas juste ||y||²)"

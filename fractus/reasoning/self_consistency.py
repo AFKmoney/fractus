@@ -1,14 +1,14 @@
-"""SelfConsistencyCheck : debat interne par bruit et vote.
+"""SelfConsistencyCheck : debat interne by bruit and vote.
 
 Porte depuis the original architecture (src/reasoning.rs:194-279) en PyTorch pur.
 
 Algorithme :
-    generate_candidates(h, n, noise_scale) : produit n versions bruitees de h.
-        Bruit uniforme U(-noise_scale, +noise_scale) (FNN dit "Gaussian-like"
+    generate_candidates(h, n, noise_scale) : produit n versions bruitees of h.
+        Bruit uniforme U(-noise_scale, +noise_scale) (the original dit "Gaussian-like"
         but utilise uniforme — on est faithful a l'implementation).
-    score_candidates(cands, ref) : for each candidat, moyenne de la similarite
-        cosinus with la reference sur all les (batch, position).
-    select_best : argmax des scores.
+    score_candidates(cands, ref) : for each candidat, moyenne of the similarite
+        cosinus with the reference on all the (batch, position).
+    select_best : argmax scores.
 """
 
 from typing import List
@@ -20,11 +20,11 @@ from ..math.stats import cosine_similarity
 
 
 class SelfConsistencyCheck(nn.Module):
-    """Debat interne : generated des candidats bruites et vote le plus coherent.
+    """Debat interne : generated candidats bruites and vote the more coherent.
 
     Args:
-        n_candidates : number de candidats bruites.
-        noise_scale  : amplitude du bruit uniforme.
+        n_candidates : number of candidats bruites.
+        noise_scale  : amplitude bruit uniforme.
     """
 
     def __init__(self, n_candidates: int = 5, noise_scale: float = 0.1):
@@ -33,9 +33,9 @@ class SelfConsistencyCheck(nn.Module):
         self.noise_scale = noise_scale
 
     def generate_candidates(self, h: torch.Tensor) -> List[torch.Tensor]:
-        """Produit n_candidates versions bruitees de h.
+        """Produit n_candidates versions bruitees of h.
 
-        Bruit uniforme U(-noise_scale, +noise_scale), comme FNN reasoning.rs:211-220.
+        Bruit uniforme U(-noise_scale, +noise_scale), comme the original reasoning.rs:211-220.
         """
         candidates = []
         for _ in range(self.n_candidates):
@@ -46,7 +46,7 @@ class SelfConsistencyCheck(nn.Module):
     def score_candidates(
         self, candidates: List[torch.Tensor], reference: torch.Tensor
     ) -> List[float]:
-        """Score = moyenne de cosine_similarity(cand, ref) sur (batch, position)."""
+        """Score = moyenne of cosine_similarity(cand, ref) on (batch, position)."""
         B, L, _D = reference.shape
         scores = []
         for c in candidates:

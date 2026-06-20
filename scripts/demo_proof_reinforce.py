@@ -1,24 +1,24 @@
-"""Demo L5 : ProofGenerator apprend par REINFORCE a converger vers une target.
+"""Demo L5 : ProofGenerator apprend by REINFORCE a convergesr toward a target.
 
 Pipeline "neural propose, exact verify disposes" :
-    1. ProofGenerator produit une preuve for une target aleatoire.
-    2. ProofVerifier dit si elle est valide (soundness garantie).
-    3. ProofReward calcule la recompense.
-    4. On met a jour le generateur par REINFORCE (policy gradient).
+    1. ProofGenerator produit a proof for a target aleatoire.
+    2. ProofVerifier dit si elle est valid (soundness guaranteed).
+    3. ProofReward computatione the reward.
+    4. On met a jour the generateur by REINFORCE (policy gradient).
 
 POSITION SCIENTIFIQUE HONNETE (mise a jour after diagnostic) :
-Le seuil de validite FNN (|conclusion - target| < 1e-3) est INACCESSIBLE for
-cette architecture : un GRU a 6 steps d'EMA 0.8/0.2 ne can pas converger vers
-une target arbitraire a 1e-3 pres. Erreur mediane without entrainement ≈ 1.72
-(sur range [-5,5] de width 10). FNN never measured it (no autodiff).
+Le seuil of validity the original (|conclusion - target| < 1e-3) est INACCESSIBLE for
+cette architecture : a GRU a 6 steps d'EMA 0.8/0.2 not can not convergesr vers
+une target arbitraire a 1e-3 pres. Erreur mediane without training ≈ 1.72
+(sur range [-5,5] of width 10). the original never measured it (no autodiff).
 
-On mesure therefore une METRIQUE CONTINUE HONNETE : the error mediane |conclusion -
-target| sur 200 targets, before/after entrainement. Critere de succes : the error
-mediane must baisser d'au moins 30% after 500 steps REINFORCE.
+On mesure therefore a METRIQUE CONTINUE HONNETE : the error mediane |conclusion -
+target| on 200 targets, before/after training. Critere of succes : the error
+mediane must baisser d'au less 30% after 500 steps REINFORCE.
 
-Honnetete supplementaire : le verify n'impose no structure logical.
-Une "preuve valide" ici = le GRU a converge vers la target numerique. Pas une
-derivation logical au sens des regles d'inference. Fidele a FNN (proof.rs:341-360).
+Honnetete supplementaire : the verify n'impose no structure logical.
+Une "proof valid" ici = the GRU a converges toward the target numerique. Pas une
+derivation logical au sens inference rules. Fidele a the original (proof.rs:341-360).
 
 Run :
     python scripts/demo_proof_reinforce.py
@@ -29,7 +29,7 @@ from fractus.reasoning.proof import ProofGenerator, ProofVerifier, ProofReward
 
 
 def evaluate_median_error(generator: ProofGenerator, n_eval: int = 200) -> float:
-    """Erreur mediane |conclusion - target| sur n_eval targets aleatoires."""
+    """Erreur mediane |conclusion - target| on n_eval targets aleatoires."""
     errors = []
     with torch.no_grad():
         for _ in range(n_eval):
@@ -54,7 +54,7 @@ def reinforce_update(
     reward = reward_fn.compute_reward(proof, is_valid)
 
     # REINFORCE : on veut maximiser E[reward]. reward est scalar non-diff.
-    # On utilise reward comme poids sur les log-probs des regles choisies.
+    # On utilise reward comme poids on the log-probs regles choisies.
     loss = torch.tensor(0.0, requires_grad=True)
     for logits, selected_idx in zip(info["logits_per_step"], info["selected_indices"]):
         log_probs = torch.log_softmax(logits, dim=-1)

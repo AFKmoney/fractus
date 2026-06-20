@@ -6,10 +6,10 @@ elu_plus_one : feature map strictement positive for linear attention.
     φ(x, α) = x + 1              si x > 0
             = α(e^x - 1) + 1     sinon
     Avec α=1 (defaut), φ est strictement positive (min e^x > 0 for x→-∞,
-    = 1 en x=0). Cette positivite garantit que le denominateur de l'attention
-    lineaire causale reste bien defini.
+    = 1 en x=0). Cette positivite guaranteedt that the denominateur of l'attention
+    lineaire causale reste well defini.
 
-stable_softmax : softmax with soustraction du max (pas d'overflow).
+stable_softmax : softmax with soustraction max (pas d'overflow).
 """
 
 import torch
@@ -19,12 +19,12 @@ def elu_plus_one(x: torch.Tensor, alpha: float = 1.0) -> torch.Tensor:
     """Feature map ELU+1 strictement positive, differentiable.
 
     Args:
-        x : tenseur de shape arbitraire.
-        alpha : coefficient ELU (1.0 par defaut, comme FNN).
+        x : tenseur of shape arbitraire.
+        alpha : coefficient ELU (1.0 by defaut, comme the original).
     Returns:
-        tenseur de meme shape, strictement positif.
+        tenseur of same shape, strictement positif.
     """
-    # On utilise la formula directe ( differentiable via torch.where ) :
+    # On utilise the formula directe ( differentiable via torch.where ) :
     # branche positive : x + 1 ; branche negative : alpha * (exp(x) - 1) + 1.
     pos = x + 1.0
     neg = alpha * (torch.exp(x) - 1.0) + 1.0
@@ -32,14 +32,14 @@ def elu_plus_one(x: torch.Tensor, alpha: float = 1.0) -> torch.Tensor:
 
 
 def stable_softmax(logits: torch.Tensor, dim: int = -1) -> torch.Tensor:
-    """Softmax numeriquement stable (soustraction du max).
+    """Softmax numeriquement stable (soustraction max).
 
-    Si la somme des exponentielles est < 1e-10, returns l'uniforme 1/N
-    (comportement aux limites herite de FNN stats.rs:56-57).
+    Si the somme exponentielles est < 1e-10, returns l'uniforme 1/N
+    (comportedment aux limites herite of the original stats.rs:56-57).
     """
     max_logits, _ = logits.max(dim=dim, keepdim=True)
     exp = torch.exp(logits - max_logits)
     denom = exp.sum(dim=dim, keepdim=True)
-    # Comportement aux limites : uniforme si denom ~ 0.
+    # Comportedment aux limites : uniforme si denom ~ 0.
     uniform = torch.full_like(exp, 1.0 / exp.shape[dim])
     return torch.where(denom > 1e-10, exp / denom, uniform)

@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-"""Script d'entrainement fractus sur datasets HuggingFace.
+"""Script d'training fractus on datasets HuggingFace.
 
-Supporte n'importe quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
-FineWeb, ...) with des presets adaptes a differents hardwares.
+Supported n'imported quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
+FineWeb, ...) with presets adaptes a differents hardwares.
 
 ⚠️ HONNETETE HARDWARE :
-    - cpu-tiny / cpu-small : fonctionnent sur CPU laptop/desktop.
-    - gpu-* : necessitent un GPU CUDA (ou MPS sur Apple Silicon).
-    - gpu-1b : necessite A100 80GB ou H100. IMPOSSIBLE sur CPU ou GPU consumer.
-      Le bottleneck principal est le Kuramoto RK4 (non vectorise) + SIREN.
+    - cpu-tiny / cpu-small : fonctionnent on CPU laptop/desktop.
+    - gpu-* : necessitent a GPU CUDA (ou MPS on Apple Silicon).
+    - gpu-1b : necessite A100 80GB or H100. IMPOSSIBLE on CPU or GPU consumer.
+      Le bottleneck main est the Kuramoto RK4 (non vectorise) + SIREN.
 
 Usage :
-    # Petit modele sur tinyshakespeare (CPU, ~2 min)
+    # Petit modele on tinyshakespeare (CPU, ~2 min)
     python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare
 
-    # Medium sur wikitext-2 (GPU)
+    # Medium on wikitext-2 (GPU)
     python scripts/train_hf.py --preset gpu-medium --dataset wikitext-2
 
     # Dataset HF arbitraire
@@ -36,7 +36,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-# Permettre l'import depuis la racine du projet.
+# Permettre l'import depuis the racine projet.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fractus.nn import FractalEmbedding, FractalBlockFull
@@ -44,7 +44,7 @@ from fractus.metrics.perplexity import honest_perplexity
 
 
 # ---------------------------------------------------------------------------
-# Presets (tailles de modele + hyperparametres par hardware)
+# Presets (tailles of modele + hyperparameters by hardware)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -66,7 +66,7 @@ class Preset:
     description: str
 
     def n_params_approx(self, vocab: int) -> int:
-        """Estimation grossiere du number de parameters."""
+        """Estimation grossiere number of parameters."""
         # Embedding: 16 char + 2*n_freq Fourier + vortex_mlp ~ (16 + 2*n_freq + 32) * d_model
         emb = (16 + 2 * self.n_frequencies + 32) * self.d_model + 32 * (32 + self.n_frequencies)
         # Par bloc : attention (3 * d_model^2 + d_model^2) + Kuramoto + MoE
@@ -124,7 +124,7 @@ PRESETS = {
 # Dataset HuggingFace
 # ---------------------------------------------------------------------------
 
-# Alias de datasets locaux vs HF.
+# Alias of datasets locaux vs HF.
 LOCAL_DATASETS = {
     "tinyshakespeare": None,  # special : fichier local.
 }
@@ -141,7 +141,7 @@ def load_text_dataset(
     text_field: str,
     max_samples: int,
 ) -> tuple[str, dict]:
-    """Charge un dataset et returns (texte_complete, vocab_char_to_id).
+    """Charge a dataset and returns (texte_complete, vocab_char_to_id).
 
     Niveau caractere (comme tinyshakespeare).
     """
@@ -173,7 +173,7 @@ def load_text_dataset(
                 "Library `datasets` non installee. Lance : pip install datasets"
             ) from e
 
-        # Parser "name" ou "name:config".
+        # Parser "name" or "name:config".
         if ":" in dataset_name:
             name, config = dataset_name.split(":", 1)
         elif dataset_name in HF_DATASET_DEFAULTS:
@@ -207,7 +207,7 @@ def load_text_dataset(
 # ---------------------------------------------------------------------------
 
 class FractalLM(nn.Module):
-    """Modele de langage fractal : Embedding + N×FractalBlockFull + head."""
+    """Modele of langage fractal : Embedding + N×FractalBlockFull + head."""
 
     def __init__(self, vocab, preset: Preset):
         super().__init__()
@@ -262,7 +262,7 @@ class CharTokenizer:
 
 
 # ---------------------------------------------------------------------------
-# Boucle d'entrainement
+# Boucle d'training
 # ---------------------------------------------------------------------------
 
 def train(args):
@@ -278,7 +278,7 @@ def train(args):
     # Preset.
     if args.preset:
         preset = PRESETS[args.preset]
-        # Override par args explicites.
+        # Override by args explicites.
         if args.d_model: preset.d_model = args.d_model
         if args.n_blocks: preset.n_blocks = args.n_blocks
         if args.seq_len: preset.seq_len = args.seq_len
@@ -286,7 +286,7 @@ def train(args):
         if args.epochs: preset.epochs = args.epochs
         if args.lr: preset.lr = args.lr
     else:
-        # Construire un preset depuis les args.
+        # Construire a preset depuis the args.
         preset = Preset(
             name="custom",
             d_model=args.d_model or 64,
@@ -465,13 +465,13 @@ Presets disponibles :
   gpu-small   ~5M params, GPU entry (RTX 3060)
   gpu-medium  ~50M params, GPU mid (RTX 4090)
   gpu-large   ~300M params, A100 40GB
-  gpu-1b      ~1B params, A100 80GB/H100 (IMPOSSIBLE sur CPU)
+  gpu-1b      ~1B params, A100 80GB/H100 (IMPOSSIBLE on CPU)
 
 Datasets predefinis :
   tinyshakespeare  (local, 1.1 MB)
   wikitext-2       (HF, ~5 MB)
   wikitext-103     (HF, ~500 MB)
-  Ou n'importe quel dataset HF : --dataset name --text-field field
+  Ou n'imported quel dataset HF : --dataset name --text-field field
 
 Exemples :
   python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare

@@ -1,18 +1,18 @@
-"""Tests de measure_compression_ratio : mesure REELLE, pas de hardcode."""
+"""Tests of measure_compression_ratio : mesure REELLE, not of hardcode."""
 
 import inspect
 import torch
 
 
 def test_compression_no_hardcoded_204():
-    """CRITERE L3 : le CODE de mesure ne must PAS hardcoder un ratio de retour.
-    On tolere la mention de '20.4×' in les docstrings (qui expliquent le
-    falsehood corrige d'OMNI), but on interdit tout 'return 20.4' ou ratio
-    numerique fige in la logical."""
+    """CRITERE L3 : the CODE of mesure not must PAS hardcoder a ratio of retour.
+    On tolere the mention of '20.4×' in the docstrings (qui expliquent le
+    falsehood correctede d'the original), but on interdit all 'return 20.4' or ratio
+    numerique fige in the logical."""
     import re
     from fractus.metrics import compression
     src = inspect.getsource(compression)
-    # On retire commentaires/docstrings before de chercher.
+    # On retire commentaires/docstrings before of chercher.
     code_lines = []
     in_docstring = False
     for line in src.split('\n'):
@@ -26,16 +26,16 @@ def test_compression_no_hardcoded_204():
             continue
         code_lines.append(line)
     code_only = '\n'.join(code_lines)
-    # Aucun litteral 20.4 in le code executable.
+    # Aucun litteral 20.4 in the code executable.
     assert not re.search(r'\b20\.4\b', code_only), \
         "Le litteral 20.4 est interdit in le code executable (falsehood OMNI)"
 
 
 def test_compression_pure_dense_returns_one():
-    """Un modele 100% dense (pas de SirenLinear) → ratio ~1.0.
+    """Un modele 100% dense (pas of SirenLinear) → ratio ~1.0.
 
-    Note : le ratio for un nn.Linear pur n'est pas EXACTEMENT 1.0 because on
-    compte le bias in les params reels (in·out + out) et in l'equivalent
+    Note : the ratio for a nn.Linear pur n'est not EXACTEMENT 1.0 because on
+    compte the bias in the params reals (in·out + out) and in l'equivalent
     dense (in·out + out aussi) — therefore ~1.0 a l'epsilon pres.
     """
     from fractus.metrics.compression import measure_compression_ratio
@@ -45,7 +45,7 @@ def test_compression_pure_dense_returns_one():
 
 
 def test_compression_with_siren_gt_one():
-    """Un modele with SirenLinear → ratio > 1 (moins de params que l'equivalent dense)."""
+    """Un modele with SirenLinear → ratio > 1 (moins of params that l'equivalent dense)."""
     from fractus.nn.siren_linear import SirenLinear
     from fractus.metrics.compression import measure_compression_ratio
     m = torch.nn.Sequential(

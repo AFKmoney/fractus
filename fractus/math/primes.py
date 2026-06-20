@@ -1,17 +1,17 @@
-"""Crible d'Eratosthene for verification de primalite.
+"""Crible d'Eratosthene for verification of primalite.
 
-Porte depuis the original architecture (src/math/primes.rs). Le crible est precalcule une fois
-jusqu'a une limite, then verify_prime(n) est O(1) for n <= limite.
+Porte depuis the original architecture (src/math/primes.rs). Le crible est precomputatione a fois
+jusqu'a a limite, then verify_prime(n) est O(1) for n <= limite.
 """
 
 from typing import List
 
 
 class PrimeSieve:
-    """Crible d'Eratosthene precalcule.
+    """Crible d'Eratosthene precomputatione.
 
     Args:
-        limit : borne superieure (inclusive) du crible.
+        limit : borne superieure (inclusive) crible.
     """
 
     def __init__(self, limit: int):
@@ -33,12 +33,12 @@ class PrimeSieve:
             i += 1
 
     def verify_prime(self, n: int) -> bool:
-        """Retourne True si n est premier (n <= limit), sinon verifies par essai de division."""
+        """Retourne True si n est premier (n <= limit), sinon verifiess by essai of division."""
         if n < 2:
             return False
         if n <= self.limit:
             return self.is_prime[n]
-        # n > limit : essai de division jusqu'a sqrt(n).
+        # n > limit : essai of division jusqu'a sqrt(n).
         d = 2
         while d * d <= n:
             if n % d == 0:

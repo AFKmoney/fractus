@@ -1,4 +1,4 @@
-"""Tests de honest_perplexity : vraie perplexite, pas proxy."""
+"""Tests of honest_perplexity : vraie perplexite, not proxy."""
 
 import math
 import torch
@@ -37,20 +37,20 @@ def test_perplexity_uniform_init_close_to_vocab():
     inp = torch.randint(0, 10, (4, 8))
     tgt = torch.randint(0, 10, (4, 8))
     ppl = honest_perplexity(model, inp, tgt)
-    # ppl ≈ exp(log(10)) = 10. Tolerance large because l'init n'est pas parfaitement uniforme.
+    # ppl ≈ exp(log(10)) = 10. Tolerance large because l'init n'est not parfaitement uniforme.
     assert 3.0 < ppl < 30.0, f"ppl attendu ~10, eu {ppl}"
 
 
 def test_perplexity_perfect_model_close_to_one():
-    """Un modele qui predit exactement → ppl ≈ 1.0."""
+    """Un modele which predit exactment → ppl ≈ 1.0."""
     from fractus.metrics.perplexity import honest_perplexity
     model = _DummyModel(vocab=5, d=8)
 
-    # Surfit parfait : on force head for que logits[arg] = grand.
+    # Surfit parfait : on force head for that logits[arg] = grand.
     inp = torch.tensor([[0, 1, 2]])
     tgt = torch.tensor([[0, 1, 2]])
     with torch.no_grad():
-        # Bias for que le bon token ait un logit enorme.
+        # Bias for that the bon token ait a logit enorme.
         for i in range(3):
             model.head.weight[i, :] = 0
             model.head.weight[i, i] = 100.0
@@ -61,8 +61,8 @@ def test_perplexity_perfect_model_close_to_one():
 
 
 def test_perplexity_not_just_embedding_norm():
-    """CRITERE L6 : honest_perplexity must faire un VRAI forward + cross_entropy,
-    pas un proxy base sur la norme de l'embedding (le falsehood FNN model.rs:537)."""
+    """CRITERE L6 : honest_perplexity must faire a VRAI forward + cross_entropy,
+    not a proxy base on the norme of l'embedding (le falsehood the original model.rs:537)."""
     import inspect
     from fractus.metrics import perplexity as ppl_mod
     src = inspect.getsource(ppl_mod)

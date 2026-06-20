@@ -1,21 +1,21 @@
-"""Demo L4 : NOTEARS recupere un DAG synthetique connu.
+"""Demo L4 : NOTEARS recupere a DAG synthetique connu.
 
-AVERTISSEMENT D'HONNETETE : cette demo utilise un SCM LINEAIRE et triangulaire
-superieur (ordre topologique trivial). C'est le cas-jouet ideal for NOTEARS —
-il a ete concu exactement for ce reglage. SHD=0 ici prouve que le PIPELINE
-tourne (les modules communiquent, NOTEARS s'optimise, la penalty fonctionne),
-PAS que NOTEARS est competent sur donnees reelles. Un SCM non-lineaire with
-ordre topologique inconnu serait nettement plus dur (future work).
+AVERTISSEMENT D'HONNETETE : cette demo utilise a SCM LINEAIRE and triangulaire
+superieur (topological order trivial). This is the cas-jouet ideal for NOTEARS —
+il a ete concu exactment for this reglage. SHD=0 ici prouve that the PIPELINE
+tourne (les modules communiquent, NOTEARS s'optimise, the penalty fonctionne),
+PAS that NOTEARS est competent on donnees realles. Un SCM non-lineaire with
+topological order inconnu serait nettement more dur (future work).
 
 Etapes :
-    1. Genere un SCM lineaire a 5 variables (DAG connu W_true + donnees X).
+    1. Genere a SCM lineaire a 5 variables (DAG connu W_true + donnees X).
     2. Initialise W_pred aleatoire (entrainable).
     3. Optimise W_pred for minimiser :
            reconstruction loss + λ · |notears_penalty(W_pred)|
        La penalty NOTEARS force W_pred a etre acyclique.
-    4. Mesure le SHD between W_pred et W_true.
+    4. Mesure the SHD between W_pred and W_true.
 
-Critere : SHD <= 3 sur 5 variables (cas jouet ideal — must passer).
+Critere : SHD <= 3 on 5 variables (cas jouet ideal — must passer).
 
 Run :
     python scripts/demo_causal.py
@@ -25,7 +25,7 @@ import sys
 import os
 import torch
 
-# Assurer que le package 'data' est importable depuis scripts/.
+# Assurer that the package 'data' est importable depuis scripts/.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fractus.causal.notears import notears_penalty

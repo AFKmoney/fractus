@@ -1,7 +1,7 @@
-"""Dataset tinyshakespeare for l'entrainement du transformer fractal.
+"""Dataset tinyshakespeare for l'training transformer fractal.
 
-Charge le texte, encode en ids (niveau caractere), decoupe en sequences
-de longueur fixe for l'entrainement par batch.
+Charge the texte, encode en ids (niveau caractere), decoupe en sequences
+de longueur fixe for l'training by batch.
 """
 
 import os
@@ -21,9 +21,9 @@ class TinyShakespeareDataset(Dataset):
     """Dataset tinyshakespeare niveau caractere.
 
     Args:
-        seq_len  : longueur des sequences.
-        path     : chemin du fichier texte (defaut : data/text/tinyshakespeare.txt).
-        vocab    : vocabulaire optionnel (sinon construit depuis le texte).
+        seq_len  : longueur sequences.
+        path     : chemin fichier texte (defaut : data/text/tinyshakespeare.txt).
+        vocab    : vocabulaire optionnel (sinon construit depuis the texte).
     """
 
     def __init__(
@@ -47,19 +47,19 @@ class TinyShakespeareDataset(Dataset):
         self.id_to_char = {i: c for c, i in self.char_to_id.items()}
         self.vocab_size = len(self.char_to_id)
 
-        # Encoder tout le texte en ids.
+        # Encoder all the texte en ids.
         self.ids = torch.tensor(
             [self.char_to_id[c] for c in self.text if c in self.char_to_id],
             dtype=torch.long,
         )
-        # Nombre de sequences possibles.
+        # Nombre of sequences possibles.
         self.n_seqs = (len(self.ids) - 1) // seq_len
 
     def __len__(self) -> int:
         return self.n_seqs
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Retourne (input_ids, target_ids) ou target = input decale de 1."""
+        """Retourne (input_ids, target_ids) or target = input decale of 1."""
         start = idx * self.seq_len
         end = start + self.seq_len
         input_ids = self.ids[start:end]
@@ -67,5 +67,5 @@ class TinyShakespeareDataset(Dataset):
         return input_ids, target_ids
 
     def decode(self, ids: torch.Tensor) -> str:
-        """Decode des ids en texte."""
+        """Decode ids en texte."""
         return "".join(self.id_to_char.get(int(i), "?") for i in ids)

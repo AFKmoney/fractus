@@ -1,7 +1,7 @@
 """Tests d'equivalence : attention vectorisee == attention bouclee.
 
-CRITERE : la version vectorisee must donner EXACTEMENT les memes sorties que
-la version bouclee (a 1e-5 pres), for garantir qu'on n'introduit pas de bug
+CRITERE : the version vectorisee must donner EXACTEMENT the memes sorties que
+la version bouclee (a 1e-5 pres), for guaranteedr qu'on n'introduit not of bug
 en optimisant.
 """
 
@@ -9,7 +9,7 @@ import torch
 
 
 def test_vectorized_matches_looped_small():
-    """Sur un petit cas (B=2, L=8, D=4), la vectorisee == bouclee."""
+    """Sur a small cas (B=2, L=8, D=4), the vectorisee == bouclee."""
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
     attn = FractalLinearAttention(d_model=8, n_heads=2, d_head=4, n_levels=1)
@@ -17,8 +17,8 @@ def test_vectorized_matches_looped_small():
     x = torch.randn(2, 8, 8)
     out_looped = attn(x)
     # La version vectorisee est appelee via _linear_attention_causal_vectorized.
-    # On la compare a la bouclee sur les memes q,k,v.
-    # Pour cela on reproduit la projection + feature map.
+    # On the compare a the bouclee on the memes q,k,v.
+    # Pour cela on reproduit the projection + feature map.
     from fractus.nn.stats import elu_plus_one
     B, L, _ = x.shape
     q_all = torch.einsum("bld,de->ble", x, attn.w_qkv[0]) + attn.b_qkv[0]
@@ -37,7 +37,7 @@ def test_vectorized_matches_looped_small():
 
 
 def test_vectorized_matches_looped_larger():
-    """Sur un cas plus grand (B=4, L=32, D=8)."""
+    """Sur a cas more large (B=4, L=32, D=8)."""
     from fractus.nn.attention import FractalLinearAttention
     from fractus.nn.stats import elu_plus_one
     torch.manual_seed(1)
@@ -59,7 +59,7 @@ def test_vectorized_matches_looped_larger():
 
 
 def test_vectorized_preserves_causality():
-    """La version vectorisee must preserver la causalite."""
+    """La version vectorisee must preserver the causalite."""
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
     attn = FractalLinearAttention(d_model=8, n_heads=2, d_head=4, n_levels=1)
@@ -74,9 +74,9 @@ def test_vectorized_preserves_causality():
 
 
 def test_vectorized_faster_than_looped():
-    """La version vectorisee must etre plus rapide que la bouclee.
-    On ne fait pas un benchmark strict, juste une verification que c'est
-    significativement plus rapide (facteur > 2)."""
+    """La version vectorisee must etre more rapide that the bouclee.
+    On not does not a benchmark strict, juste a verification that this is
+    significativement more rapide (facteur > 2)."""
     import time
     from fractus.nn.attention import FractalLinearAttention
     from fractus.nn.stats import elu_plus_one

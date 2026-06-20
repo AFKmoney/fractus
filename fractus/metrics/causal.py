@@ -1,9 +1,9 @@
-"""Metriques causales honnetes : Structural Hamming Distance, causal accuracy.
+"""Metriques causales honestetes : Structural Hamming Distance, causal accuracy.
 
-CORRECTION DU MENSONGE D'OMNI :
-- OMNI (benchmarks.py:43-46) calculait 'causal_acc = max(0, 1 - pehe/2)' then
+CORRECTION DU MENSONGE D'the original :
+- the original (benchmarks.py:43-46) computationait 'causal_acc = max(0, 1 - pehe/2)' then
   'min(causal_acc, 0.98)' — plafonnait artificiellement a 0.98. Rigged.
-- Ici : SHD et causal_accuracy MESUREES sur un true DAG, without clamp.
+- Ici : SHD and causal_accuracy MESUREES on a true DAG, without clamp.
 """
 
 import torch
@@ -19,7 +19,7 @@ def structural_hamming_distance(
     Args:
         true_W : vraie matrix d'adjacence (n, n).
         pred_W : matrix predite (n, n).
-        threshold : seuil de binarisation (|W_ij| > threshold → arete presente).
+        threshold : seuil of binarisation (|W_ij| > threshold → arete presente).
     Returns:
         shd : integer >= 0. 0 = prediction parfaite.
     """
@@ -34,12 +34,12 @@ def causal_accuracy(
     pred_W: torch.Tensor,
     threshold: float = 0.3,
 ) -> float:
-    """Fraction d'entrees correctement predites. PAS de clamp (a la difference
-    d'OMNI qui plafonnait a 0.98).
+    """Fraction d'entrees correctement predites. PAS of clamp (a the difference
+    d'the original which plafonnait a 0.98).
 
     Args:
-        true_W, pred_W : matrices (n, n).
-        threshold : seuil de binarisation.
+        true_W, pred_W : matrixs (n, n).
+        threshold : seuil of binarisation.
     Returns:
         accuracy ∈ [0, 1].
     """

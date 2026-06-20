@@ -1,4 +1,4 @@
-"""Tests de la suite de Farey et de la selection de phases expert."""
+"""Tests of the Farey sequence and of the selection of phases expert."""
 
 import math
 
@@ -17,7 +17,7 @@ def test_farey_sequence_order_1():
 
 
 def test_farey_sequence_sorted():
-    """Les fractions must etre croissantes (property de Farey)."""
+    """Les fractions must etre croissantes (property of Farey)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(5)
     values = [p / q for (p, q) in seq]
@@ -25,7 +25,7 @@ def test_farey_sequence_sorted():
 
 
 def test_farey_sequence_all_denominators_le_n():
-    """Dans F_n, all les denominateurs sont <= n."""
+    """Dans F_n, all the denominateurs are <= n."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(6)
     for (p, q) in seq:
@@ -33,7 +33,7 @@ def test_farey_sequence_all_denominators_le_n():
 
 
 def test_expert_phases_count():
-    """expert_phases(n) returns exactement n angles."""
+    """expert_phases(n) returns exactment n angles."""
     from fractus.nn.farey import expert_phases
     for n in [4, 8, 16]:
         phases = expert_phases(n)
@@ -41,7 +41,7 @@ def test_expert_phases_count():
 
 
 def test_expert_phases_in_unit_circle():
-    """Tous les angles ∈ [0, 2π)."""
+    """Tous the angles ∈ [0, 2π)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for theta in phases:
@@ -49,7 +49,7 @@ def test_expert_phases_in_unit_circle():
 
 
 def test_expert_phases_distinct():
-    """Les phases expert must etre distinctes (sinon le routing degenere)."""
+    """Les phases expert must etre distinctes (sinon the routing degenerated)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for i in range(len(phases)):

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ajouter les deux pepites originales de FNN au FractalBlock : (1) oscillateurs de Kuramoto couples bas-rang integres par RK4 — STATELESS (recalcules a each forward depuis les hidden states), et (2) Mixture-of-Experts a routing de phase von Mises sur phases distribuees par suite de Farey. Le FractalBlock etendu devient `LN → attn → PhaseSoliton → PhaseRoutedMoE (gated by Kuramoto phases) → residuelle`.
+**Goal:** Ajouter the deux pepites originales of the original au FractalBlock : (1) Kuramoto oscillators couples bas-rang integres by RK4 — STATELESS (recomputationes a each forward depuis the hidden states), and (2) Mixture-of-Experts a routing of phase von Mises on phases distribuees by Farey sequence. Le FractalBlock etendu devient `LN → attn → PhaseSoliton → PhaseRoutedMoE (gated by Kuramoto phases) → residuelle`.
 
-**Architecture (decision validee : Kuramoto STATELESS) :** Le `KuramotoLayer` est un `nn.Module` pur, without etat mutable between forwards. A each forward : (a) phases initiales derivees des hidden states (`encode_from_hidden`), (b) N steps d'integration RK4 bas-rang (courange `K = UΛUᵀ`), (c) phases finales → utilisees par le MoE. **Tout est in le graphe autodiff** (U, Λ, omega sont des `nn.Parameter`).
+**Architecture (decision valide : Kuramoto STATELESS) :** Le `KuramotoLayer` est a `nn.Module` pur, without etat mutable between forwards. A each forward : (a) phases initiales derivees hidden states (`encode_from_hidden`), (b) N steps d'integration RK4 bas-rang (courange `K = UΛUT`), (c) phases finales → utilisees by the MoE. **Tout est in the graphe autodiff** (U, Λ, omega are `nn.Parameter`).
 
 **Tech Stack:** PyTorch 2.12 CPU, numpy, pytest.
 
@@ -12,25 +12,25 @@
 
 **Prerequis :** L2a termine (FractalBlock minimal fonctionne, 41 tests passent).
 
-**Maths portees faithfully depuis FNN** (extraites du code original) :
+**Maths portedes faithfully depuis the original** (extraites code original) :
 
 ### Kuramoto (phase_ode.rs)
-- Equation : `dθ_i/dt = ω_i − damping·θ_i + K_strength·Σ_j K_ij sin(θ_j − θ_i)`, `K = UΛUᵀ`
-- Forme bas-rang O(N·r) : `p = Uᵀsinθ, q = Uᵀcosθ`, `u_p = U(Λp), u_q = U(Λq)`,
+- Equation : `dθ_i/dt = ω_i − damping·θ_i + K_strength·Σ_j K_ij sin(θ_j − θ_i)`, `K = UΛUT`
+- Forme bas-rang O(N·r) : `p = UTsinθ, q = UTcosθ`, `u_p = U(Λp), u_q = U(Λq)`,
   `dθ_i = ω_i − damping·θ_i + K_strength·(cosθ_i · u_p[i] − sinθ_i · u_q[i])`
 - RK4 standard (4 under-steps), then wrap `θ_i mod 2π` → [0, 2π).
 - `encode_from_hidden(hidden)` : `θ_i = (Σ_j hidden[i,j] / d_model · 2π) mod 2π` for i < min(N, seq_len).
 - `decode_to_bias(seq_len, d_model)` : encodage positionnel sinusoidal `[sin(freq·θ)/√freq, cos(freq·θ)/√freq]`, `freq = j//2 + 1`.
-- `phase_loss` : `L = −(1/N²)·[cosθᵀK·cosθ + sinθᵀK·sinθ]` (bas-rang : `(Uᵀcosθ)ᵀΛ(Uᵀcosθ) + (Uᵀsinθ)ᵀΛ(Uᵀsinθ)`).
+- `phase_loss` : `L = −(1/N2)·[cosθTK·cosθ + sinθTK·sinθ]` (bas-rang : `(UTcosθ)TΛ(UTcosθ) + (UTsinθ)TΛ(UTsinθ)`).
 
 ### MoE (moe.rs + farey.rs)
-- Suite de Farey d'ordre `2E` → selection uniforme de E angles ∈ [0, 2π).
-- Gate von Mises (NON normalise) : `g_e = exp(κ_eff · cos(θ̄ − θ_e))`, `κ_eff = κ/temperature`.
-- Phase moyenne du token : `θ̄ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))`.
+- Suite of Farey d'ordre `2E` → selection uniforme of E angles ∈ [0, 2π).
+- Gate von Mises (NON normalise) : `g_e = exp(κ_eff · cos(θ − θ_e))`, `κ_eff = κ/temperature`.
+- Phase moyenne token : `θ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))`.
 - Normalisation : `g_e /= Σ_e g_e` (uniforme 1/E si somme < 1e-10).
-- Top-k : selectionne les K meilleurs experts, renormalise sur le top-k.
+- Top-k : selectionne the K meilleurs experts, renormalise on the top-k.
 - Experts : MLP GeLU `gelu(x·W1 + b1)·W2 + b2`, `d_ff = 64`.
-- Load-balance loss : `L_balance = E · Σ_e (P_e − 1/E)²`, `P_e = moyenne des gates de l'expert e`.
+- Load-balance loss : `L_balance = E · Σ_e (P_e − 1/E)2`, `P_e = moyenne gates of l'expert e`.
 
 ---
 
@@ -39,35 +39,35 @@
 ```
 C:/Users/PHIL/ZCodeProject/fractus/
 ├── fractus/nn/
-│   ├── __init__.py             # MODIFY : exporte KuramotoLayer, PhaseRoutedMoE, FractalBlockFull
-│   ├── farey.py                # CREATE : suite de Farey + expert_phases (precalcul pur)
+│   ├── __init__.py             # MODIFY : exported KuramotoLayer, PhaseRoutedMoE, FractalBlockFull
+│   ├── farey.py                # CREATE : Farey sequence + expert_phases (precomputation pur)
 │   ├── phase_ode.py            # CREATE : KuramotoLayer (stateless, RK4 bas-rang)
 │   ├── moe.py                  # CREATE : PhaseRoutedMoE (gate von Mises, top-k)
 │   └── block.py                # MODIFY : ajoute FractalBlockFull (integrant Kuramoto+MoE)
 └── tests/
-    ├── test_farey.py           # CREATE : tests suite de Farey
+    ├── test_farey.py           # CREATE : tests Farey sequence
     ├── test_phase_ode.py       # CREATE : tests Kuramoto (RK4, encode/decode, loss)
     └── test_moe.py             # CREATE : tests MoE (gate, top-k, load-balance, backward)
 ```
 
 **Responsabilites :**
-- `farey.py` : generation deterministe de la suite de Farey + selection de phases expert. Aucun parameter.
+- `farey.py` : generation deterministic of the Farey sequence + selection of phases expert. Aucun parameter.
 - `phase_ode.py` : `KuramotoLayer` (stateless) — encode depuis hidden, integre RK4, decode_to_bias.
 - `moe.py` : `PhaseRoutedMoE` — gate von Mises, top-k routing, load-balance loss.
-- `block.py` : `FractalBlockFull` etend le `FractalBlock` minimal en ajoutant Kuramoto + MoE.
+- `block.py` : `FractalBlockFull` etend the `FractalBlock` minimal en ajoutant Kuramoto + MoE.
 
 ---
 
-## Task 1: Suite de Farey + expert_phases
+## Task 1: Suite of Farey + expert_phases
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/farey.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_farey.py` :
 ```python
-"""Tests de la suite de Farey et de la selection de phases expert."""
+"""Tests of the Farey sequence and of the selection of phases expert."""
 
 import math
 import torch
@@ -77,7 +77,7 @@ def test_farey_sequence_basic():
     """F_3 = {0/1, 1/3, 1/2, 2/3, 1/1} (5 termes)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(3)
-    fractions = seq  # liste de (p, q)
+    fractions = seq  # liste of (p, q)
     assert fractions == [(0, 1), (1, 3), (1, 2), (2, 3), (1, 1)]
 
 
@@ -88,7 +88,7 @@ def test_farey_sequence_order_1():
 
 
 def test_farey_sequence_sorted():
-    """Les fractions must etre croissantes (property de Farey)."""
+    """Les fractions must etre croissantes (property of Farey)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(5)
     values = [p / q for (p, q) in seq]
@@ -96,7 +96,7 @@ def test_farey_sequence_sorted():
 
 
 def test_farey_sequence_all_denominators_le_n():
-    """Dans F_n, all les denominateurs sont <= n."""
+    """Dans F_n, all the denominateurs are <= n."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(6)
     for (p, q) in seq:
@@ -104,7 +104,7 @@ def test_farey_sequence_all_denominators_le_n():
 
 
 def test_expert_phases_count():
-    """expert_phases(n) returns exactement n angles."""
+    """expert_phases(n) returns exactment n angles."""
     from fractus.nn.farey import expert_phases
     for n in [4, 8, 16]:
         phases = expert_phases(n)
@@ -112,7 +112,7 @@ def test_expert_phases_count():
 
 
 def test_expert_phases_in_unit_circle():
-    """Tous les angles ∈ [0, 2π)."""
+    """Tous the angles ∈ [0, 2π)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for theta in phases:
@@ -120,17 +120,17 @@ def test_expert_phases_in_unit_circle():
 
 
 def test_expert_phases_distinct():
-    """Les phases expert must etre distinctes (sinon le routing degenere)."""
+    """Les phases expert must etre distinctes (sinon the routing degenerated)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
-    # Deux phases ne must pas etre identiques (a tolerance flott pres).
+    # Deux phases not must not etre identiques (a tolerance flott pres).
     for i in range(len(phases)):
         for j in range(i + 1, len(phases)):
             assert abs(phases[i] - phases[j]) > 1e-6, \
                 f"phases[{i}]={phases[i]} == phases[{j}]={phases[j]}"
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_farey.py -v
@@ -141,17 +141,17 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/farey.py` :
 ```python
-"""Suite de Farey et selection de phases for le MoE a routing de phase.
+"""Suite of Farey and selection of phases for the MoE a routing of phase.
 
 Porte depuis the original architecture (src/math/farey.rs).
 
-La suite de Farey F_n est l'ensemble trie des fractions irreductibles p/q in
-[0, 1] with q <= n. Elle est generee iterativement par la property de mediante.
+La Farey sequence F_n est l'ensemble trie fractions irreductibles p/q in
+[0, 1] with q <= n. Elle est generatede iterativement by the property of mediante.
 
-Pour le MoE : on prend F_{2E} (ordre double du number d'experts) et on selectionne
-uniformement E angles parmi les fractions, convertis en angles 2π·p/q ∈ [0, 2π).
-Cela donne une distribution de phases dense, non-collapsante et deterministe —
-l'interet for le routing von Mises.
+Pour the MoE : on prend F_{2E} (ordre double number d'experts) and on selectionne
+uniformement E angles parmi the fractions, convertis en angles 2π·p/q ∈ [0, 2π).
+Cela donne a distribution of phases dense, non-collapsante and deterministic —
+l'interet for the routing von Mises.
 """
 
 import math
@@ -166,14 +166,14 @@ def _gcd(a: int, b: int) -> int:
 
 
 def farey_sequence(n: int) -> List[Tuple[int, int]]:
-    """Genere la suite de Farey F_n comme liste de (p, q) triee croissante.
+    """Genere the Farey sequence F_n comme liste of (p, q) triee croissante.
 
-    Algorithme par mediante (comme farey.rs:18-49) :
+    Algorithme by mediante (comme farey.rs:18-49) :
         Init : (a,b)=(0,1), (c,d)=(1,n).
-        Tant que c <= n : on push (a,b), then on calcule le prochain terme
+        Tant that c <= n : on push (a,b), then on computatione the prochain terme
         via k = (n + b) // d ; next = (k*c - a, k*d - b).
 
-    F_n contient exactement 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
+    F_n contient exactment 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
     """
     if n < 1:
         raise ValueError("n must etre >= 1")
@@ -184,8 +184,8 @@ def farey_sequence(n: int) -> List[Tuple[int, int]]:
     while c <= n:
         k = (n + b) // d
         a, b = c, d
-        c, d = k * c - a, k * d - b  # ATTENTION : a,b deja updates, therefore on must
-        # recalculer proprement. On corrige ci-dessous with des variables tmp.
+        c, d = k * c - a, k * d - b  # ATTENTION : a,b already updates, therefore on must
+        # recomputationer proprement. On correctede ci-dessous with variables tmp.
         fractions.append((a, b))
     # Le computation ci-dessus est incorrect (a,b modifies before). Version correcte :
     # On reprend proprement with variables temporaires.
@@ -207,7 +207,7 @@ def expert_phases(n_experts: int) -> List[float]:
     """Selectionne n_experts angles ∈ [0, 2π) depuis F_{2·n_experts}.
 
     Comme farey.rs:53-64 : on construit F_{2E} (ordre double), then on selectionne
-    uniformement E angles parmi les n_frac = len(F_{2E}) fractions disponibles.
+    uniformement E angles parmi the n_frac = len(F_{2E}) fractions disponibles.
     """
     if n_experts < 1:
         raise ValueError("n_experts must etre >= 1")
@@ -227,7 +227,7 @@ def expert_phases_tensor(n_experts: int) -> "torch.Tensor":  # type: ignore[name
     return torch.tensor(expert_phases(n_experts), dtype=torch.float32)
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_farey.py -v
@@ -249,11 +249,11 @@ git commit -m "feat(nn): add Farey sequence and expert_phases for phase-routed M
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/phase_ode.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_phase_ode.py` :
 ```python
-"""Tests de KuramotoLayer : encode/decode, RK4, phase_loss, backward."""
+"""Tests of KuramotoLayer : encode/decode, RK4, phase_loss, backward."""
 
 import math
 import torch
@@ -269,10 +269,10 @@ def test_kuramoto_output_shape():
 
 
 def test_kuramoto_phases_in_unit_circle():
-    """Toutes les phases ∈ [0, 2π) (wrapping modulaire after RK4)."""
+    """Toutes the phases ∈ [0, 2π) (wrapping modulaire after RK4)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
-    x = torch.randn(2, 10, 16) * 10  # grandes valeurs
+    x = torch.randn(2, 10, 16) * 10  # grandes values
     phases = layer(x)
     assert (phases >= 0).all() and (phases < 2 * math.pi).all()
 
@@ -286,7 +286,7 @@ def test_kuramoto_is_finite():
 
 
 def test_kuramoto_backward_every_param():
-    """CRITERE L2b : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
+    """CRITERE L2b : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)
@@ -299,13 +299,13 @@ def test_kuramoto_backward_every_param():
     for name, p in params:
         assert p.requires_grad, f"{name} should requires_grad=True"
         assert p.grad is not None, f"{name} n'a recu no gradient"
-        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert torch.isfinite(p.grad).all(), f"{name} a a gradient non-fini"
+        assert p.grad.abs().sum().item() > 0, f"{name} a recu a gradient nul"
 
 
 def test_kuramoto_phase_loss_shape_and_sign():
-    """phase_loss(phases) returns un scalar (un peu negatif typiquement,
-    because L = -mean(K_ij cos(θ_i-θ_j)) et le cos can etre positif)."""
+    """phase_loss(phases) returns a scalar (un peu negatif typiquement,
+    because L = -mean(K_ij cos(θ_i-θ_j)) and the cos can etre positif)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)
@@ -317,7 +317,7 @@ def test_kuramoto_phase_loss_shape_and_sign():
 
 def test_kuramoto_decode_to_bias_shape():
     """decode_to_bias(phases, d_model) returns (B, L, d_model) — injectable
-    comme biais in le reseau (encodage positionnel sinusoidal)."""
+    comme biais in the reseau (encodage positionnel sinusoidal)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     phases = torch.rand(2, 10, 8) * 2 * math.pi
@@ -326,7 +326,7 @@ def test_kuramoto_decode_to_bias_shape():
     assert torch.isfinite(bias).all()
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_phase_ode.py -v
@@ -337,32 +337,32 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/phase_ode.py` :
 ```python
-"""KuramotoLayer : oscillateurs de Kuramoto couples bas-rang, STATELESS.
+"""KuramotoLayer : Kuramoto oscillators couples bas-rang, STATELESS.
 
 Porte depuis the original architecture (src/phase_ode.rs) en PyTorch pur.
 
-Mathematique (shape bas-rang K = UΛUᵀ, integration RK4) :
+Mathematique (shape bas-rang K = UΛUT, integration RK4) :
 
     dθ_i/dt = ω_i − damping·θ_i + K_strength·Σ_j K_ij sin(θ_j − θ_i)
 
-    Reecrit en exploitant K = UΛUᵀ (O(N·r) au lieu de O(N²)) :
-        p = Uᵀ sin(θ) ∈ R^r
-        q = Uᵀ cos(θ) ∈ R^r
+    Reecrit en exploitant K = UΛUT (O(N·r) instead of O(N2)) :
+        p = UT sin(θ) ∈ R^r
+        q = UT cos(θ) ∈ R^r
         u_p = U (Λ ⊙ p)  ∈ R^N
         u_q = U (Λ ⊙ q)  ∈ R^N
         dθ_i = ω_i − damping·θ_i + K_strength·(cos(θ_i)·u_p[i] − sin(θ_i)·u_q[i])
 
     RK4 standard (4 under-steps), then wrap θ_i mod 2π → [0, 2π).
 
-STATELESS : pas d'etat persistant between forwards. Les phases initiales sont
-derivees des hidden states a each appel (encode_from_hidden). U, Λ, ω sont
+STATELESS : not d'etat persistant between forwards. Les phases initiales sont
+derivees hidden states a each appel (encode_from_hidden). U, Λ, ω sont
 des nn.Parameter (le courange s'apprend).
 
-Corrections vs FNN :
-- FNN gardait un etat `phases` mutable → ici STATELESS for reproductibilite
-  et testabilite (le reviewer insisterait sinon).
+Corrections vs the original :
+- the original gardait a etat `phases` mutable → ici STATELESS for reproductibilite
+  and testabilite (le reviewer insisterait sinon).
 - Le terme `-damping·θ_i` est conserve tel quel (non-standard Kuramoto but
-  faithful a FNN).
+  faithful a the original).
 """
 
 import math
@@ -371,14 +371,14 @@ import torch.nn as nn
 
 
 class KuramotoLayer(nn.Module):
-    """Couche d'oscillateurs de Kuramoto bas-rang, STATELESS.
+    """Couche d'Kuramoto oscillators bas-rang, STATELESS.
 
     Args:
         d_model       : dimension d'entree (hidden).
         n_oscillators : number d'oscillateurs N.
-        rank          : rang r du courange bas-rang K = UΛUᵀ.
-        n_steps       : number de pas RK4 par forward.
-        dt            : taille de pas RK4.
+        rank          : rang r courange bas-rang K = UΛUT.
+        n_steps       : number of not RK4 by forward.
+        dt            : taille of not RK4.
         damping       : amortissement lineaire (terme -damping·θ).
     """
 
@@ -393,7 +393,7 @@ class KuramotoLayer(nn.Module):
     ):
         super().__init__()
         if n_oscillators < 1 or rank < 1 or rank > n_oscillators:
-            raise ValueError("n_oscillators >= 1 et 1 <= rank <= n_oscillators")
+            raise ValueError("n_oscillators >= 1 and 1 <= rank <= n_oscillators")
         self.d_model = d_model
         self.N = n_oscillators
         self.rank = rank
@@ -402,7 +402,7 @@ class KuramotoLayer(nn.Module):
         self.damping = damping
         self.TWO_PI = 2.0 * math.pi
 
-        # Parametres entrainables (init comme FNN phase_ode.rs:38-57).
+        # Parametres entrainables (init comme the original phase_ode.rs:38-57).
         # omega ~ U(-0.05, 0.05).
         self.omega = nn.Parameter(torch.empty(n_oscillators).uniform_(-0.05, 0.05))
         # U ∈ R^{N, r} ~ U(-1, 1).
@@ -411,20 +411,20 @@ class KuramotoLayer(nn.Module):
         self.coupling_lambda = nn.Parameter(torch.empty(rank).uniform_(0.01, 0.51))
 
     def _derivative(self, theta: torch.Tensor) -> torch.Tensor:
-        """dθ/dt for des phases theta de shape (..., N).
+        """dθ/dt for phases theta of shape (..., N).
 
-        Utilise la shape bas-rang (O(N·r)).
+        Utilise the shape bas-rang (O(N·r)).
         """
         sin_t = torch.sin(theta)  # (..., N)
         cos_t = torch.cos(theta)
-        # p = Uᵀ sin(θ), q = Uᵀ cos(θ) — shape (..., r).
+        # p = UT sin(θ), q = UT cos(θ) — shape (..., r).
         p = torch.einsum("...n,nr->...r", sin_t, self.coupling_u)
         q = torch.einsum("...n,nr->...r", cos_t, self.coupling_u)
         # u_p = U (Λ ⊙ p), u_q = U (Λ ⊙ q) — shape (..., N).
         u_p = torch.einsum("...r,nr->...n", self.coupling_lambda * p, self.coupling_u)
         u_q = torch.einsum("...r,nr->...n", self.coupling_lambda * q, self.coupling_u)
         # dθ_i = ω_i − damping·θ_i + (cos(θ_i)·u_p[i] − sin(θ_i)·u_q[i]).
-        # coupling_strength = 1.0 (comme FNN integrate_with_config).
+        # coupling_strength = 1.0 (comme the original integrate_with_config).
         dtheta = (
             self.omega
             - self.damping * theta
@@ -434,9 +434,9 @@ class KuramotoLayer(nn.Module):
         return dtheta
 
     def _rk4_integrate(self, theta: torch.Tensor) -> torch.Tensor:
-        """Integre n_steps pas RK4 depuis theta (..., N). Retourne theta final.
+        """Integre n_steps not RK4 depuis theta (..., N). Retourne theta final.
 
-        Apres each step complete, on wrap mod 2π (comme FNN phase_ode.rs:153-155).
+        Apres each step complete, on wrap mod 2π (comme the original phase_ode.rs:153-155).
         """
         dt = self.dt
         for _ in range(self.n_steps):
@@ -457,14 +457,14 @@ class KuramotoLayer(nn.Module):
         for i < min(N, seq_len), sinon 0.
         """
         B, L, D = hidden.shape
-        # mean sur la dimension d_model : (B, L).
+        # mean on the dimension d_model : (B, L).
         hidden_mean = hidden.mean(dim=-1) * self.TWO_PI  # (B, L)
-        # On a besoin de N phases par token. Comme N can differer de L, on
+        # On a besoin of N phases by token. Comme N can differer of L, on
         # broadcast : on prend hidden_mean repete N fois, decale d'un offset
-        # par oscillateur for casser la symetrie.
-        # (FNN utilisait i < min(N, seq_len) ; ici on generalise en broadcast.)
+        # by oscillateur for casser the symetrie.
+        # (the original utilisait i < min(N, seq_len) ; ici on generalise en broadcast.)
         offsets = torch.arange(self.N, dtype=hidden.dtype, device=hidden.device)
-        offsets = offsets / self.N * self.TWO_PI  # offsets [0, 2π) par oscillateur
+        offsets = offsets / self.N * self.TWO_PI  # offsets [0, 2π) by oscillateur
         # (B, L, N) = hidden_mean(B,L,1) + offsets(1,1,N).
         theta_init = hidden_mean.unsqueeze(-1) + offsets.view(1, 1, self.N)
         return torch.remainder(theta_init, self.TWO_PI)
@@ -475,37 +475,37 @@ class KuramotoLayer(nn.Module):
         return self._rk4_integrate(theta)
 
     def phase_loss(self, phases: torch.Tensor) -> torch.Tensor:
-        """L = -(1/N²) · [cosθᵀK·cosθ + sinθᵀK·sinθ] (bas-rang).
+        """L = -(1/N2) · [cosθTK·cosθ + sinθTK·sinθ] (bas-rang).
 
-        phases : (B, L, N). Retourne un scalar.
-        Forme bas-rang : cosθᵀK·cosθ = (Uᵀcosθ)ᵀΛ(Uᵀcosθ), idem for sin.
+        phases : (B, L, N). Retourne a scalar.
+        Forme bas-rang : cosθTK·cosθ = (UTcosθ)TΛ(UTcosθ), idem for sin.
         """
         cos_t = torch.cos(phases)  # (B, L, N)
         sin_t = torch.sin(phases)
-        # Uᵀcosθ : (B, L, r).
+        # UTcosθ : (B, L, r).
         uc = torch.einsum("bln,nr->blr", cos_t, self.coupling_u)
         us = torch.einsum("bln,nr->blr", sin_t, self.coupling_u)
-        # (Uᵀcosθ)ᵀΛ(Uᵀcosθ) = Σ_r Λ_r · uc[...,r]² (par oscillateur, somme sur B,L).
+        # (UTcosθ)TΛ(UTcosθ) = Σ_r Λ_r · uc[...,r]2 (par oscillateur, somme on B,L).
         term_cos = (uc ** 2 * self.coupling_lambda).sum()
         term_sin = (us ** 2 * self.coupling_lambda).sum()
         N = self.N
-        # Moyenne sur (B, L, N²).
-        # On normalise par le number d'elements for avoir une loss par-token.
+        # Moyenne on (B, L, N2).
+        # On normalise by the number d'elements for avoir a loss par-token.
         n_elem = phases.numel()  # B*L*N
-        # FNN divisait par N² ; on adapte a (B,L,N) en divisant par N par token.
+        # the original divisait by N2 ; on adapte a (B,L,N) en divisant by N by token.
         scale = n_elem / (N * N + 1e-12)
         loss = -(term_cos + term_sin) / scale
         return loss
 
     def decode_to_bias(self, phases: torch.Tensor, d_model: int) -> torch.Tensor:
-        """Encodage positionnel sinusoidal depuis les phases.
+        """Encodage positionnel sinusoidal depuis the phases.
 
         phases : (B, L, N). Retourne (B, L, d_model).
         Comme phase_ode.rs:252-266 :
             freq = j//2 + 1  (commence a 1)
             bias[i, 2k]   = sin(freq · θ_i) / sqrt(freq)
             bias[i, 2k+1] = cos(freq · θ_i) / sqrt(freq)
-        On utilise phases[..., 0:d_model] (tronque ou repete si d_model > N).
+        On utilise phases[..., 0:d_model] (tronque or repete si d_model > N).
         """
         B, L, N = phases.shape
         # Selectionner d_model phases (repetition cyclique si d_model > N).
@@ -523,7 +523,7 @@ class KuramotoLayer(nn.Module):
         return bias
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_phase_ode.py -v
@@ -544,11 +544,11 @@ git commit -m "feat(nn): add KuramotoLayer (stateless, low-rank RK4, differentia
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/moe.py`
 
-- [ ] **Step 1: Ecrire les tests**
+- [ ] **Step 1: Ecrire the tests**
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_moe.py` :
 ```python
-"""Tests de PhaseRoutedMoE : gate von Mises, top-k, load-balance, backward."""
+"""Tests of PhaseRoutedMoE : gate von Mises, top-k, load-balance, backward."""
 
 import math
 import torch
@@ -576,7 +576,7 @@ def test_moe_is_finite():
 
 
 def test_moe_load_balance_nonneg():
-    """Load-balance loss >= 0 (c'est une somme de carres ponderee)."""
+    """Load-balance loss >= 0 (this is a somme of carres ponderee)."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
@@ -586,7 +586,7 @@ def test_moe_load_balance_nonneg():
 
 
 def test_moe_backward_every_param():
-    """CRITERE L2b : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
+    """CRITERE L2b : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
@@ -600,12 +600,12 @@ def test_moe_backward_every_param():
     for name, p in params:
         assert p.requires_grad, f"{name} should requires_grad=True"
         assert p.grad is not None, f"{name} n'a recu no gradient"
-        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert torch.isfinite(p.grad).all(), f"{name} a a gradient non-fini"
+        assert p.grad.abs().sum().item() > 0, f"{name} a recu a gradient nul"
 
 
 def test_moe_top_k_at_most_n_experts():
-    """top_k > n_experts must lever une error."""
+    """top_k > n_experts must lever a error."""
     from fractus.nn.moe import PhaseRoutedMoE
     import pytest
     with pytest.raises(ValueError):
@@ -613,18 +613,18 @@ def test_moe_top_k_at_most_n_experts():
 
 
 def test_moe_with_uniform_phases_uses_all_experts():
-    """Si toutes les phases sont identiques, all les experts recoivent un gate
-    equivalent (le routing ne must pas crasher)."""
+    """Si all the phases are identiques, all the experts recoivent a gate
+    equivalent (le routing not must not crasher)."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
-    # Phases uniformes : all les tokens ont phase 0.
+    # Phases uniformes : all the tokens have phase 0.
     phases = torch.zeros(2, 8, 4)
     out, lb_loss = moe(h, phases)
     assert torch.isfinite(out).all()
 ```
 
-- [ ] **Step 2: Lancer for verify que les tests echouent**
+- [ ] **Step 2: Lancer for verify that the tests echouent**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_moe.py -v
@@ -635,34 +635,34 @@ Expected: FAIL — module absent.
 
 Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/moe.py` :
 ```python
-"""PhaseRoutedMoE : mixture-of-experts a routing de phase von Mises.
+"""PhaseRoutedMoE : mixture-of-experts a routing of phase von Mises.
 
 Porte depuis the original architecture (src/moe.rs + farey.rs) en PyTorch pur.
 
 Mathematique :
-    Phases des experts : E angles ∈ [0, 2π) issus de la suite de Farey F_{2E}
-    (deterministe, dense, non-collapsante).
+    Phases experts : E angles ∈ [0, 2π) issus of the Farey sequence F_{2E}
+    (deterministic, dense, non-collapsante).
 
-    Phase moyenne du token : θ̄ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))
-    (moyenne circulaire sur les n_phases du token).
+    Phase moyenne token : θ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))
+    (moyenne circulaire on the n_phases token).
 
     Gate von Mises (non normalise) :
         κ_eff = κ / temperature
-        g_e = exp(κ_eff · cos(θ̄ − θ_e))      for e = 0..E-1
+        g_e = exp(κ_eff · cos(θ − θ_e))      for e = 0..E-1
 
     Normalisation : g_e /= Σ_e g_e (uniforme 1/E si Σ < 1e-10).
 
-    Top-k routing : on selectionne les K meilleurs experts (gates max),
-    on renormalise les gates retenues sur 1.
+    Top-k routing : on selectionne the K meilleurs experts (gates max),
+    on renormalise the gates retenues on 1.
 
     Expert : MLP GeLU gelu(x·W1 + b1)·W2 + b2.
 
     Load-balance loss (auxiliaire) :
-        P_e = moyenne des gates de l'expert e sur all les tokens
-        L_balance = E · Σ_e (P_e − 1/E)²
+        P_e = moyenne gates of l'expert e on all the tokens
+        L_balance = E · Σ_e (P_e − 1/E)2
 
-Differentiable de bout en bout (poids W1/W2 des experts sont entrainables).
-Les phases expert sont en buffer (precalcul Farey, hors-graphe).
+Differentiable end-to-end (poids W1/W2 experts are entrainables).
+Les phases expert are en buffer (precomputation Farey, hors-graphe).
 """
 
 import math
@@ -680,15 +680,15 @@ def _gelu(x: torch.Tensor) -> torch.Tensor:
 
 
 class PhaseRoutedMoE(nn.Module):
-    """Mixture-of-experts a routing de phase von Mises sur phases Farey.
+    """Mixture-of-experts a routing of phase von Mises on phases Farey.
 
     Args:
         d_model     : dimension d'entree/sortie.
         n_experts   : number d'experts E.
-        top_k       : number d'experts actives par token (<= E).
+        top_k       : number d'experts actives by token (<= E).
         kappa       : concentration von Mises.
-        temperature : temperature du gate (κ_eff = κ/temperature).
-        d_ff        : dimension cachee des experts (64 par defaut comme FNN).
+        temperature : temperature gate (κ_eff = κ/temperature).
+        d_ff        : dimension cachee experts (64 by defaut comme the original).
     """
 
     def __init__(
@@ -712,11 +712,11 @@ class PhaseRoutedMoE(nn.Module):
         self.temperature = temperature
         self.d_ff = d_ff
 
-        # Phases expert (precalcul Farey, hors-graphe).
+        # Phases expert (precomputation Farey, hors-graphe).
         phases = expert_phases(n_experts)
         self.register_buffer("expert_phases", torch.tensor(phases, dtype=torch.float32))
 
-        # Poids des experts : E × (W1, b1, W2, b2).
+        # Poids experts : E × (W1, b1, W2, b2).
         # Init Xavier uniforme (comme moe.rs:28-44).
         scale1 = math.sqrt(2.0 / d_model)
         scale2 = math.sqrt(2.0 / d_ff)
@@ -726,28 +726,28 @@ class PhaseRoutedMoE(nn.Module):
         self.b2 = nn.Parameter(torch.zeros(n_experts, d_model))
 
     def _compute_gates(self, phases: torch.Tensor) -> torch.Tensor:
-        """Calcule les gates von Mises for each token.
+        """Calcule the gates von Mises for each token.
 
         phases : (B, L, n_phases). Retourne gates (B, L, E).
         """
-        # Phase moyenne circulaire du token.
+        # Phase moyenne circulaire token.
         sin_p = torch.sin(phases).sum(dim=-1)  # (B, L)
         cos_p = torch.cos(phases).sum(dim=-1)
         theta_bar = torch.atan2(sin_p, cos_p)  # (B, L)
-        # Gate von Mises : exp(κ_eff · cos(θ̄ − θ_e)).
+        # Gate von Mises : exp(κ_eff · cos(θ − θ_e)).
         kappa_eff = self.kappa / self.temperature
         diff = theta_bar.unsqueeze(-1) - self.expert_phases.view(
             *[1] * (phases.dim() - 1), self.n_experts
         )  # (B, L, E)
         gates = torch.exp(kappa_eff * torch.cos(diff))  # (B, L, E)
-        # Normalisation sur E.
+        # Normalisation on E.
         gates_sum = gates.sum(dim=-1, keepdim=True)
         uniform = torch.full_like(gates, 1.0 / self.n_experts)
         gates = torch.where(gates_sum > 1e-10, gates / gates_sum, uniform)
         return gates
 
     def _expert_forward(self, h: torch.Tensor) -> torch.Tensor:
-        """h : (B, L, d_model) → sorties de all les experts (B, L, E, d_model)."""
+        """h : (B, L, d_model) → sorties of all the experts (B, L, E, d_model)."""
         # h: (B, L, d_model) ; w1: (E, d_model, d_ff).
         # Pour each expert e : gelu(h @ w1[e] + b1[e]) @ w2[e] + b2[e].
         # einsum : (B,L,d_model) × (E,d_model,d_ff) → (B,L,E,d_ff).
@@ -765,19 +765,19 @@ class PhaseRoutedMoE(nn.Module):
         B, L, _ = h.shape
         gates = self._compute_gates(phases)  # (B, L, E)
 
-        # Top-k : selectionner les K meilleurs experts par token.
+        # Top-k : selectionner the K meilleurs experts by token.
         topk_vals, topk_idx = gates.topk(self.top_k, dim=-1)  # (B, L, K)
-        # Renormaliser les K gates retenues.
+        # Renormaliser the K gates retenues.
         topk_sum = topk_vals.sum(dim=-1, keepdim=True)
         uniform_topk = torch.full_like(topk_vals, 1.0 / self.top_k)
         topk_vals_norm = torch.where(
             topk_sum > 1e-10, topk_vals / topk_sum, uniform_topk
         )  # (B, L, K)
 
-        # Sorties de all les experts.
+        # Sorties of all the experts.
         all_out = self._expert_forward(h)  # (B, L, E, d_model)
 
-        # Gather les sorties top-k : (B, L, K, d_model).
+        # Gather the sorties top-k : (B, L, K, d_model).
         # topk_idx : (B, L, K) indices in [0, E).
         idx_exp = topk_idx.unsqueeze(-1).expand(-1, -1, -1, self.d_model)  # (B, L, K, d_model)
         topk_out = torch.gather(all_out, dim=2, index=idx_exp)  # (B, L, K, d_model)
@@ -785,14 +785,14 @@ class PhaseRoutedMoE(nn.Module):
         # Combinaison ponderee : Σ_k gate_k · out_k.
         output = (topk_vals_norm.unsqueeze(-1) * topk_out).sum(dim=2)  # (B, L, d_model)
 
-        # Load-balance loss : E · Σ_e (P_e − 1/E)², P_e = moyenne des gates.
-        P = gates.mean(dim=(0, 1))  # (E,) moyenne sur B, L
+        # Load-balance loss : E · Σ_e (P_e − 1/E)2, P_e = moyenne gates.
+        P = gates.mean(dim=(0, 1))  # (E,) moyenne on B, L
         lb_loss = self.n_experts * ((P - 1.0 / self.n_experts) ** 2).sum()
 
         return output, lb_loss
 ```
 
-- [ ] **Step 4: Lancer les tests — DOIVENT PASSER**
+- [ ] **Step 4: Lancer the tests — DOIVENT PASSER**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/test_moe.py -v
@@ -829,8 +829,8 @@ class FractalBlockFull(nn.Module):
               → LN → KuramotoLayer → phases
               → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
-    Retourne (output, loss_aux) ou loss_aux regroupe la phase_loss et la
-    load_balance_loss du MoE (a ajouter a la loss principale par le caller).
+    Retourne (output, loss_aux) or loss_aux regroupe the phase_loss and la
+    load_balance_loss MoE (a ajouter a the loss principale by the caller).
     """
 
     def __init__(
@@ -866,15 +866,15 @@ class FractalBlockFull(nn.Module):
         x = x + self.dropout(self.attn(self.norm1(x)))
         # Kuramoto : phases depuis hidden normalise.
         phases = self.kuramoto(self.norm_kur(x))  # (B, L, N)
-        # MoE : routing par phases.
+        # MoE : routing by phases.
         moe_out, lb_loss = self.moe(self.norm_moe(x), phases)
         x = x + self.dropout(moe_out)
         # Loss auxiliaire : load-balance (phase_loss optionnelle, ici on l'omet
-        # for simplicite — can etre ajoutee par le caller via self.kuramoto).
+        # for simplicite — can etre ajoutee by the caller via self.kuramoto).
         return x, lb_loss
 ```
 
-Et ajouter l'import en haut de `block.py` :
+Et ajouter l'import en haut of `block.py` :
 ```python
 from .attention import FractalLinearAttention
 from .phase_ode import KuramotoLayer
@@ -900,8 +900,8 @@ Append to `C:/Users/PHIL/ZCodeProject/fractus/tests/test_block.py` :
 
 def test_block_full_backward_every_param():
     """CRITERE L2b : FractalBlockFull (attn + Kuramoto + MoE) must propager un
-    gradient fini ET non-nul a CHAQUE parameter. La preuve ultime que tout
-    le pipeline fractal est differentiable."""
+    gradient fini ET non-nul a CHAQUE parameter. La proof ultime that tout
+    the pipeline fractal est differentiable."""
     from fractus.nn.block import FractalBlockFull
     block = FractalBlockFull(
         d_model=32, n_heads=4, d_head=8, n_levels=2,
@@ -918,8 +918,8 @@ def test_block_full_backward_every_param():
     for name, p in params:
         assert p.requires_grad, f"{name} should requires_grad=True"
         assert p.grad is not None, f"{name} n'a recu no gradient"
-        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert torch.isfinite(p.grad).all(), f"{name} a a gradient non-fini"
+        assert p.grad.abs().sum().item() > 0, f"{name} a recu a gradient nul"
 
 
 def test_block_full_shape_and_finite():
@@ -936,7 +936,7 @@ def test_block_full_shape_and_finite():
     assert torch.isfinite(lb_loss)
 ```
 
-- [ ] **Step 4: Lancer all les tests**
+- [ ] **Step 4: Lancer all the tests**
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/ -v
@@ -957,17 +957,17 @@ git commit -m "feat(nn): add FractalBlockFull integrating Kuramoto + MoE (L2b co
 **Files:**
 - Modify: `C:/Users/PHIL/ZCodeProject/fractus/scripts/demo_transformer.py`
 
-- [ ] **Step 1: Ajouter une variante TinyFractalLMFull utilisant FractalBlockFull**
+- [ ] **Step 1: Ajouter a variante TinyFractalLMFull utilisant FractalBlockFull**
 
-(Optionnel — l'objective est de montrer que le bloc complete apprend aussi.)
-Voir code complete in le commit.
+(Optionnel — l'objective est of montrer that the bloc complete apprend aussi.)
+Voir code complete in the commit.
 
-- [ ] **Step 2: Lancer la demo etendue**
+- [ ] **Step 2: Lancer the demo etendue**
 
 ```powershell
 .venv\Scripts\python.exe scripts\demo_transformer.py
 ```
-Expected: la loss must baisser (au moins ÷2).
+Expected: the loss must baisser (au less ÷2).
 
 - [ ] **Step 3: Commit**
 
@@ -978,7 +978,7 @@ git commit -m "demo(L2b): extended demo with Kuramoto+MoE block"
 
 ---
 
-## Critere final de L2b « termine »
+## Critere final of L2b « termine »
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/ -v
@@ -988,18 +988,18 @@ git commit -m "demo(L2b): extended demo with Kuramoto+MoE block"
 # → loss baisse
 ```
 
-L2b termine → on a un transformer fractal COMPLET (embedding + attention + Kuramoto + MoE), differentiable de bout en bout. On passe then a L3 (SIREN).
+L2b termine → on a a transformer fractal COMPLET (embedding + attention + Kuramoto + MoE), differentiable end-to-end. On passe then a L3 (SIREN).
 
 ---
 
 ## Self-Review
 
-**1. Spec coverage :** (a) Farey → Task 1 ✅ ; (b) KuramotoLayer stateless RK4 → Task 2 ✅ ; (c) PhaseRoutedMoE von Mises → Task 3 ✅ ; (d) FractalBlockFull → Task 4 ✅ ; (e) critere backward CHAQUE parameter sur le bloc complete → `test_block_full_backward_every_param` ✅.
+**1. Spec coverage :** (a) Farey → Task 1 ✅ ; (b) KuramotoLayer stateless RK4 → Task 2 ✅ ; (c) PhaseRoutedMoE von Mises → Task 3 ✅ ; (d) FractalBlockFull → Task 4 ✅ ; (e) critere backward CHAQUE parameter on the bloc complete → `test_block_full_backward_every_param` ✅.
 
 **2. Placeholder scan :** no TBD. ✅
 
 **3. Type consistency :** `farey_sequence(int) → List[(int,int)]`, `expert_phases(int) → List[float]`. `KuramotoLayer(d_model, N, rank).forward((B,L,d_model)) → (B,L,N)`, `.phase_loss((B,L,N)) → scalar`, `.decode_to_bias((B,L,N), d_model) → (B,L,d_model)`. `PhaseRoutedMoE(d_model, E, K, kappa).forward((B,L,d_model), (B,L,n_phases)) → ((B,L,d_model), scalar)`. Coherent. ✅
 
-**4. Decision stateless :** KuramotoLayer n'a pas de `register_buffer` for un etat de phases persistant — les phases sont derivees des hidden a each forward. Conforme a la decision validee. ✅
+**4. Decision stateless :** KuramotoLayer n'a not of `register_buffer` for a etat of phases persistant — the phases are derivees hidden a each forward. Conforme a the decision valide. ✅
 
-**5. Fidelite FNN :** RK4 bas-rang, encode_from_hidden, decode_to_bias, phase_loss (bas-rang cos+sin), gate von Mises, top-k, load-balance E·Σ(P-1/E)², experts GeLU Xavier. Tous portes faithfully. ✅
+**5. Fidelite the original :** RK4 bas-rang, encode_from_hidden, decode_to_bias, phase_loss (bas-rang cos+sin), gate von Mises, top-k, load-balance E·Σ(P-1/E)2, experts GeLU Xavier. Tous porteds faithfully. ✅

@@ -1,4 +1,4 @@
-"""Tests du pipeline preuves : generateur, verify exact, recompense."""
+"""Tests pipeline proofs : generateur, verify exact, reward."""
 
 import torch
 import pytest
@@ -7,14 +7,14 @@ import pytest
 # --- InferenceRule ---
 
 def test_inference_rules_count_20():
-    """Il y a exactement 20 regles (FNN proof.rs:14-36)."""
+    """Il y a exactment 20 regles (the original proof.rs:14-36)."""
     from fractus.reasoning.proof import InferenceRule, all_rules
     assert InferenceRule.n_rules() == 20
     assert len(all_rules()) == 20
 
 
 def test_inference_rule_names_consistent():
-    """Index et nom coherents."""
+    """Index and nom coherents."""
     from fractus.reasoning.proof import InferenceRule
     assert InferenceRule.name(0) == "AddBothSides"
     assert InferenceRule.name(19) == "ProofByInduction"
@@ -23,29 +23,29 @@ def test_inference_rule_names_consistent():
 # --- ProofGenerator ---
 
 def test_generator_produces_proof():
-    """generate(target) returns une preuve with max_steps etapes."""
+    """generate(target) returns a proof with max_steps etapes."""
     from fractus.reasoning.proof import ProofGenerator
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     proof, info = gen.generate(target=5.0)
     assert len(proof.steps) == 6
     assert proof.target == 5.0
-    # Chaque step a un rule_index valide.
+    # Chaque step a a rule_index valid.
     for step in proof.steps:
         assert 0 <= step.rule_index < 20
 
 
 def test_generator_backward_every_param():
-    """CRITERE L5 : backward propage un gradient fini ET non-nul a CHAQUE parameter.
+    """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter.
 
-    La loss must toucher A LA FOIS les logits de regles (w_rule) ET les valeurs
-    predites (w_value), sinon w_value ne recoit pas de gradient. On construit
-    therefore une loss qui combine les deux : REINFORCE-like.
+    La loss must toucher A LA FOIS the logits of regles (w_rule) ET the values
+    predites (w_value), sinon w_value not recoit not of gradient. On construit
+    therefore a loss which combine the deux : REINFORCE-like.
     """
     from fractus.reasoning.proof import ProofGenerator
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     proof, info = gen.generate(target=3.0)
-    # Loss = somme des logits (touche w_rule) + somme des value_preds (touche w_value).
-    # Les deux sont des tenseurs in le graphe autodiff.
+    # Loss = somme logits (touche w_rule) + somme value_preds (touche w_value).
+    # Les deux are tenseurs in the graphe autodiff.
     loss = sum(logits.sum() for logits in info["logits_per_step"])
     loss = loss + sum(vp for vp in info["value_preds_per_step"])
     loss.backward()
@@ -75,7 +75,7 @@ def test_verify_primality():
 
 
 def test_verify_fermat():
-    """Fermat petit : 2^(7-1) ≡ 1 mod 7."""
+    """Fermat small : 2^(7-1) ≡ 1 mod 7."""
     from fractus.reasoning.proof import ProofVerifier
     v = ProofVerifier()
     assert v.verify_fermat(2, 7) is True
@@ -97,7 +97,7 @@ def test_verify_gcd():
 
 
 def test_verify_rejects_invalid_proof():
-    """Une preuve with conclusion loin de la target must etre rejetee."""
+    """Une proof with conclusion loin of the target must etre rejetee."""
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
     v = ProofVerifier()
     steps = [ProofStep(rule_index=0, rule_name="AddBothSides", premise_indices=[],
@@ -107,9 +107,9 @@ def test_verify_rejects_invalid_proof():
 
 
 def test_verify_accepts_valid_proof():
-    """Une preuve dont la conclusion atteint la target must etre acceptee.
+    """Une proof dont the conclusion atteint the target must etre acceptede.
 
-    Note : le seuil 1e-3 est strict (<, pas <=), therefore |conclusion - target| must
+    Note : the seuil 1e-3 est strict (<, not <=), therefore |conclusion - target| must
     etre STRICTEMENT inferieur a 0.001. On utilise 0.0005 for etre sur.
     """
     from fractus.reasoning.proof import ProofVerifier, Proof, ProofStep
@@ -123,7 +123,7 @@ def test_verify_accepts_valid_proof():
 # --- ProofReward ---
 
 def test_reward_valid_proof_high():
-    """Une preuve valide a une recompense elevee."""
+    """Une proof valid a a reward elevee."""
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     r = ProofReward()
     steps = [ProofStep(rule_index=0, rule_name="AddBothSides", premise_indices=[],
@@ -134,7 +134,7 @@ def test_reward_valid_proof_high():
 
 
 def test_reward_diversity_increases_with_rules():
-    """Plus de regles distinctes → recompense diversity plus haute."""
+    """Plus of regles distinctes → reward diversity more haute."""
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     r = ProofReward()
     steps1 = [ProofStep(rule_index=0, rule_name="A", premise_indices=[], conclusion=5.0, confidence=1.0)]
@@ -146,7 +146,7 @@ def test_reward_diversity_increases_with_rules():
 
 
 def test_reward_weights_sum_to_one():
-    """Les poids par defaut somment a 1.0 (0.6 + 0.3 + 0.1)."""
+    """Les poids by defaut somment a 1.0 (0.6 + 0.3 + 0.1)."""
     from fractus.reasoning.proof import ProofReward
     r = ProofReward()
     total = r.correctness_weight + r.efficiency_weight + r.diversity_weight

@@ -1,5 +1,5 @@
 # Workspace racine fractus.
-# Les deux crates (fractus-core, fractus-py) sont des members isoles.
+# Les deux crates (fractus-core, fractus-py) are members isoles.
 [workspace]
 members = ["crate/fractus-core", "crate/fractus-py"]
 resolver = "2"

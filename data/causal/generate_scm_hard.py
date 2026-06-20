@@ -1,15 +1,15 @@
-"""SCM non-lineaire with ordre topologique INCONNU — validation serieuse de NOTEARS.
+"""SCM non-lineaire with topological order INCONNU — validation serieuse of NOTEARS.
 
-CORRECTION DU CAS JOUET L4 : en L4, le SCM was lineaire + triangulaire superieur
-(ordre topologique trivial). La demo SHD=0 ne prouvait que le pipeline tourne.
+CORRECTION DU CAS JOUET L4 : en L4, the SCM was lineaire + triangulaire superieur
+(topological order trivial). La demo SHD=0 not prouvait that the pipeline tourne.
 
-Ici : SCM NON-LINEAIRE (X_j = tanh(Σ W·X_i) + ε) with ordre topologique
-INCONNU (W full, permutation aleatoire des variables). NOTEARS must decouvrir
-l'ordre ET la structure. C'est le true test de competence.
+Ici : SCM NON-LINEAIRE (X_j = tanh(Σ W·X_i) + ε) with topological order
+INCONNU (W full, permutation aleatoire variables). NOTEARS must decouvrir
+l'ordre ET the structure. This is the true test of competence.
 
-Resultat empirique : NOTEARS lineaire est robuste a la non-linearite moderee
-(tanh ≈ identite for petites entrees) et recupere le DAG with SHD=0 meme
-in ce cas difficile. C'est une validation scientifique honnete au-dela
+Resultat empirique : NOTEARS lineaire est robuste a the non-linearite moderee
+(tanh ≈ identite for petites entrees) and recupere the DAG with SHD=0 meme
+in this cas difficile. This is a validation scientifique honestete au-dela
 du cas jouet.
 """
 
@@ -23,23 +23,23 @@ def generate_nonlinear_scm(
     noise_std: float = 0.3,
     seed: int = 42,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Genere un SCM NON-LINEAIRE with ordre topologique inconnu.
+    """Genere a SCM NON-LINEAIRE with topological order inconnu.
 
-    X_j = tanh(Σ_i W[i,j] · X_i) + ε_j, ou l'ordre topo des variables est
-    une permutation aleatoire (therefore W_true n'est PAS triangulaire).
+    X_j = tanh(Σ_i W[i,j] · X_i) + ε_j, or l'ordre topo variables est
+    a permutation aleatoire (therefore W_true n'est PAS triangulaire).
 
     Args:
-        n_vars    : number de variables.
+        n_vars    : number of variables.
         n_samples : number d'echantillons.
         edge_prob : probabilite d'arete.
-        noise_std : ecart-type du bruit.
+        noise_std : ecart-type bruit.
         seed      : for reproductibilite.
     Returns:
         W_true : matrix (n_vars, n_vars), NON triangulaire (ordre cache).
         X      : donnees (n_samples, n_vars).
     """
     g = torch.Generator().manual_seed(seed)
-    # Ordre topologique cache : permutation aleatoire.
+    # Ordre topological cache : permutation aleatoire.
     perm = torch.randperm(n_vars, generator=g)
 
     W_true = torch.zeros(n_vars, n_vars)

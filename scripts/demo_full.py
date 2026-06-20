@@ -1,15 +1,15 @@
-"""Demo L7 : integration complete des 3 tâches du spec fractus.
+"""Demo L7 : integration complete 3 taches spec fractus.
 
 Le spec disait (L7) : 3 demos demontrables — texte, raisonnement mathematical,
-inference causale. Cette demo orchestre les 3 en un seul script, et utilise
-les metriques honnetes de fractus.metrics.
+inference causale. Cette demo orchestre the 3 en a seul script, and utilise
+les metriques honestetes of fractus.metrics.
 
-Ce qui marche (deja valide in les demos L2b, L4) :
+Ce which marche (deja valid in the demos L2b, L4) :
     - Texte : TinyFractalLM apprend 'hello world', loss 4.73 → 0.65.
-    - Causal : NOTEARS recupere un DAG synthetique, SHD = 0.
-Ce qui ne marche pas (decouvert en L5) :
-    - Preuves : REINFORCE pur n'apprend pas (error stagne). On documente
-      honnetement au lieu de pretendre.
+    - Causal : NOTEARS recupere a DAG synthetique, SHD = 0.
+Ce which not marche not (decouvert en L5) :
+    - Preuves : REINFORCE pur n'apprend not (error stagne). On documente
+      honestetement instead of pretendre.
 
 Run :
     python scripts/demo_full.py
@@ -38,7 +38,7 @@ def section(title: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tâche 1 : Generation de texte (FractalBlockFull)
+# Tache 1 : Generation of texte (FractalBlockFull)
 # ---------------------------------------------------------------------------
 
 class TinyFractalLM(nn.Module):
@@ -93,7 +93,7 @@ def demo_text():
         opt.step()
     final_loss = ce.item()
 
-    # Perplexite honnete (pas proxy).
+    # Perplexite honestete (pas proxy).
     ppl = honest_perplexity(model, ids[:, :-1], ids[:, 1:])
 
     print(f"\nCE Loss : {initial_loss:.4f} -> {final_loss:.4f} ({(1-final_loss/initial_loss)*100:.0f}% baisse)")
@@ -112,7 +112,7 @@ def demo_text():
 
 
 # ---------------------------------------------------------------------------
-# Tâche 2 : Raisonnement mathematical (ProofGenerator + Verifier)
+# Tache 2 : Raisonnement mathematical (ProofGenerator + Verifier)
 # ---------------------------------------------------------------------------
 
 def demo_proofs():
@@ -120,7 +120,7 @@ def demo_proofs():
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier, ProofReward
     from fractus.reasoning.conjecture import ConjectureDiscoveryLoop
 
-    # 2a. Le verify exact est SOUND : tout ce qu'il accepte est true.
+    # 2a. Le verify exact est SOUND : all this qu'il accepted est true.
     verify = ProofVerifier()
     examples = [
         ("7 est premier", lambda: verify.verify_primality(7, True)),
@@ -134,7 +134,7 @@ def demo_proofs():
         result = fn()
         print(f"  [{'OK' if result else 'KO'}] {desc}")
 
-    # 2b. Decouverte de conjectures (Popper).
+    # 2b. Decouverte of conjectures (Popper).
     print("\nDecouverte de conjectures (falsification popperienne) :")
     loop = ConjectureDiscoveryLoop(state_dim=32, n_trials=50, seed=42)
     for _ in range(30):
@@ -143,7 +143,7 @@ def demo_proofs():
     print(f"  Decouvertes (survecu + novelty) : {loop.n_discoveries}")
     print(f"  Taux de decouverte : {loop.discovery_rate():.1%}")
 
-    # 2c. VERDICT HONNETE sur REINFORCE.
+    # 2c. VERDICT HONNETE on REINFORCE.
     print("\nVERDICT HONNETE (generateur de preuves) :")
     print("  Le ProofGenerator + REINFORCE pur n'apprend PAS la tâche de preuve")
     print("  (error stagne, voir demo_proof_reinforce.py). Le verify est")
@@ -152,7 +152,7 @@ def demo_proofs():
 
 
 # ---------------------------------------------------------------------------
-# Tâche 3 : Inference causale (NOTEARS + do-calculus)
+# Tache 3 : Inference causale (NOTEARS + do-computationus)
 # ---------------------------------------------------------------------------
 
 def demo_causal():
@@ -183,7 +183,7 @@ def demo_causal():
     print(f"  (cas jouet lineaire + triangulaire — prouve que le pipeline tourne,")
     print(f"   pas la competence sur donnees reelles.)")
 
-    # do-calculus : effet de do(X_0 = v) sur X_4.
+    # do-computationus : effet of do(X_0 = v) on X_4.
     from fractus.causal.do import do_intervention
     X_do = do_intervention(X, var_idx=0, value=2.0)
     print(f"\ndo(X_0 = 2.0) applique : colonne 0 fixee a 2.0")

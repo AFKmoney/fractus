@@ -1,10 +1,10 @@
-"""Tests de RecursiveReasoner (ACT) et SelfConsistencyCheck."""
+"""Tests of RecursiveReasoner (ACT) and SelfConsistencyCheck."""
 
 import torch
 
 
 def test_act_output_shape():
-    """ACT preserve la shape (B, L, d)."""
+    """ACT preserve the shape (B, L, d)."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
@@ -25,7 +25,7 @@ def test_act_is_finite():
 
 
 def test_act_ponder_loss_nonneg():
-    """ponder_loss >= 0 (c'est une moyenne de pas)."""
+    """ponder_loss >= 0 (this is a moyenne of pas)."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
     out, ponder = reasoner(torch.randn(2, 5, 16), lambda x: x * 0.5)
@@ -33,7 +33,7 @@ def test_act_ponder_loss_nonneg():
 
 
 def test_act_backward_every_param():
-    """CRITERE L5 : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
+    """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
@@ -63,7 +63,7 @@ def test_self_consistency_candidates_count():
 
 
 def test_self_consistency_select_best():
-    """select_best returns un idx valide et un score in [-1, 1]."""
+    """select_best returns a idx valid and a score in [-1, 1]."""
     from fractus.reasoning.self_consistency import SelfConsistencyCheck
     scc = SelfConsistencyCheck(n_candidates=3, noise_scale=0.05)
     ref = torch.randn(2, 4, 16)

@@ -1,4 +1,4 @@
-"""Suite de Fibonacci precalculee + formula de Binet for grands n.
+"""Suite of Fibonacci precomputationee + formula of Binet for grands n.
 
 Porte depuis the original architecture (src/math/fibonacci.rs).
 """
@@ -7,10 +7,10 @@ from typing import List
 
 
 class FibonacciSequence:
-    """Suite de Fibonacci precalculee.
+    """Suite of Fibonacci precomputationee.
 
     Args:
-        n : number de termes a precalculer.
+        n : number of termes a precomputationer.
     """
 
     def __init__(self, n: int):
@@ -26,7 +26,7 @@ class FibonacciSequence:
             self.values.append(self.values[i - 1] + self.values[i - 2])
 
     def get(self, i: int) -> int:
-        """Retourne F(i). Pour i < n : table. Pour i >= n : formula de Binet."""
+        """Retourne F(i). Pour i < n : table. Pour i >= n : formula of Binet."""
         if i < 0:
             raise ValueError("i must etre >= 0")
         if i < len(self.values):

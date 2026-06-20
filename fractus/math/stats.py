@@ -12,7 +12,7 @@ def sigmoid(x: torch.Tensor) -> torch.Tensor:
 
 
 def cosine_similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Similarite cosinus : dot(a,b) / (||a|| · ||b||). 0 si une norme < 1e-10."""
+    """Similarite cosinus : dot(a,b) / (||a|| · ||b||). 0 si a norme < 1e-10."""
     dot = (a * b).sum()
     norm_a = a.norm()
     norm_b = b.norm()

@@ -1,14 +1,14 @@
-"""Demo Scaling : transformer fractal sur tinyshakespeare (entrainement court).
+"""Demo Scaling : transformer fractal on tinyshakespeare (training court).
 
-Entraine TinyFractalLM sur un SOUS-ENSEMBLE de tinyshakespeare (200 batches),
-mesure la perplexite honnete, et generated du texte.
+Entraine TinyFractalLM on a SOUS-ENSEMBLE of tinyshakespeare (200 batches),
+mesure the perplexite honestete, and generated texte.
 
-HONNETETE SUR LA LIMITE CPU : l'entrainement complete (1 epoch = ~900 batches)
-prend ~10 min sur le Ryzen 5 a cause de Kuramoto RK4 (4 under-steps) et du
-masque triangulaire de l'attention. Cette demo fait un entrainement COURT
-(200 batches, ~3 min) qui prouve que le modele APPREND sur du true texte,
-but without convergence complete. Pour un entrainement complete : GPU ou
-vectorisation approfondie du Kuramoto (future work).
+HONNETETE SUR LA LIMITE CPU : l'training complete (1 epoch = ~900 batches)
+prend ~10 min on the Ryzen 5 because of Kuramoto RK4 (4 under-steps) and du
+masque triangulaire of l'attention. Cette demo does a training COURT
+(200 batches, ~3 min) which prouve that the modele APPREND on true texte,
+but without convergesnce complete. Pour a training complete : GPU ou
+vectorisation approfondie Kuramoto (future work).
 
 Setup (CPU-only) :
     vocab = 65 (tinyshakespeare)
@@ -89,7 +89,7 @@ def main():
         initial_ppl = honest_perplexity(model, inp, tgt)
     print(f"Perplexite initial : {initial_ppl:.2f}  (= vocab ≈ {dataset.vocab_size})")
 
-    # Entrainement COURT : 200 batches (under-ensemble, ~3 min sur CPU).
+    # Entrainement COURT : 200 batches (under-ensemble, ~3 min on CPU).
     n_batches = 200
     print(f"\nEntrainement court : {n_batches} batches (under-ensemble du dataset)...")
     t0 = time.time()
@@ -119,7 +119,7 @@ def main():
     elapsed = time.time() - t0
     print(f"\nTemps : {elapsed:.0f}s ({elapsed/60:.1f} min)")
 
-    # Evaluer perplexite finale sur validation.
+    # Evaluer perplexite finale on validation.
     model.eval()
     val_ces = []
     with torch.no_grad():

@@ -1,26 +1,26 @@
-"""PrimeGenerator : MLP qui apprend a produire des numbers premiers.
+"""PrimeGenerator : MLP which apprend a produire numbers premiers.
 
-REDESIGN L5+ v2 : la tâche 'converger vers une target a 1e-3' (FNN proof.rs)
-was inatteignable with l'architecture GRU+EMA (prouve par 2 tentatives :
-REINFORCE pur, then curriculum+shaping+baseline, toutes deux ~0% de validite).
+REDESIGN L5+ v2 : the tache 'convergesr toward a target a 1e-3' (the original proof.rs)
+was inatteignable with l'architecture GRU+EMA (prouve by 2 tentatives :
+REINFORCE pur, then curriculum+shaping+baseline, all deux ~0% of validity).
 
-NOUVELLE TÂCHE : produire des integers qui sont PREMIERS. Le verify exact
-(PrimeSieve) teste la primalite — c'est binary (true/false sur integers concrets),
-pas une convergence numerique.
+NOUVELLE TACHE : produire integers which are PREMIERS. Le verify exact
+(PrimeSieve) teste the primalite — this is binary (true/false on integers concrets),
+pas a convergesnce numerique.
 
-Pourquoi cette tâche est apprenable :
-    - Densite de premiers in [2,100] = 25%. Un generateur aleatoire reussit
-      deja 1 fois sur 4 → REINFORCE a un signal constant non-nul.
-    - L'objective (maximiser la fraction de n premiers) est clair et mesurable.
-    - Le verify est SOUND : tout n accepte est mathematiquement premier.
+Pourquoi cette tache est apprenable :
+    - Densite of premiers in [2,100] = 25%. Un generateur aleatoire reussit
+      already 1 fois on 4 → REINFORCE a a signal constant non-nul.
+    - L'objective (maximiser the fraction of n premiers) est clair and mesurable.
+    - Le verify est SOUND : all n accepted est mathematicalment premier.
 
-Architecture : MLP simple. Entree = un contexte (vector aleatoire ou cible).
-Sortie = logits sur N classes (n ∈ [2, N]). argmax = n predit.
+Architecture : MLP simple. Entree = a contexte (vector aleatoire or target).
+Sortie = logits on N classes (n ∈ [2, N]). argmax = n predit.
 
-Note honnete : c'est une tâche SYMBOLIQUE simple (produire un premier), pas
-une preuve logical structuree. C'est le niveau atteignable with REINFORCE sur
-un verify exact. Une vraie "preuve" au sens derivation logical necessite
-un arbre de recherche + verification structurelle (future work).
+Note honestete : this is a tache SYMBOLIQUE simple (produire a premier), pas
+une proof logical structuree. This is the niveau atteignable with REINFORCE sur
+un verify exact. Une vraie "proof" au sens derivation logical necessite
+un arbre of recherche + verification structurelle (future work).
 """
 
 import torch
@@ -30,12 +30,12 @@ from ..math.primes import PrimeSieve
 
 
 class PrimeGenerator(nn.Module):
-    """MLP qui apprend a produire des numbers premiers.
+    """MLP which apprend a produire numbers premiers.
 
     Args:
-        max_n    : les integers predits sont in [2, max_n].
-        context_dim : dimension du vector de contexte (entree).
-        hidden   : width du MLP.
+        max_n    : the integers predits are in [2, max_n].
+        context_dim : dimension vector of contexte (entree).
+        hidden   : width MLP.
     """
 
     def __init__(self, max_n: int = 100, context_dim: int = 16, hidden: int = 64):
@@ -61,14 +61,14 @@ class PrimeGenerator(nn.Module):
         return self.mlp(context)
 
     def predict(self, context: torch.Tensor) -> torch.Tensor:
-        """Retourne les n predits (argmax), shape (B,). n ∈ [2, max_n]."""
+        """Retourne the n predits (argmax), shape (B,). n ∈ [2, max_n]."""
         logits = self.forward(context)
         indices = logits.argmax(dim=-1)  # (B,) ∈ [0, n_classes-1]
         return indices + 2  # n = index + 2
 
     def is_prime_pred(self, n: torch.Tensor) -> torch.Tensor:
-        """Verifie la primalite des n predits. Retourne bool tensor (B,)."""
-        # n est un tensor d'integers ; on verifies via le crible.
+        """Verifie the primalite n predits. Retourne bool tensor (B,)."""
+        # n est a tensor d'integers ; on verifiess via the crible.
         results = []
         for ni in n.tolist():
             results.append(self.sieve.verify_prime(int(ni)))

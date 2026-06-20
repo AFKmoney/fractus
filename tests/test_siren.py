@@ -1,24 +1,24 @@
-"""Tests de TorusSirenWeight : vraie SIREN sin(ω₀·), pas SiLU."""
+"""Tests of TorusSirenWeight : vraie SIREN sin(ω0·), not SiLU."""
 
 import inspect
 import torch
 
 
 def test_siren_uses_sin_not_silu():
-    """CRITERE L3 : la SIREN must utiliser torch.sin comme non-linearite,
-    PAS nn.SiLU. C'est exactement le falsehood d'OMNI (torus_siren.py:15,17).
+    """CRITERE L3 : the SIREN must utiliser torch.sin comme non-linearite,
+    PAS nn.SiLU. This is exactment the falsehood d'the original (torus_siren.py:15,17).
 
-    On verifies via l'inspection REELLE des modules du code source (AST),
-    pas via recherche de chaine (qui matcherait le docstring qui explique
-    la correction)."""
+    On verifiess via l'inspection REELLE modules code source (AST),
+    not via recherche of chaine (qui matcherait the docstring which explique
+    the correction)."""
     import ast
     from fractus.nn import siren as siren_mod
 
-    # 1. torch.sin must etre appele in le forward.
+    # 1. torch.sin must etre appele in the forward.
     src = inspect.getsource(siren_mod)
     assert 'torch.sin(' in src, "La SIREN must utiliser torch.sin(ω₀·)"
 
-    # 2. Parser le source et verify qu'no Attribute dont attr='SiLU'
+    # 2. Parser the source and verify qu'no Attribute dont attr='SiLU'
     #    n'est utilise comme appel (nn.SiLU()).
     tree = ast.parse(src)
     silu_calls = []
@@ -31,14 +31,14 @@ def test_siren_uses_sin_not_silu():
 
 
 def test_siren_omega0_is_30_not_56():
-    """ω₀ = 30 (justifie par Sitzmann 2020), PAS 56 (non justifie, heritage OMNI)."""
+    """ω0 = 30 (justifie by Sitzmann 2020), PAS 56 (non justifie, heritage the original)."""
     from fractus.nn.siren import TorusSirenWeight
     s = TorusSirenWeight(out_h=16, out_w=16, hidden=32)
     assert abs(s.omega0 - 30.0) < 1e-6, f"ω₀ should etre 30.0, eu {s.omega0}"
 
 
 def test_siren_output_shape():
-    """La SIREN evaluee sur la grille produit une matrix (out_h, out_w)."""
+    """La SIREN evaluee on the grille produit a matrix (out_h, out_w)."""
     from fractus.nn.siren import TorusSirenWeight
     s = TorusSirenWeight(out_h=16, out_w=16, hidden=32)
     W = s()
@@ -53,7 +53,7 @@ def test_siren_is_finite():
 
 
 def test_siren_backward_propagates():
-    """CRITERE L3 : backward propage un gradient fini ET non-nul a CHAQUE parameter."""
+    """CRITERE L3 : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
     from fractus.nn.siren import TorusSirenWeight
     s = TorusSirenWeight(out_h=16, out_w=16, hidden=32)
     W = s()
@@ -70,7 +70,7 @@ def test_siren_backward_propagates():
 
 
 def test_siren_fewer_params_than_dense():
-    """La SIREN must avoir MOINS de parameters que la matrix dense equivalente."""
+    """La SIREN must avoir MOINS of parameters that the matrix dense equivalente."""
     from fractus.nn.siren import TorusSirenWeight
     s = TorusSirenWeight(out_h=32, out_w=32, hidden=16)
     n_siren = sum(p.numel() for p in s.parameters())

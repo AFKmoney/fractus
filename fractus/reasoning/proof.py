@@ -1,25 +1,23 @@
-"""Pipeline de preuves : neural propose, exact verify disposes.
+"""Proof pipeline: neural proposes, exact verifier disposes.
 
-Porte depuis the original architecture (src/proof.rs) en PyTorch pur.
+Architecture:
+    ProofGenerator: autoregressive GRU that produces a sequence of ProofSteps.
+        Each step: chooses a rule (argmax over logits) + predicts a scalar
+        value (conclusion progressing toward the target).
+    ProofVerifier: EXACT VERIFICATION. Does NOT use inference rules for
+        verification. Instead, it tests concrete arithmetic identities
+        (addition, primality, divisibility, Fermat, Wilson, GCD, modular).
+        Soundness guaranteed: if the verifier says "valid", it is
+        mathematically true.
+    ProofReward: R = 0.6*correctness + 0.3*efficiency + 0.1*diversity.
 
-Architecture :
-    ProofGenerator : GRU autoregressif qui produit une sequence de ProofStep.
-        Chaque step : choisit une regle (argmax sur logits) + predit une valeur
-        scalar (conclusion progressive vers la cible).
-    ProofVerifier : VERIFICATION EXACTE. N'utilise PAS les regles d'inference —
-        teste uniquement des identites arithmetiques concretes (addition,
-        primalite, divisibilite, Fermat, Wilson, GCD, modulaire). Soundness
-        garantie : si le verify dit "valide", c'est mathematiquement true.
-    ProofReward : R = 0.6·correctness + 0.3·efficiency + 0.1·diversity.
+The ProofGenerator is trainable via REINFORCE (policy gradient) on the
+reward from the verifier.
 
-CORRECTION vs FNN : FNN n'avait pas d'autodiff (training.rs:399 = bruit). Ici
-le ProofGenerator est entrainable par REINFORCE (policy gradient) sur la
-recompense du verify. Voir demo L5.
-
-HONNETETE : le verify ne verifies que la CONCLUSION numerique (|conclusion - target|<1e-3),
-pas la structure logical de la preuve. C'est faithful a FNN (proof.rs:341-360).
-Une preuve "acceptee" est therefore garantie d'atteindre la bonne valeur numerique,
-but pas d'etre une derivation logiquement valide etape par etape.
+HONESTY NOTE: The verifier only checks the NUMERICAL CONCLUSION
+(|conclusion - target| < 1e-3), not the logical structure of the proof.
+An "accepted" proof is therefore guaranteed to reach the correct numerical
+value, but is not necessarily a logically valid step-by-step derivation.
 """
 
 import math
@@ -32,62 +30,36 @@ import torch.nn as nn
 from ..math.primes import PrimeSieve
 
 
-# ---------------------------------------------------------------------------
-# Regles d'inference (les 20 regles de FNN proof.rs:14-36)
-# ---------------------------------------------------------------------------
-
 class InferenceRule:
-    """Labels des 20 regles d'inference (comme FNN proof.rs:14-36).
+    """Labels for the 20 inference rules.
 
-    NOTE : ce ne sont que des labels. Le generateur predit un index de regle,
-    but le verify ne lit PAS la regle — il verifies uniquement la
-    conclusion numerique. Fidele a FNN.
+    NOTE: these are just labels. The generator predicts a rule index, but the
+    verifier does NOT read the rule. It only verifies the numerical conclusion.
     """
 
     NAMES = [
-        "AddBothSides",       # a=b → a+c=b+c
-        "MultiplyBothSides",  # a=b → a*c=b*c
-        "Distributive",       # a*(b+c) = a*b + a*c
-        "Commutative",        # a+b = b+a
-        "Associative",        # (a+b)+c = a+(b+c)
-        "Transitive",         # a=b, b=c → a=c
-        "Substitution",       # replace variable with value
-        "Reflexive",          # a=a
-        "Symmetric",          # a=b → b=a
-        "FermatLittle",       # a^(p-1) ≡ 1 mod p
-        "WilsonTheorem",      # (p-1)! ≡ -1 mod p
-        "EuclidGCD",          # gcd(a,b) = gcd(b, a mod b)
-        "Divisibility",       # a|b et a|c → a|(b+c)
-        "ModularArithmetic",  # a ≡ b mod n → a+c ≡ b+c mod n
-        "Contradiction",      # assume ¬P, derive contradiction → P
-        "DoubleNegation",     # ¬(¬P) → P
-        "ModusPonens",        # P, P→Q → Q
-        "UniversalInstant",   # ∀x:P(x) → P(a)
-        "ExistentialIntro",   # P(a) → ∃x:P(x)
-        "ProofByInduction",   # cas de base + pas inductif
+        "AddBothSides", "MultiplyBothSides", "Distributive", "Commutative",
+        "Associative", "Transitive", "Substitution", "Reflexive", "Symmetric",
+        "FermatLittle", "WilsonTheorem", "EuclidGCD", "Divisibility",
+        "ModularArithmetic", "Contradiction", "DoubleNegation", "ModusPonens",
+        "UniversalInstant", "ExistentialIntro", "ProofByInduction",
     ]
 
     @classmethod
-    def n_rules(cls) -> int:
+    def n_rules(cls):
         return len(cls.NAMES)
 
     @classmethod
-    def name(cls, idx: int) -> str:
+    def name(cls, idx):
         return cls.NAMES[idx]
 
 
-def all_rules() -> List[str]:
-    """Retourne la liste des noms des 20 regles."""
+def all_rules():
     return list(InferenceRule.NAMES)
 
 
-# ---------------------------------------------------------------------------
-# Dataclasses
-# ---------------------------------------------------------------------------
-
 @dataclass
 class ProofStep:
-    """Une etape de preuve (comme FNN proof.rs:73-79)."""
     rule_index: int
     rule_name: str
     premise_indices: List[int]
@@ -97,36 +69,22 @@ class ProofStep:
 
 @dataclass
 class Proof:
-    """Une preuve complete (comme FNN proof.rs:83-88)."""
     steps: List[ProofStep] = field(default_factory=list)
     target: float = 0.0
     conclusion: float = 0.0
     is_valid: bool = False
 
 
-# ---------------------------------------------------------------------------
-# ProofGenerator : GRU autoregressif (FNN proof.rs:91-260)
-# ---------------------------------------------------------------------------
-
 class ProofGenerator(nn.Module):
-    """Generateur de preuves GRU autoregressif.
-
-    Produit une sequence de ProofStep : a each step, choisit une regle
-    (argmax sur logits) et predit une valeur scalar (conclusion progressive
-    via EMA 0.8/0.2 vers la cible).
+    """Autoregressive GRU proof generator.
 
     Args:
-        hidden_dim : dimension de l'etat cache du GRU (32 par defaut, FNN).
-        n_rules    : number de regles (= 20, InferenceRule.NAMES).
-        max_steps  : number d'etapes de preuve generees (6 par defaut, FNN).
+        hidden_dim: GRU hidden state dimension (32 by default).
+        n_rules:    number of rules (= 20).
+        max_steps:  number of proof steps generated (6 by default).
     """
 
-    def __init__(
-        self,
-        hidden_dim: int = 32,
-        n_rules: int = None,
-        max_steps: int = 6,
-    ):
+    def __init__(self, hidden_dim=32, n_rules=None, max_steps=6):
         super().__init__()
         if n_rules is None:
             n_rules = InferenceRule.n_rules()
@@ -134,44 +92,29 @@ class ProofGenerator(nn.Module):
         self.n_rules = n_rules
         self.max_steps = max_steps
 
-        # Poids (comme FNN proof.rs:108-141). Init Xavier-ish uniform.
         scale_rule = math.sqrt(2.0 / (hidden_dim + n_rules))
         self.w_rule = nn.Parameter(torch.empty(hidden_dim, n_rules).uniform_(-scale_rule, scale_rule))
         scale_value = math.sqrt(2.0 / (hidden_dim + 1))
         self.w_value = nn.Parameter(torch.empty(hidden_dim).uniform_(-scale_value, scale_value))
 
-        # GRU : input = [hidden ; scalar_input] → hidden. Poids [hidden_dim, hidden_dim+1].
         gru_scale = math.sqrt(2.0 / (hidden_dim + hidden_dim + 1))
         self.w_update = nn.Parameter(torch.empty(hidden_dim, hidden_dim + 1).uniform_(-gru_scale, gru_scale))
         self.w_reset = nn.Parameter(torch.empty(hidden_dim, hidden_dim + 1).uniform_(-gru_scale, gru_scale))
         self.w_candidate = nn.Parameter(torch.empty(hidden_dim, hidden_dim + 1).uniform_(-gru_scale, gru_scale))
 
-    def _gru_step(self, hidden: torch.Tensor, x_scalar: torch.Tensor) -> torch.Tensor:
-        """Un pas GRU (comme FNN proof.rs:210-232). Pas de biais separe.
-
-        hidden : (hidden_dim,). x_scalar : scalar.
-        """
-        # input = concat([hidden, x_scalar]) → (hidden_dim+1,).
+    def _gru_step(self, hidden, x_scalar):
         x = torch.cat([hidden, x_scalar.reshape(1)])
         z = torch.sigmoid(self.w_update @ x)
         r = torch.sigmoid(self.w_reset @ x)
-        # candidate : combined = concat([r ⊙ hidden, x_scalar]).
         combined = torch.cat([r * hidden, x_scalar.reshape(1)])
         h_tilde = torch.tanh(self.w_candidate @ combined)
         return (1 - z) * hidden + z * h_tilde
 
-    def generate(self, target: float) -> tuple[Proof, dict]:
-        """Genere une preuve for atteindre `target`.
-
-        Retourne (proof, info) ou info contient les tenseurs for REINFORCE :
-            info['logits_per_step'] : liste de (n_rules,) logits par step.
-            info['selected_indices'] : liste d'ints (regle choisie par step).
-        """
+    def generate(self, target):
         device = self.w_rule.device
-        steps: List[ProofStep] = []
+        steps = []
         current_value = float(target)
 
-        # Init etat cache : hidden[i] = target · sin(i+1) · 0.1 (FNN proof.rs:149-151).
         idx = torch.arange(1, self.hidden_dim + 1, dtype=torch.float32, device=device)
         hidden = torch.tensor(target, dtype=torch.float32, device=device) * torch.sin(idx) * 0.1
 
@@ -180,19 +123,16 @@ class ProofGenerator(nn.Module):
         value_preds_per_step = []
 
         for step_idx in range(self.max_steps):
-            # input = [hidden ; current_value · 0.1].
             x_scalar = torch.tensor(current_value * 0.1, dtype=torch.float32, device=device)
             hidden = self._gru_step(hidden, x_scalar)
 
-            # logits = hidden @ w_rule.
-            logits = hidden @ self.w_rule  # (n_rules,)
+            logits = hidden @ self.w_rule
             rule_index = int(logits.argmax().item())
 
-            value_pred = (hidden @ self.w_value)  # tenseur scalar, for gradient
+            value_pred = (hidden @ self.w_value)
 
             premise_indices = [step_idx - 1] if step_idx > 0 else []
 
-            # confidence = softmax(logits)[rule_index] (stable).
             max_logit = logits.max()
             exps = torch.exp(logits - max_logit)
             sum_exp = exps.sum()
@@ -201,7 +141,6 @@ class ProofGenerator(nn.Module):
             else:
                 confidence = 1.0 / self.n_rules
 
-            # EMA 0.8/0.2 vers value_pred (FNN proof.rs:189).
             value_pred_float = float(value_pred.item())
             current_value = 0.8 * current_value + 0.2 * value_pred_float
 
@@ -218,20 +157,12 @@ class ProofGenerator(nn.Module):
 
         is_valid = abs(current_value - target) < 1e-3
         proof = Proof(steps=steps, target=float(target), conclusion=current_value, is_valid=is_valid)
-        info = {
-            "logits_per_step": logits_per_step,
-            "selected_indices": selected_indices,
-            "value_preds_per_step": value_preds_per_step,
-        }
+        info = {"logits_per_step": logits_per_step, "selected_indices": selected_indices,
+                "value_preds_per_step": value_preds_per_step}
         return proof, info
 
 
-# ---------------------------------------------------------------------------
-# ProofVerifier : VERIFICATION EXACTE (FNN proof.rs:263-360)
-# ---------------------------------------------------------------------------
-
-def _mod_pow(base: int, exp: int, modulus: int) -> int:
-    """Exponentiation modulaire rapide par carres (FNN proof.rs:364-378)."""
+def _mod_pow(base, exp, modulus):
     if modulus == 1:
         return 0
     result = 1
@@ -244,54 +175,46 @@ def _mod_pow(base: int, exp: int, modulus: int) -> int:
     return result
 
 
-def _gcd(a: int, b: int) -> int:
-    """Euclide iteratif (FNN proof.rs:381-388)."""
+def _gcd(a, b):
     while b:
         a, b = b, a % b
     return abs(a)
 
 
 class ProofVerifier:
-    """Verificateur EXACT de preuves (soundness garantie).
+    """Exact proof verifier (soundness guaranteed).
 
-    N'utilise PAS les regles d'inference — teste des identites arithmetiques
-    concretes. Toute preuve acceptee est mathematiquement vraie sur la
-    conclusion numerique (|conclusion - target| < 1e-3).
+    Tests concrete arithmetic identities, not inference rule semantics.
+    Any accepted proof is mathematically true on its numerical conclusion.
     """
 
-    def __init__(self, sieve_limit: int = 10000):
+    def __init__(self, sieve_limit=10000):
         self.sieve = PrimeSieve(sieve_limit)
 
-    def verify_arithmetic(self, a: int, b: int, claimed_sum: int) -> bool:
-        """Verifie a + b == claimed_sum (FNN proof.rs:275-277)."""
+    def verify_arithmetic(self, a, b, claimed_sum):
         return a + b == claimed_sum
 
-    def verify_primality(self, n: int, is_prime: bool) -> bool:
-        """Verifie que n est premier ssi is_prime (FNN proof.rs:280-282)."""
+    def verify_primality(self, n, is_prime):
         return self.sieve.verify_prime(n) == is_prime
 
-    def verify_divisibility(self, a: int, b: int) -> bool:
-        """Verifie que b divise a (FNN proof.rs:285-290)."""
+    def verify_divisibility(self, a, b):
         if b == 0:
             return False
         return a % b == 0
 
-    def verify_modular(self, a: int, b: int, n: int) -> bool:
-        """Verifie a ≡ b mod n (FNN proof.rs:293-298)."""
+    def verify_modular(self, a, b, n):
         if n == 0:
             return False
         return (a - b) % n == 0
 
-    def verify_fermat(self, a: int, p: int) -> bool:
-        """Verifie Fermat petit : a^(p-1) ≡ 1 mod p for p premier et a non divisible par p."""
+    def verify_fermat(self, a, p):
         if p < 2 or not self.sieve.verify_prime(p):
             return False
         if a % p == 0:
-            return True  # cas trivial
+            return True
         return _mod_pow(a, p - 1, p) == 1
 
-    def verify_wilson(self, p: int) -> bool:
-        """Verifie Wilson : (p-1)! ≡ p-1 mod p for p premier."""
+    def verify_wilson(self, p):
         if p < 2 or not self.sieve.verify_prime(p):
             return False
         if p == 2:
@@ -301,20 +224,14 @@ class ProofVerifier:
             fact_mod = (fact_mod * (i % p)) % p
         return fact_mod == p - 1
 
-    def verify_gcd(self, a: int, b: int) -> bool:
-        """Verifie l'identite gcd(a,b)·lcm(a,b) = a·b (FNN proof.rs:329-338)."""
+    def verify_gcd(self, a, b):
         g = _gcd(a, b)
         if a == 0 or b == 0:
             return g == max(a, b)
-        lcm = (a // g) * b  # ordre anti-overflow
+        lcm = (a // g) * b
         return g * lcm == a * b
 
-    def verify_proof(self, proof: Proof) -> bool:
-        """Verifie globalement une preuve (FNN proof.rs:341-360).
-
-        Critere : (a) all les rule_index sont valides (< n_rules), et
-        (b) |conclusion - target| < 1e-3.
-        """
+    def verify_proof(self, proof):
         if not proof.steps:
             return False
         n_rules = InferenceRule.n_rules()
@@ -324,43 +241,31 @@ class ProofVerifier:
         return abs(proof.conclusion - proof.target) < 1e-3
 
 
-# ---------------------------------------------------------------------------
-# ProofReward : R = 0.6·correctness + 0.3·efficiency + 0.1·diversity (FNN proof.rs:391-456)
-# ---------------------------------------------------------------------------
-
 class ProofReward:
-    """Recompense composite for REINFORCE.
+    """Composite reward for REINFORCE: R = 0.6*correctness + 0.3*efficiency + 0.1*diversity."""
 
-    R = 0.6·correctness + 0.3·efficiency + 0.1·diversity.
-    """
-
-    def __init__(
-        self,
-        correctness_weight: float = 0.6,
-        efficiency_weight: float = 0.3,
-        diversity_weight: float = 0.1,
-    ):
+    def __init__(self, correctness_weight=0.6, efficiency_weight=0.3, diversity_weight=0.1):
         self.correctness_weight = correctness_weight
         self.efficiency_weight = efficiency_weight
         self.diversity_weight = diversity_weight
 
-    def correctness_reward(self, proof: Proof, is_valid: bool) -> float:
-        """1.0 si valide, sinon decroit with the error (FNN proof.rs:417-426)."""
+    def correctness_reward(self, proof, is_valid):
+        """1.0 if valid, otherwise decreases with error."""
         if is_valid:
             return 1.0
         error = abs(proof.conclusion - proof.target)
         max_error = max(abs(proof.target), 1.0)
         return max(0.0, 1.0 - min(error / max_error, 1.0))
 
-    def efficiency_reward(self, proof: Proof) -> float:
-        """1.0 si 1 step, sinon 1/n_steps (FNN proof.rs:429-438). 'Brevity'."""
+    def efficiency_reward(self, proof):
+        """1.0 if 1 step, otherwise 1/n_steps (brevity)."""
         n = len(proof.steps)
         if n <= 1:
             return 1.0
         return 1.0 / n
 
-    def diversity_reward(self, proof: Proof) -> float:
-        """Fraction des 20 regles distinctes utilisees (FNN proof.rs:441-456). 'Novelty'."""
+    def diversity_reward(self, proof):
+        """Fraction of distinct rules used (novelty)."""
         if not proof.steps:
             return 0.0
         n_rules = InferenceRule.n_rules()
@@ -371,8 +276,8 @@ class ProofReward:
         n_unique = sum(used)
         return min(n_unique / n_rules, 1.0)
 
-    def compute_reward(self, proof: Proof, is_valid: bool) -> float:
-        """R = 0.6·correctness + 0.3·efficiency + 0.1·diversity."""
+    def compute_reward(self, proof, is_valid):
+        """R = 0.6*correctness + 0.3*efficiency + 0.1*diversity."""
         c = self.correctness_reward(proof, is_valid)
         e = self.efficiency_reward(proof)
         d = self.diversity_reward(proof)

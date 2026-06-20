@@ -1,14 +1,14 @@
-"""Suite de Farey et selection de phases for le MoE a routing de phase.
+"""Suite of Farey and selection of phases for the MoE a routing of phase.
 
 Porte depuis the original architecture (src/math/farey.rs).
 
-La suite de Farey F_n est l'ensemble trie des fractions irreductibles p/q in
-[0, 1] with q <= n. Elle est generee iterativement par la property de mediante.
+La Farey sequence F_n est l'ensemble trie fractions irreductibles p/q in
+[0, 1] with q <= n. Elle est generatede iterativement by the property of mediante.
 
-Pour le MoE : on prend F_{2E} (ordre double du number d'experts) et on selectionne
-uniformement E angles parmi les fractions, convertis en angles 2π·p/q ∈ [0, 2π).
-Cela donne une distribution de phases dense, non-collapsante et deterministe —
-l'interet for le routing von Mises.
+Pour the MoE : on prend F_{2E} (ordre double number d'experts) and on selectionne
+uniformement E angles parmi the fractions, convertis en angles 2π·p/q ∈ [0, 2π).
+Cela donne a distribution of phases dense, non-collapsante and deterministic —
+l'interet for the routing von Mises.
 """
 
 import math
@@ -16,10 +16,10 @@ from typing import List, Tuple
 
 
 def farey_sequence(n: int) -> List[Tuple[int, int]]:
-    """Genere la suite de Farey F_n comme liste de (p, q) triee croissante.
+    """Genere the Farey sequence F_n comme liste of (p, q) triee croissante.
 
-    Algorithme par mediante (comme farey.rs:18-49).
-    F_n contient exactement 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
+    Algorithme by mediante (comme farey.rs:18-49).
+    F_n contient exactment 1 + Σ_{q=1}^{n} φ(q) termes (φ = indicatrice d'Euler).
     """
     if n < 1:
         raise ValueError("n must etre >= 1")
@@ -41,7 +41,7 @@ def expert_phases(n_experts: int) -> List[float]:
     """Selectionne n_experts angles ∈ [0, 2π) depuis F_{2·n_experts}.
 
     Comme farey.rs:53-64 : on construit F_{2E} (ordre double), then on selectionne
-    uniformement E angles parmi les n_frac = len(F_{2E}) fractions disponibles.
+    uniformement E angles parmi the n_frac = len(F_{2E}) fractions disponibles.
     """
     if n_experts < 1:
         raise ValueError("n_experts must etre >= 1")

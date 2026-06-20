@@ -1,41 +1,38 @@
-"""Penalite d'acyclicite NOTEARS : h(W) = tr(e^{W⊙W}) − n.
+"""NOTEARS acyclicity penalty: h(W) = tr(e^{W⊙W}) − n.
 
-Portee faithfully depuis the original architecture (src/causal.rs:159-196) en PyTorch pur.
+Ported faithfully from the original architecture (src/causal.rs) in pure PyTorch.
 
-Math (Zheng et al. 2018, "DAGs with NO TEARS") :
+Math (Zheng et al. 2018, "DAGs with NO TEARS"):
     h(W) = tr(expm(W ⊙ W)) − n
-    ou expm est l'exponentielle matricielle et ⊙ le produit d'Hadamard.
+    where expm is the matrix exponential and ⊙ is the Hadamard product.
 
-    Propriete : h(W) = 0 ssi W est acyclique (DAG).
-    h(W) > 0 si W contient un cycle.
-    Differentiable → on can l'optimiser par gradient descent.
+    Property: h(W) = 0 if and only if W is acyclic (a DAG).
+    h(W) > 0 if W contains a cycle.
+    Differentiable: we can optimize it via gradient descent.
 
-Approximation : expm via serie de Taylor a 20 termes (comme FNN).
-
-CORRECTION vs OMNI : OMNI n'avait PAS de contrainte d'acyclicite du tout
-(rkhs_causal.py n'imposait no DAG). Ici on a un true NOTEARS differentiable.
+Approximation: expm via Taylor series with 20 terms.
 """
 
 import torch
 
 
 def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
-    """Calcule h(W) = tr(e^{W⊙W}) − n, scalar.
+    """Compute h(W) = tr(e^{W⊙W}) − n, a scalar.
 
     Args:
-        W : matrix d'adjacence (n, n), differentiable.
-        n_terms : number de termes de la serie de Taylor (20 par defaut).
+        W: adjacency matrix (n, n), differentiable.
+        n_terms: number of Taylor series terms (20 by default).
     Returns:
-        h : scalar. =0 si W est un DAG, >0 si W contient un cycle.
+        h: scalar. =0 if W is a DAG, >0 if W contains a cycle.
     """
     n = W.shape[0]
-    assert W.shape == (n, n), f"W must etre carree, eu {W.shape}"
+    assert W.shape == (n, n), f"W must be square, got {W.shape}"
 
-    M = W * W  # produit d'Hadamard (W ⊙ W).
+    M = W * W  # Hadamard product (W ⊙ W).
 
     eye = torch.eye(n, dtype=W.dtype, device=W.device)
     result = eye.clone()
-    term = eye.clone()  # term_k = M^k / k!, init a M^0/0! = I
+    term = eye.clone()  # term_k = M^k / k!, init to M^0/0! = I
     for k in range(1, n_terms + 1):
         term = (term @ M) / k
         result = result + term

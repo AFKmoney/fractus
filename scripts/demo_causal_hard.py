@@ -1,7 +1,7 @@
-"""Demo L4+ : NOTEARS sur SCM non-lineaire with ordre topologique INCONNU.
+"""Demo L4+ : NOTEARS on SCM non-lineaire with topological order INCONNU.
 
-VALIDATION SERIEUSE au-dela du cas jouet L4 (lineaire + triangulaire).
-Si NOTEARS recupere le DAG ici, on a une vraie preuve de competence.
+VALIDATION SERIEUSE au-dela cas jouet L4 (lineaire + triangulaire).
+Si NOTEARS recupere the DAG ici, on a a vraie proof of competence.
 
 Run :
     python scripts/demo_causal_hard.py

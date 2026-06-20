@@ -1,16 +1,16 @@
-"""Tests du pipeline conjectures : generateur, testeur, memory, boucle."""
+"""Tests pipeline conjectures : generateur, testeur, memory, boucle."""
 
 import torch
 
 
 def test_conjecture_templates_count_10():
-    """10 templates (FNN conjecture.rs:15-26)."""
+    """10 templates (the original conjecture.rs:15-26)."""
     from fractus.reasoning.conjecture import ConjectureTemplate
     assert ConjectureTemplate.n_templates() == 10
 
 
 def test_tester_sum_identity_survives():
-    """SumIdentity (a+a=2a) must toujours survivre (identite vraie)."""
+    """SumIdentity (a+a=2a) must always survivre (identite vraie)."""
     from fractus.reasoning.conjecture import ConjectureTester, Conjecture
     tester = ConjectureTester(n_trials=50, seed=42)
     conj = Conjecture(template_index=0, template_name="SumIdentity")
@@ -38,7 +38,7 @@ def test_tester_fermat_fails_for_composite():
 
 
 def test_generator_produces_conjecture():
-    """Le generateur produit une conjecture valide depuis un etat."""
+    """Le generateur produit a conjecture valid depuis a etat."""
     from fractus.reasoning.conjecture import ConjectureGenerator
     gen = ConjectureGenerator(state_dim=32)
     state = torch.randn(32)
@@ -48,15 +48,15 @@ def test_generator_produces_conjecture():
 
 
 def test_generator_backward_every_param():
-    """CRITERE L5 : backward propage un gradient fini ET non-nul a CHAQUE parameter.
+    """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter.
 
-    La loss must toucher w_template (logits), w_params (parameters generes) ET
-    w_novelty (score nouveaute). Sinon certains poids ne recoivent pas de gradient.
+    La loss must toucher w_template (logits), w_params (parameters generateds) ET
+    w_novelty (score nouveaute). Sinon certains poids not recoivent not of gradient.
     """
     from fractus.reasoning.conjecture import ConjectureGenerator
     gen = ConjectureGenerator(state_dim=32)
     state = torch.randn(32)
-    # Recalculer les 3 tenseurs for avoir le graphe complete.
+    # Recomputationer the 3 tenseurs for avoir the graphe complete.
     logits = state @ gen.w_template
     params_logits = state @ gen.w_params
     novelty = state @ gen.w_novelty
@@ -70,14 +70,14 @@ def test_generator_backward_every_param():
 
 
 def test_memory_add_and_evict():
-    """La memory evince les non-survivantes quand pleine."""
+    """La memory evince the non-survivantes quand pleine."""
     from fractus.reasoning.conjecture import ConjectureMemory, Conjecture
     mem = ConjectureMemory(max_size=3)
     for i in range(3):
         c = Conjecture(template_index=i, template_name=str(i), survived=False)
         mem.add(c)
     assert len(mem.discovered) == 3
-    # Ajout d'une 4e : eviction de la plus ancienne non-survivante.
+    # Ajout d'une 4e : eviction of the more ancienne non-survivante.
     c4 = Conjecture(template_index=3, template_name="3", survived=True)
     mem.add(c4)
     assert len(mem.discovered) == 3
@@ -85,15 +85,15 @@ def test_memory_add_and_evict():
 
 
 def test_memory_is_novel():
-    """is_novel detecte les templates deja survivants."""
+    """is_novel detecte the templates already survivants."""
     from fractus.reasoning.conjecture import ConjectureMemory, Conjecture
     mem = ConjectureMemory()
     c1 = Conjecture(template_index=0, template_name="A", survived=True)
     mem.add(c1)
-    # Une nouvelle conjecture du meme template survivant n'est pas nouvelle.
+    # Une nouvelle conjecture same template survivant n'est not nouvelle.
     c2 = Conjecture(template_index=0, template_name="A")
     assert mem.is_novel(c2) is False
-    # Un autre template est nouveau.
+    # Un other template est nouveau.
     c3 = Conjecture(template_index=1, template_name="B")
     assert mem.is_novel(c3) is True
 
@@ -107,6 +107,6 @@ def test_discovery_loop_runs():
         result = loop.discover_step()
         if result is not None:
             discoveries += 1
-    # Au moins une decouverte (SumIdentity, FermatLittle, etc. sont vraies).
+    # Au less a decouverte (SumIdentity, FermatLittle, etc. are vraies).
     assert discoveries >= 1, f"Aucune decouverte en 20 steps, eu {discoveries}"
     assert 0.0 <= loop.discovery_rate() <= 1.0

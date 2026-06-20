@@ -1,18 +1,18 @@
-"""16 features morphologiques deterministes par token.
+"""16 morphological features deterministic by token.
 
 Porte depuis the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
-interprete comme un codepoint Unicode ; for les ids < 128 ce sont des
-caracteres ASCII, au-dela on derive les features de la valeur numerique.
+interprete comme a codepoint Unicode ; for the ids < 128 this are des
+caracteres ASCII, au-dela on derive the features of the value numerique.
 
-Ces features n'ont AUCUN parameter entrainable — elles sont calculees
-deterministiquement then concatenees a la base de Fourier in FractalEmbedding.
+Ces features n'ont AUCUN parameter entrainable — elles are computationees
+deterministiquement then concatenees a the Fourier basis in FractalEmbedding.
 """
 
 import torch
 
 
 class CharClassFeatures:
-    """Extraction de 16 features morphologiques a partir d'un token id.
+    """Extraction of 16 morphological features a partir d'un token id.
 
     Features (index : signification) :
         0  : is_vowel          (a, e, i, o, u)
@@ -23,12 +23,12 @@ class CharClassFeatures:
         5  : is_lowercase
         6  : is_punctuation    (!"#$%...)
         7  : is_alphabetic
-        8  : is_numeric        (alias de is_digit ici)
+        8  : is_numeric        (alias of is_digit ici)
         9  : is_whitespace     (espace, tab, newline)
-        10 : is_control        (codepoint < 32 ou == 127)
-        11 : digit_value       (0-9, ou 0 si pas un chiffre)
+        10 : is_control        (codepoint < 32 or == 127)
+        11 : digit_value       (0-9, or 0 si not a chiffre)
         12 : char_category     (categorie Unicode simplifiee comme float)
-        13 : position_in_alphabet (0-25, ou -1 si pas une lettre ; on encode -1→0)
+        13 : position_in_alphabet (0-25, or -1 si not a lettre ; on encode -1→0)
         14 : is_ascii          (codepoint < 128)
         15 : parity            (token id pair = 1, impair = 0)
     """
@@ -39,10 +39,10 @@ class CharClassFeatures:
 
     @staticmethod
     def extract(token_id: int) -> torch.Tensor:
-        """Retourne un tenseur float32 de shape (16,)."""
+        """Retourne a tenseur float32 of shape (16,)."""
         f = torch.zeros(CharClassFeatures.N_FEATURES, dtype=torch.float32)
 
-        # On interprete l'octet de poids faible comme un caractere potentiel.
+        # On interprete l'octet of poids weak comme a caractere potentiel.
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel
@@ -81,13 +81,13 @@ class CharClassFeatures:
         # 7: is_alphabetic
         f[7] = float(is_alpha)
 
-        # 8: is_numeric (alias de is_digit ici)
+        # 8: is_numeric (alias of is_digit ici)
         f[8] = float(is_digit)
 
         # 9: is_whitespace (espace, tab 0x09, newline 0x0A, CR 0x0D)
         f[9] = float(as_byte in (0x09, 0x0A, 0x0D, 0x20))
 
-        # 10: is_control (codepoint < 32 ou == 127)
+        # 10: is_control (codepoint < 32 or == 127)
         f[10] = float(as_byte < 0x20 or as_byte == 0x7F)
 
         # 11: digit_value
@@ -106,7 +106,7 @@ class CharClassFeatures:
         elif f[10] > 0.5:
             f[12] = 5.0
 
-        # 13: position_in_alphabet (0-25, ou 0 si pas une lettre)
+        # 13: position_in_alphabet (0-25, or 0 si not a lettre)
         if 0x41 <= as_byte <= 0x5A:
             f[13] = float(as_byte - 0x41)
         elif 0x61 <= as_byte <= 0x7A:

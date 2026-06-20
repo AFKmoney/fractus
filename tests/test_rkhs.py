@@ -1,4 +1,4 @@
-"""Tests de RKHSCausalOperator : true RKHS via RFF, pas projection bas-rang nue."""
+"""Tests of RKHSCausalOperator : true RKHS via RFF, not projection bas-rang nue."""
 
 import torch
 
@@ -28,8 +28,8 @@ def test_rkhs_kernel_approx_positive():
 
 
 def test_rkhs_backward_every_param():
-    """CRITERE L4 : backward propage un gradient fini ET non-nul a CHAQUE parameter
-    entrainable (U, V, decode). Les W_rff sont figes par conception (Rahimi-Recht)."""
+    """CRITERE L4 : backward propage a gradient fini ET non-nul a CHAQUE parameter
+    entrainable (U, V, decode). Les W_rff are figes by conception (Rahimi-Recht)."""
     from fractus.causal.rkhs import RKHSCausalOperator
     op = RKHSCausalOperator(dim=8, rank=4, n_rff=32)
     x = torch.randn(16, 8)
@@ -43,36 +43,36 @@ def test_rkhs_backward_every_param():
         assert p.requires_grad, f"{name} should requires_grad=True"
         assert p.grad is not None, f"{name} n'a recu no gradient"
         assert torch.isfinite(p.grad).all(), f"{name} gradient non-fini"
-        # Tous les params nommes (U, V, decode.weight) sont entrainables et
-        # must recevoir un gradient non-nul.
+        # Tous the params nommes (U, V, decode.weight) are entrainables et
+        # must recevoir a gradient non-nul.
         assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
 
 
 def test_rkhs_not_just_linear_projection():
-    """VRAI RKHS : la sortie must passer par une feature map non-lineaire (cos/sin),
-    pas etre une projection lineaire simple x@W (le false RKHS d'OMNI).
+    """VRAI RKHS : the sortie must passer by a feature map non-lineaire (cos/sin),
+    not etre a projection lineaire simple x@W (le false RKHS d'the original).
 
-    On verifies que le forward NE PEUT PAS s'ecrire comme une simple Linear :
-    si on remplace φ(x) = [cos,sin] par φ(x) = x (lineaire), la sortie change.
-    Concretement : on compare le true forward a un forward ou on court-circuite
-    les features par l'identite (en clippant temporairement les cos/sin via
-    une approximation lineaire autour de 0).
+    On verifiess that the forward NE PEUT PAS s'ecrire comme a simple Linear :
+    si on remplace φ(x) = [cos,sin] by φ(x) = x (lineaire), the sortie change.
+    Concretement : on compare the true forward a a forward or on court-circuite
+    the features by l'identite (en clippant temporairement the cos/sin via
+    a approximation lineaire autour of 0).
     """
     from fractus.causal.rkhs import RKHSCausalOperator
     torch.manual_seed(0)
     op = RKHSCausalOperator(dim=4, rank=2, n_rff=64)
-    # Petite entree autour de 0 : a x≈0, cos(ω·x+b)≈cos(b), sin(ω·x+b)≈sin(b)+ω·x·cos(b).
-    # Donc le RKHS est approximativement lineaire en x for petit x, but pas
-    # exactement. Pour x grand, la non-linearite est manifeste.
+    # Petite entree autour of 0 : a x≈0, cos(ω·x+b)≈cos(b), sin(ω·x+b)≈sin(b)+ω·x·cos(b).
+    # Donc the RKHS est approximativement lineaire en x for small x, but pas
+    # exactment. Pour x grand, the non-linearite est manifeste.
     x_small = torch.randn(8, 4) * 0.01  # petit
     x_large = torch.randn(8, 4) * 5.0   # grand
     y_small = op(x_small)
     y_large = op(x_large)
-    # Pour x grand, si c'was lineaire, doubler x doublerait y. On verifies la
-    # non-linearite : op(2·x_large) ≠ 2·op(x_large) a cause des sin/cos.
+    # Pour x grand, si c'was lineaire, doubler x doublerait y. On verifiess la
+    # non-linearite : op(2·x_large) = 2·op(x_large) because ofs sin/cos.
     y_2x = op(2.0 * x_large)
     ratio = y_2x / (2.0 * y_large + 1e-10)
-    # Si lineaire : ratio = 1 partout. Si non-lineaire : ratio devie de 1.
+    # Si lineaire : ratio = 1 partout. Si non-lineaire : ratio devie of 1.
     deviation = (ratio - 1.0).abs().mean().item()
     assert deviation > 1e-3, \
         f"Le RKHS must etre non-lineaire (deviation > 1e-3), eu {deviation}"

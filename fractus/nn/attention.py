@@ -5,23 +5,23 @@ Portee faithfully depuis the original architecture (src/attention.rs) en PyTorch
 Mathematique (Katharopoulos 2020, shape causale normalisee) :
 
     Feature map : φ(x; level) = elu_plus_one(x + ω_level, α=1)
-        with ω_level = (φ²)^{-level}, φ² = ((1+√5)/2)² ≈ 2.618
-        (offset Mandelbrot-decroissant, renomme honnetement).
+        with ω_level = (φ2)^{-level}, φ2 = ((1+√5)/2)2 ≈ 2.618
+        (offset Mandelbrot-decroissant, renomme honestetement).
 
-    Recurrence causale (INCLUSIVE : a l'instant t, S et z sont mis a jour
-    with k_t, v_t AVANT de calculer y_t) :
+    Recurrence causale (INCLUSIVE : a l'instant t, S and z are mis a jour
+    with k_t, v_t AVANT of computationer y_t) :
         S_t = Σ_{i≤t} φ(k_i) ⊗ v_i   ∈ R^{d_head × d_head}
         z_t = Σ_{i≤t} φ(k_i)          ∈ R^{d_head}
-        y_t = (φ(q_t)ᵀ S_t) / (φ(q_t)ᵀ z_t)
+        y_t = (φ(q_t)T S_t) / (φ(q_t)T z_t)
         (sortie 0 si |denom| < 1e-10)
 
     Agregation multi-niveaux : output = Σ_level w_level · attn_level(x)
         with w = softmax(level_logits) (init uniforme 1/n_levels).
 
-Complexite : O(L · d_head²) par tete par niveau, vs O(L² · d_head) for
-l'attention softmax classique. C'est l'interet.
+Complexite : O(L · d_head2) by tete by niveau, vs O(L2 · d_head) for
+l'attention softmax classique. This is l'interet.
 
-Differentiable de bout en bout (all les poids sont des nn.Parameter).
+Differentiable end-to-end (all the poids are nn.Parameter).
 """
 
 import math
@@ -32,11 +32,11 @@ from .stats import elu_plus_one, stable_softmax
 
 
 def _mandelbrot_offsets(n_levels: int) -> torch.Tensor:
-    """Offsets ω_level = (φ²)^{-level} for level = 0..n_levels-1.
+    """Offsets ω_level = (φ2)^{-level} for level = 0..n_levels-1.
 
-    Decroissance geometrique doree. Renommee honnete : FNN appelait ca
-    "Mandelbrot frequencies" but il n'y a pas d'iteration de Mandelbrot —
-    juste une suite geometrique de base φ².
+    Decroissance geometrique doree. Renommee honestete : the original appelait ca
+    "Mandelbrot frequencies" but il n'y a not d'iteration of Mandelbrot —
+    juste a suite geometrique of base φ2.
     """
     phi = (1.0 + math.sqrt(5.0)) / 2.0
     phi_sq = phi * phi  # ≈ 2.618
@@ -48,10 +48,10 @@ class FractalLinearAttention(nn.Module):
     """Attention lineaire causale multi-niveaux.
 
     Args:
-        d_model  : dimension du modele (entree/sortie).
-        n_heads  : number de tetes d'attention.
-        d_head   : dimension par tete. Doit satisfaire n_heads · d_head == d_model.
-        n_levels : number de niveaux fractals (offsets Mandelbrot distincts).
+        d_model  : dimension modele (entree/sortie).
+        n_heads  : number of tetes d'attention.
+        d_head   : dimension by tete. Doit satisfaire n_heads · d_head == d_model.
+        n_levels : number of niveaux fractals (offsets Mandelbrot distincts).
     """
 
     def __init__(self, d_model: int, n_heads: int, d_head: int, n_levels: int = 3):
@@ -70,36 +70,36 @@ class FractalLinearAttention(nn.Module):
         self.n_levels = n_levels
         d_qkv = n_heads * d_head  # = d_model
 
-        # Poids Q, K, V concatenes (comme FNN attention.rs:30-32).
-        # Init de type Glorot : U(-scale, scale), scale = sqrt(2/(fan_in+fan_out)).
-        # (Note : le true Xavier/Glorot uniforme est sqrt(6/(fan_in+fan_out)) ;
-        #  FNN utilisait sqrt(2/(...)), on conserve for fidelite.)
+        # Poids Q, K, V concatenes (comme the original attention.rs:30-32).
+        # Init of type Glorot : U(-scale, scale), scale = sqrt(2/(fan_in+fan_out)).
+        # (Note : the true Xavier/Glorot uniforme est sqrt(6/(fan_in+fan_out)) ;
+        #  the original utilisait sqrt(2/(...)), on conserve for fidelite.)
         scale = math.sqrt(2.0 / (d_model + d_qkv))
         self.w_qkv = nn.Parameter(
             torch.empty(3, d_model, d_qkv).uniform_(-scale, scale)
         )
         self.b_qkv = nn.Parameter(torch.zeros(3, d_qkv))
 
-        # Projection de sortie (meme style d'init que Q/K/V).
+        # Projection of sortie (meme style d'init that Q/K/V).
         scale_out = math.sqrt(2.0 / (d_qkv + d_model))
         self.w_out = nn.Parameter(
             torch.empty(d_qkv, d_model).uniform_(-scale_out, scale_out)
         )
         self.b_out = nn.Parameter(torch.zeros(d_model))
 
-        # Poids par niveau (softmax → init uniforme 1/n_levels).
+        # Poids by niveau (softmax → init uniforme 1/n_levels).
         self.level_logits = nn.Parameter(torch.zeros(n_levels))
 
-        # Offsets Mandelbrot par niveau (precalcules, hors-graphe because constants).
+        # Offsets Mandelbrot by niveau (precomputationes, hors-graphe because constants).
         offsets = _mandelbrot_offsets(n_levels)
         self.register_buffer("level_offsets", offsets)
 
     def feature_map(self, x: torch.Tensor, level: int) -> torch.Tensor:
         """φ(x; level) = elu_plus_one(x + ω_level).
 
-        x : (..., d_head). L'offset ω_level est un scalar ajoute a tout x.
+        x : (..., d_head). L'offset ω_level est a scalar ajoute a all x.
         """
-        # Invariant : level est toujours in [0, n_levels) (venu de forward).
+        # Invariant : level est always in [0, n_levels) (venu of forward).
         assert 0 <= level < self.n_levels, f"level {level} hors [0, {self.n_levels})"
         offset = self.level_offsets[level]
         return elu_plus_one(x + offset, alpha=1.0)
@@ -107,10 +107,10 @@ class FractalLinearAttention(nn.Module):
     def _linear_attention_causal_one_head(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     ) -> torch.Tensor:
-        """Recurrence causale for UNE tete, sur un batch.
+        """Recurrence causale for UNE tete, on a batch.
 
-        q, k : (B, L, d_head) — deja φ-mappes (feature map appliquee).
-        v    : (B, L, d_head) — brut (pas de feature map sur v).
+        q, k : (B, L, d_head) — already φ-mappes (feature map appliquee).
+        v    : (B, L, d_head) — brut (pas of feature map on v).
         Retourne y : (B, L, d_head).
 
         Math :
@@ -119,21 +119,21 @@ class FractalLinearAttention(nn.Module):
             y_t = (q_t · S_t) / (q_t · z_t)
         """
         B, L, D = q.shape
-        # On accumule la running sum S (B, D, D) et z (B, D).
+        # On accumule the running sum S (B, D, D) and z (B, D).
         S = torch.zeros(B, D, D, dtype=q.dtype, device=q.device)
         z = torch.zeros(B, D, dtype=q.dtype, device=q.device)
         outputs = []
         for t in range(L):
             kt = k[:, t, :]  # (B, D)
             vt = v[:, t, :]  # (B, D)
-            # Mise a jour INCLUSIVE before computation de y_t (causalite stricte
-            # incluant le present token, comme FNN attention.rs:173-208).
+            # Mise a jour INCLUSIVE before computation of y_t (causalite stricte
+            # incluant the present token, comme the original attention.rs:173-208).
             S = S + kt.unsqueeze(2) * vt.unsqueeze(1)  # outer product (B, D, D)
             z = z + kt  # (B, D)
             qt = q[:, t, :]  # (B, D)
             num = torch.bmm(qt.unsqueeze(1), S).squeeze(1)  # (B, D)
             denom = (qt * z).sum(dim=1, keepdim=True)  # (B, 1)
-            # Sortie 0 si |denom| < 1e-10 (comportement aux limites de FNN).
+            # Sortie 0 si |denom| < 1e-10 (comportedment aux limites of the original).
             safe = denom.abs() > 1e-10
             y_t = torch.where(safe, num / (denom + 1e-20), torch.zeros_like(num))
             outputs.append(y_t)
@@ -142,20 +142,20 @@ class FractalLinearAttention(nn.Module):
     def _linear_attention_causal_vectorized(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
     ) -> torch.Tensor:
-        """Version VECTORISEE de _linear_attention_causal_one_head.
+        """Version VECTORISEE of _linear_attention_causal_one_head.
 
-        Meme mathematical, but without boucle Python sur L. Astuce :
-        precalculer les sommes cumulees S_t et z_t via une convolution
-        triangulaire inferieure, then calculer all les y_t en parallele.
+        Meme mathematical, but without boucle Python on L. Astuce :
+        precomputationer the sommes cumulees S_t and z_t via a convolution
+        triangulaire inferieure, then computationer all the y_t en parallele.
 
-        Equivalence garantie par test_attention_vectorized.py (atol 1e-5).
+        Equivalence guaranteed by test_attention_vectorized.py (atol 1e-5).
 
-        Complexite : O(L · D²) but en operations tensorielles paralleles,
-        au lieu de O(L) appels Python sequentiels.
+        Complexite : O(L · D2) but en operations tensorielles paralleles,
+        instead of O(L) appels Python sequentiels.
         """
         B, L, D = q.shape
 
-        # S_t = Σ_{i≤t} k_i ⊗ v_i  ∈ R^{B, D, D}, ou la matrix [p,q] = k[p]·v[q].
+        # S_t = Σ_{i≤t} k_i ⊗ v_i  ∈ R^{B, D, D}, or the matrix [p,q] = k[p]·v[q].
         # outer[t] : (B, L, D, D) with outer[b,t,p,q] = k[b,t,p] · v[b,t,q].
         outer = torch.einsum("btp,btq->btpq", k, v)  # (B, L, D, D)
         # Masque causal triangulaire inferieur : mask[t,j] = 1 si j <= t.
@@ -166,12 +166,12 @@ class FractalLinearAttention(nn.Module):
         # z_t = Σ_{i<=t} k_i ∈ R^{B, L, D}.
         z = torch.einsum("tj,bjp->btp", mask, k)  # (B, L, D)
 
-        # y_t = (q_t · S_t) / (q_t · z_t) for tout t.
+        # y_t = (q_t · S_t) / (q_t · z_t) for all t.
         # num[b,t,q] = Σ_p q[b,t,p] · S[b,t,p,q].
         num = torch.einsum("btp,btpq->btq", q, S)  # (B, L, D)
         # denom[b,t] = q[b,t,:] · z[b,t,:].
         denom = (q * z).sum(dim=-1, keepdim=True)  # (B, L, 1)
-        # Sortie 0 si |denom| < 1e-10 (comportement aux limites FNN).
+        # Sortie 0 si |denom| < 1e-10 (comportedment aux limites the original).
         safe = denom.abs() > 1e-10
         y = torch.where(safe, num / (denom + 1e-20), torch.zeros_like(num))
         return y  # (B, L, D)
@@ -193,11 +193,11 @@ class FractalLinearAttention(nn.Module):
             q = q_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
             k = k_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
             v = v_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
-            # Appliquer feature map a q et k (PAS a v).
+            # Appliquer feature map a q and k (PAS a v).
             q = self.feature_map(q, level)
             k = self.feature_map(k, level)
 
-            # Attention par tete — version vectorisee (17x plus rapide que la boucle).
+            # Attention by tete — version vectorisee (17x more rapide that the boucle).
             head_outputs = []
             for h in range(self.n_heads):
                 yh = self._linear_attention_causal_vectorized(
@@ -207,7 +207,7 @@ class FractalLinearAttention(nn.Module):
             # Concatener tetes : (B, L, n_heads·d_head) = (B, L, d_qkv)
             attn = torch.cat(head_outputs, dim=-1)
 
-            # Projection de sortie + ajout pondere.
+            # Projection of sortie + ajout pondere.
             projected = attn @ self.w_out + self.b_out  # (B, L, d_model)
             output = output + level_weights[level] * projected
 

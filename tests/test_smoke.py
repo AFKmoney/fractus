@@ -1,44 +1,44 @@
-"""Test fume : prouve que la plomberie Python → PyTorch → Rust tient.
+"""Test fume : prouve that the plomberie Python → PyTorch → Rust tient.
 
-Ces tests ne valident no logical mathematical — juste que les briques
-communiquent. Si un de ces tests echoue, rien d'autre ne can marcher.
+Ces tests not validnt no logical mathematical — juste that the briques
+communiquent. Si a of these tests echoue, rien d'autre not can marcher.
 """
 
 
 def test_torch_available():
-    """PyTorch est installe et fonctionnel."""
+    """PyTorch est installe and fonctionnel."""
     import torch
     t = torch.tensor([1.0, 2.0, 3.0])
     assert t.sum().item() == 6.0
 
 
 def test_numpy_available():
-    """NumPy est installe (necessaire for le pont tenseurs)."""
+    """NumPy est installe (necessaire for the pont tenseurs)."""
     import numpy as np
     a = np.array([1, 2, 3])
     assert a.sum() == 6
 
 
 def test_rust_bridge_import():
-    """Le module natif fractus._core est bien construit et importable."""
+    """Le module natif fractus._core est well construit and importable."""
     from fractus import _core
     assert hasattr(_core, "add")
 
 
 def test_rust_bridge_add():
-    """Python can appeler du Rust et recuperer le bon result."""
+    """Python can appeler Rust and recuperer the bon result."""
     from fractus import _core
     assert _core.add(2, 3) == 5
     assert _core.add(-10, 4) == -6
 
 
 def test_torch_numpy_interop():
-    """PyTorch et numpy s'echangent des tenseurs (necessaire for le pont Rust)."""
+    """PyTorch and numpy s'echangent tenseurs (necessaire for the pont Rust)."""
     import numpy as np
     import torch
     arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     t = torch.from_numpy(arr)
     assert t.dtype == torch.float32
-    # Retour vers numpy
+    # Retour toward numpy
     back = t.numpy()
     assert np.allclose(back, arr)

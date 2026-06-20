@@ -1,1 +1,1 @@
-"""Sous-package data : generation de datasets (synthetiques en L4)."""
+"""Sous-package data : generation of datasets (synthetiques en L4)."""

@@ -1,30 +1,30 @@
-"""PhaseRoutedMoE : mixture-of-experts a routing de phase von Mises.
+"""PhaseRoutedMoE : mixture-of-experts a routing of phase von Mises.
 
 Porte depuis the original architecture (src/moe.rs + farey.rs) en PyTorch pur.
 
 Mathematique :
-    Phases des experts : E angles ∈ [0, 2π) issus de la suite de Farey F_{2E}.
+    Phases experts : E angles ∈ [0, 2π) issus of the Farey sequence F_{2E}.
 
-    Phase moyenne du token : θ̄ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))
-    (moyenne circulaire sur les n_phases du token).
+    Phase moyenne token : θ = atan2(Σ_p sin(θ_p), Σ_p cos(θ_p))
+    (moyenne circulaire on the n_phases token).
 
     Gate von Mises (non normalise) :
         κ_eff = κ / temperature
-        g_e = exp(κ_eff · cos(θ̄ − θ_e))      for e = 0..E-1
+        g_e = exp(κ_eff · cos(θ − θ_e))      for e = 0..E-1
 
     Normalisation : g_e /= Σ_e g_e (uniforme 1/E si Σ < 1e-10).
 
-    Top-k routing : on selectionne les K meilleurs experts (gates max),
-    on renormalise les gates retenues sur 1.
+    Top-k routing : on selectionne the K meilleurs experts (gates max),
+    on renormalise the gates retenues on 1.
 
     Expert : MLP GeLU gelu(x·W1 + b1)·W2 + b2.
 
     Load-balance loss (auxiliaire) :
-        P_e = moyenne des gates de l'expert e sur all les tokens
-        L_balance = E · Σ_e (P_e − 1/E)²
+        P_e = moyenne gates of l'expert e on all the tokens
+        L_balance = E · Σ_e (P_e − 1/E)2
 
-Differentiable de bout en bout (poids W1/W2 des experts sont entrainables).
-Les phases expert sont en buffer (precalcul Farey, hors-graphe).
+Differentiable end-to-end (poids W1/W2 experts are entrainables).
+Les phases expert are en buffer (precomputation Farey, hors-graphe).
 """
 
 import math
@@ -42,15 +42,15 @@ def _gelu(x: torch.Tensor) -> torch.Tensor:
 
 
 class PhaseRoutedMoE(nn.Module):
-    """Mixture-of-experts a routing de phase von Mises sur phases Farey.
+    """Mixture-of-experts a routing of phase von Mises on phases Farey.
 
     Args:
         d_model     : dimension d'entree/sortie.
         n_experts   : number d'experts E.
-        top_k       : number d'experts actives par token (<= E).
+        top_k       : number d'experts actives by token (<= E).
         kappa       : concentration von Mises.
-        temperature : temperature du gate (κ_eff = κ/temperature).
-        d_ff        : dimension cachee des experts (64 par defaut comme FNN).
+        temperature : temperature gate (κ_eff = κ/temperature).
+        d_ff        : dimension cachee experts (64 by defaut comme the original).
     """
 
     def __init__(
@@ -74,11 +74,11 @@ class PhaseRoutedMoE(nn.Module):
         self.temperature = temperature
         self.d_ff = d_ff
 
-        # Phases expert (precalcul Farey, hors-graphe).
+        # Phases expert (precomputation Farey, hors-graphe).
         phases = expert_phases(n_experts)
         self.register_buffer("expert_phases", torch.tensor(phases, dtype=torch.float32))
 
-        # Poids des experts : E × (W1, b1, W2, b2). Init Xavier uniforme.
+        # Poids experts : E × (W1, b1, W2, b2). Init Xavier uniforme.
         scale1 = math.sqrt(2.0 / d_model)
         scale2 = math.sqrt(2.0 / d_ff)
         self.w1 = nn.Parameter(torch.empty(n_experts, d_model, d_ff).uniform_(-scale1, scale1))
@@ -87,7 +87,7 @@ class PhaseRoutedMoE(nn.Module):
         self.b2 = nn.Parameter(torch.zeros(n_experts, d_model))
 
     def _compute_gates(self, phases: torch.Tensor) -> torch.Tensor:
-        """Calcule les gates von Mises for each token.
+        """Calcule the gates von Mises for each token.
 
         phases : (B, L, n_phases). Retourne gates (B, L, E).
         """
@@ -105,7 +105,7 @@ class PhaseRoutedMoE(nn.Module):
         return gates
 
     def _expert_forward(self, h: torch.Tensor) -> torch.Tensor:
-        """h : (B, L, d_model) → sorties de all les experts (B, L, E, d_model).
+        """h : (B, L, d_model) → sorties of all the experts (B, L, E, d_model).
 
         Pour each expert e : gelu(h @ w1[e] + b1[e]) @ w2[e] + b2[e].
         """

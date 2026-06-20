@@ -8,7 +8,7 @@ L2b (FractalBlockFull) :
         → LN → KuramotoLayer → phases
         → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
-La connexion residuelle garantit la stabilite et permet l'empilement.
+La connexion residuelle guaranteedt the stabilite and permet l'empilement.
 """
 
 import torch
@@ -23,11 +23,11 @@ class FractalBlock(nn.Module):
     """Bloc transformer fractal minimal (L2a).
 
     Args:
-        d_model  : dimension du modele.
-        n_heads  : number de tetes d'attention.
-        d_head   : dimension par tete (n_heads·d_head == d_model requis).
-        n_levels : niveaux fractals de l'attention.
-        dropout  : taux de dropout (0 par defaut en L2a, on ajoutera en L7).
+        d_model  : dimension modele.
+        n_heads  : number of tetes d'attention.
+        d_head   : dimension by tete (n_heads·d_head == d_model requis).
+        n_levels : niveaux fractals of l'attention.
+        dropout  : taux of dropout (0 by defaut en L2a, on ajoutera en L7).
     """
 
     def __init__(
@@ -59,8 +59,8 @@ class FractalBlockFull(nn.Module):
               → LN → KuramotoLayer → phases
               → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
 
-    Retourne (output, loss_aux) ou loss_aux est la load_balance_loss du MoE
-    (a ajouter a la loss principale par le caller).
+    Retourne (output, loss_aux) or loss_aux est the load_balance_loss MoE
+    (a ajouter a the loss principale by the caller).
     """
 
     def __init__(
@@ -96,7 +96,7 @@ class FractalBlockFull(nn.Module):
         x = x + self.dropout(self.attn(self.norm1(x)))
         # Kuramoto : phases depuis hidden normalise.
         phases = self.kuramoto(self.norm_kur(x))  # (B, L, N)
-        # MoE : routing par phases.
+        # MoE : routing by phases.
         moe_out, lb_loss = self.moe(self.norm_moe(x), phases)
         x = x + self.dropout(moe_out)
         return x, lb_loss

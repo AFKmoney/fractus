@@ -1,7 +1,7 @@
-"""Tests de l'embedding fractal : char features, base de Fourier, FractalEmbedding.
+"""Tests of l'embedding fractal : char features, Fourier basis, FractalEmbedding.
 
-Le critere critique (herite de FNN qui echouait la) : la forward must etre
-differentiable et backward() must propager des gradients finis partout.
+Le critere critique (herite of the original which echouait la) : the forward must etre
+differentiable and backward() must propager gradients finis partout.
 """
 
 import torch
@@ -9,11 +9,11 @@ import pytest
 
 
 # ---------------------------------------------------------------------------
-# CharClassFeatures (16 features morphologiques)
+# CharClassFeatures (16 morphological features)
 # ---------------------------------------------------------------------------
 
 def test_char_features_shape():
-    """16 features for tout token id."""
+    """16 features for all token id."""
     from fractus.nn.char_features import CharClassFeatures
     f = CharClassFeatures.extract(ord("a"))
     assert f.shape == (16,)
@@ -27,7 +27,7 @@ def test_char_features_vowel():
 
 
 def test_char_features_digit_value():
-    """'5' est un chiffre de valeur 5 (feature 11)."""
+    """'5' est a chiffre of value 5 (feature 11)."""
     from fractus.nn.char_features import CharClassFeatures
     f = CharClassFeatures.extract(ord("5"))
     assert f[2].item() == 1.0   # is_digit
@@ -35,7 +35,7 @@ def test_char_features_digit_value():
 
 
 def test_char_features_batch_consistency():
-    """La meme lettre donne le meme vector de features."""
+    """La same lettre donne the same vector of features."""
     from fractus.nn.char_features import CharClassFeatures
     f1 = CharClassFeatures.extract(ord("z"))
     f2 = CharClassFeatures.extract(ord("z"))
@@ -43,11 +43,11 @@ def test_char_features_batch_consistency():
 
 
 # ---------------------------------------------------------------------------
-# MandelbrotFourierBasis (base de Fourier a decroissance (φ²)^{-k})
+# MandelbrotFourierBasis (Fourier basis a decroissance (φ2)^{-k})
 # ---------------------------------------------------------------------------
 
 def test_fourier_basis_shape():
-    """Pour vocab 128 et 32 frequences : matrix (vocab, 2·n_freq) (sin+cos)."""
+    """Pour vocab 128 and 32 frequences : matrix (vocab, 2·n_freq) (sin+cos)."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     basis = MandelbrotFourierBasis(vocab_size=128, n_frequencies=32)
     M = basis.matrix()  # (vocab, 2*n_freq)
@@ -62,10 +62,10 @@ def test_fourier_basis_is_finite():
 
 
 def test_fourier_frequencies_decay():
-    """Les frequences ω_k = (φ²)^{-k} must decroitre geometriquement."""
+    """Les frequences ω_k = (φ2)^{-k} must decroitre geometriquement."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     basis = MandelbrotFourierBasis(vocab_size=10, n_frequencies=4)
-    # ω_0 = 1.0, ω_1 = 1/φ², ω_2 = 1/φ⁴, ...
+    # ω_0 = 1.0, ω_1 = 1/φ2, ω_2 = 1/φ4, ...
     phi_sq = ((1 + 5 ** 0.5) / 2) ** 2
     expected = [phi_sq ** (-k) for k in range(4)]
     for k, exp in enumerate(expected):
@@ -74,7 +74,7 @@ def test_fourier_frequencies_decay():
 
 
 def test_fourier_matrix_is_deterministic():
-    """Deux appels donnent la meme matrix (pas d'alea)."""
+    """Deux appels donnent the same matrix (pas d'alea)."""
     from fractus.nn.fourier import MandelbrotFourierBasis
     b1 = MandelbrotFourierBasis(vocab_size=64, n_frequencies=16)
     b2 = MandelbrotFourierBasis(vocab_size=64, n_frequencies=16)
@@ -103,15 +103,15 @@ def test_fractal_embedding_is_finite():
 
 
 def test_fractal_embedding_backward_propagates():
-    """CRITIQUE : backward() must propager un gradient fini ET non-nul a CHAQUE parameter.
+    """CRITIQUE : backward() must propager a gradient fini ET non-nul a CHAQUE parameter.
 
-    C'est exactement le test que the original architecture echouait (training.rs:399 utilisait du
-    bruit aleatoire au lieu d'un gradient). Ici, la projection Linear est in
-    le graphe autodiff, therefore les gradients must etre non-nuls et finis.
+    This is exactment the test that the original architecture echouait (training.rs:399 utilisait du
+    bruit aleatoire au lieu d'un gradient). Ici, the projection Linear est in
+    the graphe autodiff, therefore the gradients must etre non-nuls and finis.
 
-    On verifies CHAQUE parameter individuellement (et pas juste « au moins un »),
-    parce qu'un parameter mort (gradient nul) in le MLP vortex par exemple
-    indiquerait un autodiff casse silencieusement — exactement le defaut que
+    On verifiess CHAQUE parameter individuellement (et not juste « au less a »),
+    parce qu'un parameter mort (gradient nul) in the MLP vortex for example
+    indiquerait a autodiff casse silencieusement — exactment the defaut que
     cette refonte must eliminer.
     """
     from fractus.nn.embedding import FractalEmbedding
@@ -135,7 +135,7 @@ def test_fractal_embedding_backward_propagates():
 
 
 def test_fractal_embedding_respects_vocab_bounds():
-    """Un id >= vocab_size must lever une error (pas de crash silencieux)."""
+    """Un id >= vocab_size must lever a error (pas of crash silencieux)."""
     from fractus.nn.embedding import FractalEmbedding
     emb = FractalEmbedding(vocab_size=100, d_model=32, n_frequencies=8)
     with pytest.raises(IndexError):

@@ -1,10 +1,10 @@
-"""honest_perplexity : vraie perplexite = exp(loss de validation).
+"""honest_perplexity : vraie perplexite = exp(loss of validation).
 
-CORRECTION DE LA PERPLEXITE FICTIVE D'OMNI/FNN :
-- FNN (model.rs:537-546) retournait un PROXY base sur la norme de l'embedding,
-  pas une vraie perplexite. Le commentaire admettait :
+CORRECTION DE LA PERPLEXITE FICTIVE D'the original/the original :
+- the original (model.rs:537-546) retournait a PROXY base on the norme of l'embedding,
+  not a vraie perplexite. Le commentaire admettait :
   "Real perplexity requires a full forward pass".
-- Ici : vraie perplexite = exp(cross-entropy moyenne sur un dataset de validation).
+- Ici : vraie perplexite = exp(cross-entropy moyenne on a dataset of validation).
 """
 
 import math
@@ -17,18 +17,18 @@ def honest_perplexity(
     input_ids: torch.Tensor,
     target_ids: torch.Tensor,
 ) -> float:
-    """Calcule la vraie perplexite = exp(CE loss moyenne).
+    """Calcule the vraie perplexite = exp(CE loss moyenne).
 
     Args:
-        model      : un modele qui prend input_ids et returns des logits.
+        model      : a modele which prend input_ids and returns logits.
         input_ids  : (B, L) tenseur d'ids d'entree.
-        target_ids : (B, L) tenseur d'ids cibles (typiquement input decale de 1).
+        target_ids : (B, L) tenseur d'ids targets (typiquement input decale of 1).
     Returns:
         ppl : float >= 1.0. ppl = 1.0 = prediction parfaite.
     """
     model.eval()
     with torch.no_grad():
-        logits = model(input_ids)  # (B, L, vocab) ou autre selon le modele
+        logits = model(input_ids)  # (B, L, vocab) or other selon the modele
         if isinstance(logits, tuple):
             logits = logits[0]  # certains modeles return (logits, aux_loss)
         B, L, V = logits.shape

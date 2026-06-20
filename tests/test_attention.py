@@ -1,6 +1,6 @@
-"""Tests de FractalLinearAttention : shape, causalite, differentiabilite.
+"""Tests of FractalLinearAttention : shape, causalite, differentiabilite.
 
-L'attention lineaire causale de Katharopoulos (O(L·d²) au lieu de O(L²·d)).
+L'attention lineaire causale of Katharopoulos (O(L·d2) instead of O(L2·d)).
 Portee faithfully depuis the original architecture src/attention.rs.
 """
 
@@ -26,17 +26,17 @@ def test_attention_is_finite():
 
 
 def test_attention_causality():
-    """L'attention est CAUSALE : changer le token a la position j >= t ne must
-    pas affecter la sortie a la position t < j."""
+    """L'attention est CAUSALE : changer the token a the position j >= t not must
+    not affecter the sortie a the position t < j."""
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
     attn = FractalLinearAttention(d_model=16, n_heads=2, d_head=8, n_levels=1)
-    attn.eval()  # couper tout dropout eventuel
+    attn.eval()  # couper all dropout eventuel
     x = torch.randn(1, 6, 16)
     out1 = attn(x)
-    # Modifier la position 4 (et after) ne must pas changer la sortie aux pos 0..3.
+    # Modifier the position 4 (et after) not must not changer the sortie aux pos 0..3.
     x_modified = x.clone()
-    x_modified[0, 4:] = torch.randn(2, 16)  # briser les positions 4 et 5
+    x_modified[0, 4:] = torch.randn(2, 16)  # briser the positions 4 and 5
     out2 = attn(x_modified)
     # Les 4 premieres positions must etre identiques (causalite stricte).
     assert torch.allclose(out1[0, :4], out2[0, :4], atol=1e-5), \
@@ -44,8 +44,8 @@ def test_attention_causality():
 
 
 def test_attention_backward_propagates():
-    """CRITERE L2a : backward() must propager un gradient fini ET non-nul a
-    CHAQUE parameter. C'est exactement le test que FNN echouait."""
+    """CRITERE L2a : backward() must propager a gradient fini ET non-nul a
+    CHAQUE parameter. This is exactment the test that the original echouait."""
     from fractus.nn.attention import FractalLinearAttention
     attn = FractalLinearAttention(d_model=32, n_heads=4, d_head=8, n_levels=2)
     x = torch.randn(2, 8, 32)
@@ -63,14 +63,14 @@ def test_attention_backward_propagates():
 
 
 def test_attention_multi_levels_changes_output():
-    """Test ORTHOGONAL de l'effet multi-niveaux (corrige la version
-    quasi-tautologique qui tirait deux modules in le meme flux RNG).
+    """Test ORTHOGONAL of l'effet multi-niveaux (correctede the version
+    quasi-tautological which tirait deux modules in the same flux RNG).
 
     Idee : with n_levels=2, si on force level_logits = [+inf, -inf] (therefore le
-    softmax met tout le poids sur le niveau 0, no sur le niveau 1), la sortie
-    must etre EXACTEMENT celle d'un module n_levels=1 with le meme offset de
-    niveau 0. Et inversement with [-inf, +inf] (tout sur le niveau 1).
-    Cela isole l'effet des offsets multi-niveaux independamment de l'init aleatoire.
+    softmax met all the poids on the niveau 0, no on the niveau 1), the sortie
+    must etre EXACTEMENT celle d'un module n_levels=1 with the same offset de
+    niveau 0. Et inversement with [-inf, +inf] (tout on the niveau 1).
+    Cela isole l'effet offsets multi-niveaux independamment of l'init aleatoire.
     """
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
@@ -88,15 +88,15 @@ def test_attention_multi_levels_changes_output():
 
     out_ref = attn_ref(x)
 
-    # Cas 1 : tout le poids sur le niveau 0 → must reproduire exactement attn_ref.
+    # Cas 1 : all the poids on the niveau 0 → must reproduire exactment attn_ref.
     with torch.no_grad():
         attn2.level_logits.data = torch.tensor([1e9, -1e9])
     out_level0_only = attn2(x)
     assert torch.allclose(out_level0_only, out_ref, atol=1e-4), \
         "Forcer level_logits=[+inf,-inf] should reproduire exactement n_levels=1"
 
-    # Cas 2 : tout le poids sur le niveau 1 → must DIFFERER de attn_ref
-    # (because l'offset ω_1 = (φ²)^{-1} ≠ ω_0 = 1, therefore la feature map differe).
+    # Cas 2 : all the poids on the niveau 1 → must DIFFERER of attn_ref
+    # (because l'offset ω_1 = (φ2)^{-1} = ω_0 = 1, therefore the feature map differe).
     with torch.no_grad():
         attn2.level_logits.data = torch.tensor([-1e9, 1e9])
     out_level1_only = attn2(x)
@@ -107,8 +107,8 @@ def test_attention_multi_levels_changes_output():
 
 
 def test_attention_d_model_constraint():
-    """d_model must etre divisible par n_heads (sinon error)."""
+    """d_model must etre divisible by n_heads (sinon error)."""
     from fractus.nn.attention import FractalLinearAttention
     with pytest.raises(ValueError):
         FractalLinearAttention(d_model=30, n_heads=4, d_head=8, n_levels=1)
-        # 4 * 8 = 32 ≠ 30
+        # 4 * 8 = 32 = 30

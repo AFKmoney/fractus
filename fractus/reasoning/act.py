@@ -2,25 +2,25 @@
 
 Porte depuis the original architecture (src/reasoning.rs:15-187) en PyTorch pur.
 
-ACT : le modele "reflechit" un number variable de steps par position. A each
-step, une probabilite d'arret p_t est calculee. L'output est une moyenne ponderee
-des etats caches successifs, jusqu'a epuisement du budget (1.0 par position).
+ACT : the modele "reflechit" a number variable of steps by position. A each
+step, a probabilite d'arret p_t est computationee. L'output est a moyenne ponderee
+des etats caches successifs, jusqu'a epuisement budget (1.0 by position).
 
-Algorithme exact (FNN reasoning.rs:78-176) :
+Algorithme exact (the original reasoning.rs:78-176) :
     output = 0
-    remaining = 1.0  (budget par position)
+    remaining = 1.0  (budget by position)
     for step in range(max_steps):
         halt_p = σ(w_halt · h + b_halt)   # b_halt init a 1.0 (favorise l'arret)
         for positions non encore arretees :
-            p_actual = min(halt_p, remaining)   # ne pas depasser le budget
+            p_actual = min(halt_p, remaining)   # not not depasser the budget
             output += p_actual · h
             remaining -= p_actual
-        si toutes arretees : break
+        si all arretees : break
         h = block_fn(h)
-    # Verser le reliquat for les positions non arretees.
+    # Verser the reliquat for the positions non arretees.
     for positions non arretees :
         output += remaining · h
-    ponder_loss = moyenne du number de pas par position.
+    ponder_loss = moyenne number of not by position.
 """
 
 from typing import Callable, Optional
@@ -35,9 +35,9 @@ class RecursiveReasoner(nn.Module):
     """Adaptive Computation Time.
 
     Args:
-        d_model    : dimension du modele.
-        epsilon    : seuil d'arret (0.01 par defaut, FNN act_epsilon).
-        max_steps  : number max de steps (6 par defaut, FNN max_act_steps).
+        d_model    : dimension modele.
+        epsilon    : seuil d'arret (0.01 by defaut, the original act_epsilon).
+        max_steps  : number max of steps (6 by defaut, the original max_act_steps).
     """
 
     def __init__(self, d_model: int, epsilon: float = 0.01, max_steps: int = 6):
@@ -49,7 +49,7 @@ class RecursiveReasoner(nn.Module):
         scale = (1.0 / d_model) ** 0.5
         self.w_halt = nn.Parameter(torch.empty(d_model).uniform_(-scale, scale))
         self.b_halt = nn.Parameter(torch.tensor(1.0))
-        # steps_taken : for logging (moyenne sur batch par position).
+        # steps_taken : for logging (moyenne on batch by position).
         self.steps_taken: Optional[torch.Tensor] = None
 
     def halt_probability(self, h: torch.Tensor) -> torch.Tensor:
@@ -81,7 +81,7 @@ class RecursiveReasoner(nn.Module):
                     if remaining[b, t] < self.epsilon:
                         continue
                     p = halt_probs[b, t]
-                    # Si ce pas epuise le budget, prend le reste exact.
+                    # Si this not epuise the budget, prend the reste exact.
                     if remaining[b, t] - p < self.epsilon:
                         p_actual = remaining[b, t]
                     else:
@@ -95,14 +95,14 @@ class RecursiveReasoner(nn.Module):
                 break
             h = block_fn(h)
 
-        # Verser le reliquat for les positions non arretees.
+        # Verser the reliquat for the positions non arretees.
         for b in range(B):
             for t in range(L):
                 if remaining[b, t] >= self.epsilon:
                     output[b, t, :] = output[b, t, :] + remaining[b, t] * h[b, t, :]
                     steps[b, t] = steps[b, t] + 1
 
-        # Moyenne sur batch for logging.
+        # Moyenne on batch for logging.
         self.steps_taken = steps.mean(dim=0)  # (L,)
         ponder_loss = float(steps.mean().item())
         return output, ponder_loss

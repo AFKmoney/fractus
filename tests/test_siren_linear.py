@@ -1,10 +1,10 @@
-"""Tests de SirenLinear : se comporte comme nn.Linear but W = SIREN(grid)."""
+"""Tests of SirenLinear : se comported comme nn.Linear but W = SIREN(grid)."""
 
 import torch
 
 
 def test_siren_linear_shape():
-    """SirenLinear(in, out) se comporte comme nn.Linear : (B, in) → (B, out)."""
+    """SirenLinear(in, out) se comported comme nn.Linear : (B, in) → (B, out)."""
     from fractus.nn.siren_linear import SirenLinear
     layer = SirenLinear(in_features=16, out_features=16, hidden=32)
     x = torch.randn(4, 16)
@@ -20,8 +20,8 @@ def test_siren_linear_is_finite():
 
 
 def test_siren_linear_backward_propagates():
-    """CRITERE L3 : backward propage un gradient fini ET non-nul a CHAQUE parameter
-    de la SIREN (qui EST la matrix de poids, in le graphe)."""
+    """CRITERE L3 : backward propage a gradient fini ET non-nul a CHAQUE parameter
+    of the SIREN (qui EST the matrix of poids, in the graphe)."""
     from fractus.nn.siren_linear import SirenLinear
     layer = SirenLinear(in_features=16, out_features=16, hidden=32)
     x = torch.randn(4, 16)
@@ -39,11 +39,11 @@ def test_siren_linear_backward_propagates():
 
 
 def test_siren_linear_has_no_dense_weight():
-    """SirenLinear ne must PAS avoir de nn.Parameter de poids dense separe —
-    la matrix vient entierement de la SIREN."""
+    """SirenLinear not must PAS avoir of nn.Parameter of poids dense separe —
+    the matrix vient integerement of the SIREN."""
     from fractus.nn.siren_linear import SirenLinear
     layer = SirenLinear(in_features=16, out_features=16, hidden=32)
-    # Tous les params must venir de la SIREN (prefixe 'siren.') ou du bias.
+    # Tous the params must venir of the SIREN (prefixe 'siren.') or bias.
     param_names = [n for n, _ in layer.named_parameters()]
     for n in param_names:
         assert n.startswith("siren.") or n == "bias", \

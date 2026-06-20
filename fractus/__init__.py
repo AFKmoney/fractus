@@ -1,24 +1,24 @@
-"""fractus — refonte unifiee de FNN + the original design.
+"""fractus — refonte unifiee of the original + the original design.
 
-L0 : seul le pont natif `_core` est expose (lazily, voir plus bas). Les modules
-nn/, causal/, reasoning/ seront ajoutes in les couches ulterieures (L1+).
+L0 : seul the pont natif `_core` est expose (lazily, voir more bas). Les modules
+nn/, causal/, reasoning/ seront ajoutes in the couches ulterieures (L1+).
 
-Conception : les under-modules purs-Python (fractus.nn, etc.) must rester
-importables meme si le module natif Rust n'est pas construit (utile for les
+Conception : the under-modules purs-Python (fractus.nn, etc.) must rester
+importables same si the module natif Rust n'est not construit (utile for les
 tests unitaires PyTorch). On n'import therefore PAS `_core` au niveau module — on
-l'expose via __getattr__ paresseux, qui ne leve que si quelqu'un y accede
-reellement without avoir lance `maturin develop`.
+l'expose via __getattr__ paresseux, which not leve that si quelqu'un y accede
+reallement without avoir lance `maturin develop`.
 """
 
 __version__ = "0.1.0"
 
 
 def __getattr__(name):
-    # Import paresseux du module natif fractus._core.
-    # Ne se declenche que si quelqu'un fait `from fractus import _core`
-    # ou `fractus._core`. Les imports `import fractus.nn` ne passent pas ici.
+    # Import paresseux module natif fractus._core.
+    # Ne se declenche that si quelqu'un does `from fractus import _core`
+    # or `fractus._core`. Les imports `import fractus.nn` not passent not ici.
     #
-    # On utilise importlib.import_module et non `from fractus import _core`,
+    # On utilise importlib.import_module and non `from fractus import _core`,
     # because cette derniere shape re-declencherait __getattr__ → recursion infinie.
     if name == "_core":
         import importlib

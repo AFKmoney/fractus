@@ -1,18 +1,18 @@
-"""Demo L3 : mesurer la VRAIE compression SIREN sur un modele.
+"""Demo L3 : mesurer the VRAIE compression SIREN on a modele.
 
 On construit deux variantes d'un mini-MLP :
     (A) 100% dense (nn.Linear)
     (B) Couches cachees en SirenLinear, derniere couche dense.
 
 On mesure :
-    - Le ratio de compression (params SIREN vs dense equivalent).
-    - La capacite d'apprentissage : can-on surfit une cible with (B) aussi bien
+    - Le ratio of compression (params SIREN vs dense equivalent).
+    - La capacite d'learning : can-on surfit a target with (B) also bien
       qu'with (A) ?
 
 POSITION SCIENTIFIQUE HONNETE :
-On s'attend a un ratio MODESTE (~2× a 5×) et a une loss de quality d'apprentissage
-(les poids SIREN sont lisses, ce qui limite la capacite a exprimer des functions
-arbitraires). C'est la verite — a comparer au falsehood 20.4× d'OMNI.
+On s'attend a a ratio MODESTE (~2× a 5×) and a a loss of quality d'learning
+(les poids SIREN are lisses, this which limite the capacite a exprimer functions
+arbitraires). This is the verite — a comparer au falsehood 20.4× d'the original.
 
 Run :
     python scripts/demo_siren_compression.py

@@ -1,13 +1,13 @@
-"""Demo L5+ v2 : PrimeGenerator apprend a produire des numbers premiers.
+"""Demo L5+ v2 : PrimeGenerator apprend a produire numbers premiers.
 
-REDESIGN : la tâche 'converger vers target a 1e-3' (L5 original) was
-inatteignable. Nouvelle tâche : produire des integers premiers, verifies par
-le crible exact (soundness garantie).
+REDESIGN : the tache 'convergesr toward target a 1e-3' (L5 original) was
+inatteignable. Nouvelle tache : produire integers premiers, verifiess par
+le crible exact (soundness guaranteed).
 
 REINFORCE : reward = 1 si n predit est premier, 0 sinon. Loss = -reward · log_prob.
-Comme 25% des integers in [2,100] sont premiers, le signal n'est pas sparse.
+Comme 25% integers in [2,100] are premiers, the signal n'est not sparse.
 
-Critere honnete : valid_rate must depasser 25% (le hasard) after entrainement,
+Critere honestete : valid_rate must depasser 25% (le hasard) after training,
 idealement atteindre >70%.
 
 Run :
@@ -19,7 +19,7 @@ from fractus.reasoning.prime_generator import PrimeGenerator
 
 
 def evaluate_valid_rate(gen: PrimeGenerator, n_eval: int = 200) -> float:
-    """Fraction de n predits qui sont premiers."""
+    """Fraction of n predits which are premiers."""
     gen.eval()
     n_valid = 0
     with torch.no_grad():
@@ -46,7 +46,7 @@ def main():
     for step in range(n_steps):
         gen.train()
         opt.zero_grad()
-        ctx = torch.randn(16, gen.context_dim)  # batch de 16 contextes.
+        ctx = torch.randn(16, gen.context_dim)  # batch of 16 contextes.
         logits = gen(ctx)
         indices = logits.argmax(dim=-1)
         n_pred = indices + 2

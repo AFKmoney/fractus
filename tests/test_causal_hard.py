@@ -1,10 +1,10 @@
-"""Tests du SCM non-lineaire + validation NOTEARS au-dela du cas jouet."""
+"""Tests SCM non-lineaire + validation NOTEARS au-dela cas jouet."""
 
 import torch
 
 
 def test_nonlinear_scm_shape():
-    """generate_nonlinear_scm returns W (n,n) et X (samples, n)."""
+    """generate_nonlinear_scm returns W (n,n) and X (samples, n)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     W, X = generate_nonlinear_scm(n_vars=5, n_samples=100, seed=42)
     assert W.shape == (5, 5)
@@ -12,7 +12,7 @@ def test_nonlinear_scm_shape():
 
 
 def test_nonlinear_scm_is_dag():
-    """W_true must etre acyclique (c'est un DAG par construction)."""
+    """W_true must etre acyclique (this is a DAG by construction)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     from fractus.causal.notears import notears_penalty
     W, _ = generate_nonlinear_scm(n_vars=5, n_samples=100, seed=42)
@@ -21,9 +21,9 @@ def test_nonlinear_scm_is_dag():
 
 
 def test_nonlinear_scm_not_triangular():
-    """W_true ne must PAS etre triangulaire (ordre topo cache)."""
+    """W_true not must PAS etre triangulaire (ordre topo cache)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
-    # Sur plusieurs seeds, au moins un W must etre non-triangulaire.
+    # Sur plusieurs seeds, au less a W must etre non-triangulaire.
     found_nontrian = False
     for seed in range(20):
         W, _ = generate_nonlinear_scm(n_vars=5, n_samples=10, seed=seed)
@@ -38,9 +38,9 @@ def test_nonlinear_scm_not_triangular():
 
 
 def test_notears_recovers_nonlinear_dag():
-    """CRITERE L4+ : NOTEARS recupere un DAG non-lineaire a ordre inconnu (SHD <= 3).
+    """CRITERE L4+ : NOTEARS recupere a DAG non-lineaire a ordre inconnu (SHD <= 3).
 
-    C'est la validation au-dela du cas jouet L4 (lineaire + triangulaire).
+    This is the validation au-dela cas jouet L4 (lineaire + triangulaire).
     """
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     from fractus.causal.notears import notears_penalty

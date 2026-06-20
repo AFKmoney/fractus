@@ -1,4 +1,4 @@
-"""Sous-package nn — modules de reseau de neurones (PyTorch).
+"""Sous-package nn — modules of reseau of neurones (PyTorch).
 
 L1 : embedding fractal (FractalEmbedding).
 L2a : attention lineaire causale (FractalLinearAttention) + bloc minimal (FractalBlock).
