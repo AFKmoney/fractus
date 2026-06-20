@@ -1,6 +1,5 @@
-# Versions épinglées pour reproductibilité du dev.
-# PyTorch CPU-only wheel (pas de CUDA — l'APU AMD n'est pas supportée par ROCm sous Windows).
-# IMPORTANT : sur Windows, installer torch CPU avec l'index-url explicite :
+# Versions épinglées pour le dev (reproductibilité).
+# PyTorch CPU-only wheel sur Windows :
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 torch>=2.2,<3.0

@@ -27,6 +27,15 @@ Thumbs.db
 *.log
 checkpoints/
 
+# Datasets téléchargés (trop gros pour git)
+data/text/tinyshakespeare.txt
+data/text/*.txt
+data/hf_cache/
+
+# TensorBoard
+runs/
+events.out.tfevents.*
+
 # Windows reserved names accidentally created (e.g. by shell redirects)
 nul
 NUL
