@@ -1,36 +1,36 @@
-"""16 morphological features deterministic by token.
+"""16 deterministic morphological features per token.
 
-Ported from the original architecture (src/embedding.rs, CharClassFeatures). Le token id est
-interprete as a codepoint Unicode ; for the ids < 128 this are des
-caracteres ASCII, au-dela on derive the features of the value numerique.
+Ported from the original system (src/embedding.rs, CharClassFeatures). The token id is
+interpreted as a Unicode codepoint; for ids < 128 these are ASCII characters, and beyond
+that we derive features from the numeric value.
 
-Ces features n'ont AUCUN parameter trainable — elles are computationees
-deterministiquement then concatenees a the Fourier basis in FractalEmbedding.
+These features have NO trainable parameters — they are computed deterministically, then
+concatenated with the Fourier basis in FractalEmbedding.
 """
 
 import torch
 
 
 class CharClassFeatures:
-    """Extraction of 16 morphological features a partir d'un token id.
+    """Extraction of 16 morphological features from a token id.
 
-    Features (index : signification) :
+    Features (index: meaning):
         0  : is_vowel          (a, e, i, o, u)
-        1  : is_consonant      (lettre non voyelle)
+        1  : is_consonant      (non-vowel letter)
         2  : is_digit          (0-9)
         3  : is_space          (0x20)
         4  : is_uppercase
         5  : is_lowercase
         6  : is_punctuation    (!"#$%...)
         7  : is_alphabetic
-        8  : is_numeric        (alias of is_digit ici)
-        9  : is_whitespace     (espace, tab, newline)
+        8  : is_numeric        (alias of is_digit here)
+        9  : is_whitespace     (space, tab, newline)
         10 : is_control        (codepoint < 32 or == 127)
-        11 : digit_value       (0-9, or 0 si not a chiffre)
-        12 : char_category     (categorie Unicode simplifiee as float)
-        13 : position_in_alphabet (0-25, or -1 si not a lettre ; on encode -1→0)
+        11 : digit_value       (0-9, or 0 if not a digit)
+        12 : char_category     (simplified Unicode category as float)
+        13 : position_in_alphabet (0-25, or -1 if not a letter; we encode -1→0)
         14 : is_ascii          (codepoint < 128)
-        15 : parity            (token id pair = 1, impair = 0)
+        15 : parity            (even token id = 1, odd = 0)
     """
 
     N_FEATURES = 16
@@ -39,17 +39,17 @@ class CharClassFeatures:
 
     @staticmethod
     def extract(token_id: int) -> torch.Tensor:
-        """Retourne a tenseur float32 of shape (16,)."""
+        """Returns a float32 tensor of shape (16,)."""
         f = torch.zeros(CharClassFeatures.N_FEATURES, dtype=torch.float32)
 
-        # On interprete l'octet of poids weak as a caractere potentiel.
+        # We interpret the low byte as a potential character.
         as_byte = (token_id & 0xFF)
 
         # 0: is_vowel
         is_vowel_bool = as_byte in CharClassFeatures.VOWELS
         f[0] = float(is_vowel_bool)
 
-        # 1: is_consonant (lettre alphabetique non voyelle)
+        # 1: is_consonant (alphabetic non-vowel letter)
         is_alpha = (
             (0x41 <= as_byte <= 0x5A) or  # A-Z
             (0x61 <= as_byte <= 0x7A)     # a-z
@@ -81,10 +81,10 @@ class CharClassFeatures:
         # 7: is_alphabetic
         f[7] = float(is_alpha)
 
-        # 8: is_numeric (alias of is_digit ici)
+        # 8: is_numeric (alias of is_digit here)
         f[8] = float(is_digit)
 
-        # 9: is_whitespace (espace, tab 0x09, newline 0x0A, CR 0x0D)
+        # 9: is_whitespace (space, tab 0x09, newline 0x0A, CR 0x0D)
         f[9] = float(as_byte in (0x09, 0x0A, 0x0D, 0x20))
 
         # 10: is_control (codepoint < 32 or == 127)
@@ -93,8 +93,8 @@ class CharClassFeatures:
         # 11: digit_value
         f[11] = float(as_byte - 0x30) if is_digit else 0.0
 
-        # 12: char_category simplifie : 1.0 lettre, 2.0 chiffre, 3.0 ponctuation,
-        #     4.0 espace, 5.0 controle, 0.0 other.
+        # 12: char_category simplified: 1.0 letter, 2.0 digit, 3.0 punctuation,
+        #     4.0 space, 5.0 control, 0.0 other.
         if is_alpha:
             f[12] = 1.0
         elif is_digit:
@@ -106,7 +106,7 @@ class CharClassFeatures:
         elif f[10] > 0.5:
             f[12] = 5.0
 
-        # 13: position_in_alphabet (0-25, or 0 si not a lettre)
+        # 13: position_in_alphabet (0-25, or 0 if not a letter)
         if 0x41 <= as_byte <= 0x5A:
             f[13] = float(as_byte - 0x41)
         elif 0x61 <= as_byte <= 0x7A:
@@ -115,7 +115,7 @@ class CharClassFeatures:
         # 14: is_ascii
         f[14] = float(token_id < 128)
 
-        # 15: parity (token id pair)
+        # 15: parity (even token id)
         f[15] = float((token_id % 2) == 0)
 
         return f

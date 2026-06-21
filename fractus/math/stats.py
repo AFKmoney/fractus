@@ -1,18 +1,18 @@
-"""Utilities: sigmoid, cosine_similarity.
+"""Numerical utilities: sigmoid, cosine_similarity.
 
-Ported from the original architecture (src/math/stats.rs). Pure PyTorch.
+Ported from the original system (src/math/stats.rs). Pure PyTorch.
 """
 
 import torch
 
 
 def sigmoid(x: torch.Tensor) -> torch.Tensor:
-    """σ(x) = 1 / (1 + exp(-x)). Stable numeriquement for larges x negatifs."""
+    """σ(x) = 1 / (1 + exp(-x)). Numerically stable for large negative x."""
     return torch.sigmoid(x)
 
 
 def cosine_similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Similarite cosinus : dot(a,b) / (||a|| · ||b||). 0 si a norme < 1e-10."""
+    """Cosine similarity: dot(a,b) / (||a|| · ||b||). 0 if a norm < 1e-10."""
     dot = (a * b).sum()
     norm_a = a.norm()
     norm_b = b.norm()

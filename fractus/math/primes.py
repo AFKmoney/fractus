@@ -1,6 +1,6 @@
 """Sieve of Eratosthenes for primality verification.
 
-Ported from the original architecture (src/math/primes.rs). Precomputed once
+Ported from the original system (src/math/primes.rs). Precomputed once
 up to a limit, then verify_prime(n) is O(1) for n <= limit.
 """
 
@@ -8,23 +8,23 @@ from typing import List
 
 
 class PrimeSieve:
-    """Crible d'Eratosthene precomputatione.
+    """Precomputed Sieve of Eratosthenes.
 
     Args:
-        limit : borne superieure (inclusive) sieve.
+        limit : upper bound (inclusive) for the sieve.
     """
 
     def __init__(self, limit: int):
         if limit < 0:
-            raise ValueError("limit must etre >= 0")
+            raise ValueError("limit must be >= 0")
         self.limit = limit
-        # is_prime[i] = True si i is prime.
+        # is_prime[i] = True if i is prime.
         self.is_prime: List[bool] = [True] * (limit + 1)
         if limit >= 0:
             self.is_prime[0] = False
         if limit >= 1:
             self.is_prime[1] = False
-        # Crible classique.
+        # Classical sieve.
         i = 2
         while i * i <= limit:
             if self.is_prime[i]:
@@ -33,12 +33,12 @@ class PrimeSieve:
             i += 1
 
     def verify_prime(self, n: int) -> bool:
-        """Returns True si n is prime (n <= limit), otherwise verifiesss by trial of division."""
+        """Returns True if n is prime (n <= limit); otherwise verifies by trial division."""
         if n < 2:
             return False
         if n <= self.limit:
             return self.is_prime[n]
-        # n > limit : essai of division jusqu'a sqrt(n).
+        # n > limit: trial division up to sqrt(n).
         d = 2
         while d * d <= n:
             if n % d == 0:

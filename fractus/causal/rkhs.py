@@ -1,6 +1,6 @@
 """RKHSCausalOperator: causal operator in an RKHS via Random Fourier Features.
 
-True RKHS with a Galsoan kernel approximated by RFF (Rahimi-Recht 2007).
+A true RKHS with a Gaussian kernel approximated by RFF (Rahimi-Recht 2007).
 Not a bare low-rank projection. W_rff are frozen (Rahimi-Recht method).
 Only U, V, and decode are trained.
 """
@@ -16,7 +16,7 @@ class RKHSCausalOperator(nn.Module):
         dim:   input/output dimension (original space).
         rank:  rank of the low-rank decomposition A = U @ V^T in the RKHS.
         n_rff: number of random features K (more = better approximation).
-        sigma: bandwidth of the Galsoan kernel (1.0 by default).
+        sigma: bandwidth of the Gaussian kernel (1.0 by default).
     """
 
     def __init__(self, dim, rank=16, n_rff=64, sigma=1.0):
@@ -50,7 +50,7 @@ class RKHSCausalOperator(nn.Module):
         return torch.cat([cos_part, sin_part], dim=-1)
 
     def kernel(self, x, y):
-        """Approximated Galsoan kernel: k(x, y) ~= phi(x) . phi(y). Shape (N_x, N_y)."""
+        """Approximated Gaussian kernel: k(x, y) ~= phi(x) . phi(y). Shape (N_x, N_y)."""
         return self.features(x) @ self.features(y).T
 
     def forward(self, x):

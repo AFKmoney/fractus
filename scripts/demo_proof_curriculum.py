@@ -1,17 +1,17 @@
-"""Demo L5+ : ProofGenerator apprend by curriculum + reward shaping + baseline.
+"""Demo L5+: ProofGenerator learns via curriculum + reward shaping + baseline.
 
-CORRECTION DU VERDICT L5 : REINFORCE pur did not learn parce that the tache
-was too dure d'emblee (targets ±5, error 1.7, reward ecrase a 0).
+L5 VERDICT CORRECTION: pure REINFORCE did not learn because the task was
+too hard right from the start (targets ±5, error 1.7, reward crushed to 0).
 
-Cette demo use ProofTrainer with :
-    - reward shaping continu (-log(1+err), gradient non-nul parall)
-    - baseline subtraction (reduit the variance REINFORCE)
-    - curriculum (targets ±0.1 → ±5 progressivement)
+This demo uses ProofTrainer with:
+    - continuous reward shaping (-log(1+err), non-zero gradient everywhere)
+    - baseline subtraction (reduces REINFORCE variance)
+    - curriculum (targets ±0.1 → ±5 progressively)
 
-Critere honesty : the error mediane a ±5 must baisser d'au less 30% after
-training, et/ou the taux of validity must augmenter significativement.
+Honest criterion: the median error at ±5 must drop by at least 30% after
+training, and/or the validity rate must increase significantly.
 
-Run :
+Run:
     python scripts/demo_proof_curriculum.py
 """
 
@@ -32,19 +32,19 @@ def main():
     print("=" * 60)
     print("VERDICT L5+ (curriculum + reward shaping + baseline)")
     print("=" * 60)
-    print(f"Erreur mediane (±5) : {metrics['initial_error']:.4f} -> {metrics['final_error']:.4f}")
-    baisse = (1 - metrics['final_error'] / max(metrics['initial_error'], 1e-9)) * 100
-    print(f"Baisse : {baisse:.1f}%")
-    print(f"Taux validite (±5) : {metrics['initial_valid_rate']:.1%} -> {metrics['final_valid_rate']:.1%}")
-    print(f"Paliers atteints : {metrics['levels_reached']}/5")
+    print(f"Median error (±5): {metrics['initial_error']:.4f} -> {metrics['final_error']:.4f}")
+    reduction = (1 - metrics['final_error'] / max(metrics['initial_error'], 1e-9)) * 100
+    print(f"Reduction: {reduction:.1f}%")
+    print(f"Validity rate (±5): {metrics['initial_valid_rate']:.1%} -> {metrics['final_valid_rate']:.1%}")
+    print(f"Stages reached: {metrics['levels_reached']}/5")
 
-    if baisse >= 30.0 or metrics['final_valid_rate'] > metrics['initial_valid_rate'] + 0.05:
-        print("\nOK : le generateur APPREND (curriculum + reward shaping + baseline).")
-        print("  Correction du verdict L5 : REINFORCE pur n'was pas le problem,")
-        print("  c'was la tâche trop dure without curriculum.")
+    if reduction >= 30.0 or metrics['final_valid_rate'] > metrics['initial_valid_rate'] + 0.05:
+        print("\nOK: the generator LEARNS (curriculum + reward shaping + baseline).")
+        print("  Correction of the L5 verdict: pure REINFORCE was not the problem,")
+        print("  it was the task being too hard without a curriculum.")
     else:
-        print("\n~ : amelioration modeste. Considerer : lr plus eleve, plus de")
-        print("  paliers, ou PPO for reduire encore la variance.")
+        print("\n~: modest improvement. Consider: a higher lr, more stages,")
+        print("  or PPO to reduce variance further.")
 
 
 if __name__ == "__main__":

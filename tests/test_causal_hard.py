@@ -1,4 +1,4 @@
-"""Tests SCM non-lineaire + validation NOTEARS au-dela cas jouet."""
+"""Tests of the non-linear SCM + NOTEARS validation beyond the toy case."""
 
 import torch
 
@@ -12,35 +12,35 @@ def test_nonlinear_scm_shape():
 
 
 def test_nonlinear_scm_is_dag():
-    """W_true must be acyclic (this is a DAG by construction)."""
+    """W_true must be acyclic (it is a DAG by construction)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     from fractus.causal.notears import notears_penalty
     W, _ = generate_nonlinear_scm(n_vars=5, n_samples=100, seed=42)
     h = notears_penalty(W)
-    assert abs(h.item()) < 1e-3, f"W_true should etre DAG (h≈0), eu {h.item()}"
+    assert abs(h.item()) < 1e-3, f"W_true should be a DAG (h≈0), got {h.item()}"
 
 
 def test_nonlinear_scm_not_triangular():
-    """W_true not must PAS be triangulaire (ordre topo cache)."""
+    """W_true must NOT be triangular (hidden topological order)."""
     from data.causal.generate_scm_hard import generate_nonlinear_scm
-    # Sur moreieurs seeds, au less a W must be non-triangulaire.
+    # Over several seeds, at least one W must be non-triangular.
     found_nontrian = False
     for seed in range(20):
         W, _ = generate_nonlinear_scm(n_vars=5, n_samples=10, seed=seed)
-        # Triangulaire superieur strict : W[i,j] != 0 implique i < j.
-        # Non-triangulaire : exists i > j with W[i,j] != 0.
+        # Strict upper-triangular: W[i,j] != 0 implies i < j.
+        # Non-triangular: exists i > j with W[i,j] != 0.
         for i in range(5):
             for j in range(i):
                 if W[i, j] != 0:
                     found_nontrian = True
                     break
-    assert found_nontrian, "Aucun W non-triangulaire trouve en 20 seeds"
+    assert found_nontrian, "No non-triangular W found in 20 seeds"
 
 
 def test_notears_recovers_nonlinear_dag():
-    """CRITERE L4+ : NOTEARS recupere a DAG non-lineaire a ordre inconnu (SHD <= 3).
+    """L4+ CRITERION: NOTEARS recovers a non-linear DAG with unknown order (SHD <= 3).
 
-    This is the validation au-dela cas jouet L4 (lineaire + triangulaire).
+    This is the validation beyond the L4 toy case (linear + upper-triangular).
     """
     from data.causal.generate_scm_hard import generate_nonlinear_scm
     from fractus.causal.notears import notears_penalty
@@ -60,4 +60,4 @@ def test_notears_recovers_nonlinear_dag():
         loss.backward()
         opt.step()
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
-    assert shd <= 3, f"NOTEARS should recuperer le DAG non-lineaire (SHD<=3), eu {shd}"
+    assert shd <= 3, f"NOTEARS should recover the non-linear DAG (SHD<=3), got {shd}"

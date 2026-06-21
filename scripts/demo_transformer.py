@@ -1,22 +1,22 @@
-"""Demo L2b : transformer fractal COMPLET (with Kuramoto + MoE).
+"""Demo L2b: COMPLETE fractal transformer (with Kuramoto + MoE).
 
-Assembler FractalEmbedding + N×FractalBlockFull + projection logit, et
-l'trainsr on a toy sequence of texte. FractalBlockFull integre :
-  - attention lineaire causale multi-niveaux (L2a)
-  - Kuramoto oscillators couples bas-rang RK4 (L2b)
-  - mixture-of-experts a routing von Mises/Farey (L2b)
+Assemble FractalEmbedding + N×FractalBlockFull + logit projection, and train
+on a toy text sequence. FractalBlockFull integrates:
+  - multi-level causal linear attention (L2a)
+  - low-rank Kuramoto RK4 oscillators (L2b)
+  - von Mises/Farey-routed mixture-of-experts (L2b)
 
-Corrige the error centrale of the original architecture (training.rs:399 = bruit) : here Adam
-recoit of vrais gradients on TOUT the pipeline (y compris U/Λ Kuramoto et
-W1/W2 experts) and the loss baisse.
+Corrects the central error of the original system (training.rs:399 = noise): here Adam
+receives real gradients across the ENTIRE pipeline (including Kuramoto U/Λ and expert
+W1/W2) and the loss drops.
 
-On use a all small setup (CPU-only) :
-    vocab  = 128 (ASCII imprimable : ord(c)-32 ∈ [0,95] ⊂ [0,128))
+Small setup (CPU-only):
+    vocab  = 128 (printable ASCII: ord(c)-32 ∈ [0,95] ⊂ [0,128))
     d_model = 32
     n_blocks = 2
     seq_len  = 16
 
-Run :
+Run:
     python scripts/demo_transformer.py
 """
 
@@ -26,7 +26,7 @@ from fractus.nn import FractalEmbedding, FractalBlockFull
 
 
 class TinyFractalLM(nn.Module):
-    """Embedding + blocs FractalBlockFull + projection logit."""
+    """Embedding + FractalBlockFull blocks + logit projection."""
 
     def __init__(self, vocab, d_model, n_heads, d_head, n_levels, n_blocks,
                  n_oscillators, coupling_rank, n_experts, top_k):
@@ -59,20 +59,20 @@ def main():
     text = "hello world " * 8
     vocab = 128
     ids = torch.tensor([ord(c) - 32 for c in text if 0 <= ord(c) - 32 < vocab])
-    print(f"Sequence : {len(ids)} tokens, vocab={vocab}")
-    print(f"Extrait : {''.join(chr(int(i)+32) for i in ids[:24])!r}")
+    print(f"Sequence: {len(ids)} tokens, vocab={vocab}")
+    print(f"Excerpt: {''.join(chr(int(i)+32) for i in ids[:24])!r}")
 
     seq_len = 16
     n_seqs = len(ids) // seq_len
     ids = ids[:n_seqs * seq_len].view(n_seqs, seq_len)
-    print(f"Batchs : {n_seqs} sequences de longueur {seq_len}")
+    print(f"Batches: {n_seqs} sequences of length {seq_len}")
 
     model = TinyFractalLM(
         vocab=vocab, d_model=32, n_heads=4, d_head=8, n_levels=2, n_blocks=2,
         n_oscillators=8, coupling_rank=4, n_experts=4, top_k=2,
     )
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"Parametres : {n_params}")
+    print(f"Parameters: {n_params}")
 
     opt = torch.optim.Adam(model.parameters(), lr=3e-3)
 
@@ -80,7 +80,7 @@ def main():
     for epoch in range(40):
         opt.zero_grad()
         logits, aux_loss = model(ids)
-        # Cross-entooy + 0.1 * load-balance loss auxiliaire.
+        # Cross-entropy + 0.1 * auxiliary load-balance loss.
         ce_loss = nn.functional.cross_entropy(
             logits[:, :-1].reshape(-1, vocab),
             ids[:, 1:].reshape(-1),
@@ -95,12 +95,12 @@ def main():
 
     final_loss = ce_loss.item()
     print()
-    print(f"CE Loss initial : {initial_loss:.4f}  (= log({vocab}) ≈ {torch.log(torch.tensor(float(vocab))).item():.3f})")
-    print(f"CE Loss finale   : {final_loss:.4f}")
-    print(f"Baisse           : {(1 - final_loss / initial_loss) * 100:.1f}%")
+    print(f"Initial CE loss : {initial_loss:.4f}  (= log({vocab}) ≈ {torch.log(torch.tensor(float(vocab))).item():.3f})")
+    print(f"Final CE loss   : {final_loss:.4f}")
+    print(f"Reduction       : {(1 - final_loss / initial_loss) * 100:.1f}%")
 
     print()
-    print("Generation (greedy) :")
+    print("Generation (greedy):")
     model.eval()
     with torch.no_grad():
         context = torch.tensor([[ord(c) - 32 for c in "hello"]])
@@ -113,11 +113,10 @@ def main():
     print(f"  '{generated}'")
 
     if final_loss < initial_loss * 0.5:
-        print("\n✓ SUCCES : le transformer fractal complete (Kuramoto+MoE) apprend.")
+        print("\n✓ SUCCESS: the complete fractal transformer (Kuramoto+MoE) learns.")
     else:
-        print("\n✗ ECHEC : loss ne baisse pas assez.")
+        print("\n✗ FAILURE: the loss does not drop enough.")
 
 
 if __name__ == "__main__":
     main()
-

@@ -4,12 +4,12 @@ import torch
 
 
 def test_act_output_shape():
-    """ACT preserve the shape (B, L, d)."""
+    """ACT preserves the shape (B, L, d)."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
     def block_fn(h):
-        return h * 0.5  # block trivial
+        return h * 0.5  # trivial block
 
     h = torch.randn(2, 5, 16)
     out, ponder = reasoner(h, block_fn)
@@ -25,7 +25,7 @@ def test_act_is_finite():
 
 
 def test_act_ponder_loss_nonneg():
-    """ponder_loss >= 0 (this is a moyenne of pas)."""
+    """ponder_loss >= 0 (it is a mean of step counts)."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
     out, ponder = reasoner(torch.randn(2, 5, 16), lambda x: x * 0.5)
@@ -33,7 +33,7 @@ def test_act_ponder_loss_nonneg():
 
 
 def test_act_backward_every_param():
-    """CRITERE L5 : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
+    """L5 CRITERION: backward propagates a finite AND non-zero gradient to EVERY parameter."""
     from fractus.reasoning.act import RecursiveReasoner
     reasoner = RecursiveReasoner(d_model=16, max_steps=4)
 
@@ -46,13 +46,13 @@ def test_act_backward_every_param():
     loss.backward()
     for name, p in reasoner.named_parameters():
         assert p.requires_grad, f"{name} should requires_grad=True"
-        assert p.grad is not None, f"{name} n'a recu no gradient"
+        assert p.grad is not None, f"{name} received no gradient"
         assert torch.isfinite(p.grad).all()
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert p.grad.abs().sum().item() > 0, f"{name} received a zero gradient"
 
 
 def test_self_consistency_candidates_count():
-    """generate_candidates produit n_candidates versions."""
+    """generate_candidates produces n_candidates versions."""
     from fractus.reasoning.self_consistency import SelfConsistencyCheck
     scc = SelfConsistencyCheck(n_candidates=4, noise_scale=0.1)
     h = torch.randn(2, 5, 16)
@@ -63,7 +63,7 @@ def test_self_consistency_candidates_count():
 
 
 def test_self_consistency_select_best():
-    """select_best returns a idx valid and a score in [-1, 1]."""
+    """select_best returns a valid idx and a score in [-1, 1]."""
     from fractus.reasoning.self_consistency import SelfConsistencyCheck
     scc = SelfConsistencyCheck(n_candidates=3, noise_scale=0.05)
     ref = torch.randn(2, 4, 16)

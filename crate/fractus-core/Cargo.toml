@@ -8,4 +8,4 @@ name = "fractus_core"
 path = "src/lib.rs"
 
 [dependencies]
-# Aucune dependance en L0. nalgebra/serde/etc. ajoutes quand a module en a besoin.
+# No dependencies in L0. nalgebra/serde/etc. added when a module needs them.

@@ -1,21 +1,21 @@
-# Fractus L0 — Socle Technique Implementation Plan
+# Fractus L0 — Technical Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Etablir the socle technique of fractus — a repo with a crate Rust pur (`fractus-core`), a crate of bindings PyO3 (`fractus-py`), a package Python (`fractus`), and a test fume which prouve that Python → PyTorch → maturin → Rust → retour Python fonctionne end-to-end.
+**Goal:** Establish the technical foundation of fractus — a repo with a pure-Rust crate (`fractus-core`), a PyO3 bindings crate (`fractus-py`), a Python package (`fractus`), and a smoke test that proves Python → PyTorch → maturin → Rust → back to Python works end-to-end.
 
-**Architecture:** Trois components isoles. (1) `fractus-core` : Rust pur, no I/O, exported the functions mathematics (ici juste `add` for the fume + the port vortex 2-adique d'the original). (2) `fractus-py` : bindings PyO3/maturin which exposent `fractus-core` a Python under the nom `fractus._core`. (3) `fractus` : package Python installant PyTorch and abritant the modele entrainable (vide for L0). Le Rust reste outside the autodiff graph ; the forward/backward se fera en PyTorch (couches ulterieures).
+**Architecture:** Three isolated components. (1) `fractus-core`: pure Rust, no I/O, exports mathematical functions (here just `add` for the smoke test + the 2-adic vortex port from the original). (2) `fractus-py`: PyO3/maturin bindings that expose `fractus-core` to Python under the name `fractus._core`. (3) `fractus`: Python package installing PyTorch and hosting the trainable model (empty for L0). Rust stays outside the autodiff graph; forward/backward will be done in PyTorch (later layers).
 
-**Tech Stack:** Rust 1.94 + `nalgebra`, `pyo3` (feature `extension-module`) ; Python 3.14 via `py` launcher in a venv dedie ; `maturin 1.14` for the build ; `torch` (CPU-only wheel) + `numpy` + `pytest`.
+**Tech Stack:** Rust 1.94 + `nalgebra`, `pyo3` (feature `extension-module`); Python 3.14 via the `py` launcher in a dedicated venv; `maturin 1.14` for the build; `torch` (CPU-only wheel) + `numpy` + `pytest`.
 
-**Environment (verifiess on the machine target) :**
+**Environment (verified on the target machine):**
 - `py` → Python 3.14.0 with pip 25.3 ✅
 - `cargo` / `rustc` 1.94.0 ✅
-- `python`/`python3` (MSYS2) → **without pip, not not utiliser**
-- Hardware : AMD Ryzen 5 5500U, CPU-only effectif
-- Creation in : `C:/Users/PHIL/ZCodeProject/fractus/`
+- `python`/`python1` (MSYS2) → **without pip, do not use**
+- Hardware: AMD Ryzen 5 5500U, effective CPU-only
+- Created in: `C:/Users/PHIL/ZCodeProject/fractus/`
 
-**Lien spec :** `docs/superpowers/specs/2026-06-19-fractus-unified-design.md`, section 6 « L0 — Socle technique ».
+**Spec link:** `docs/SPEC.md`, section 6 "L0 — Technical foundation".
 
 ---
 
@@ -24,55 +24,55 @@
 ```
 C:/Users/PHIL/ZCodeProject/fractus/
 ├── .gitignore                          # ignore .venv, target/, __pycache__, *.egg-info
-├── README.md                           # pitch court + instructions of dev
-├── pyproject.toml                      # projet Python racine (fractus), builde by maturin
-├── requirements-dev.txt                # versions epinglees for reproductibilite
+├── README.md                           # short pitch + dev instructions
+├── pyproject.toml                      # root Python project (fractus), built by maturin
+├── requirements-dev.txt                # pinned versions for reproducibility
 ├── crate/
-│   ├── fractus-core/                   # workspace member : coeur mathematical Rust pur
+│   ├── fractus-core/                   # workspace member: pure-Rust mathematical core
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs                  # pub mod uniquement for modules existants
-│   │       └── vortex.rs               # port 2-adique depuis the original (correct + fixes)
-│   └── fractus-py/                     # workspace member : bindings PyO3
+│   │       ├── lib.rs                  # pub mod only for existing modules
+│   │       └── vortex.rs               # 2-adic port from the original (correct + fixes)
+│   └── fractus-py/                     # workspace member: PyO3 bindings
 │       ├── Cargo.toml
 │       └── src/
 │           └── lib.rs                  # #[pymodule] fractus._core
-├── Cargo.toml                          # workspace racine (lie the 2 crates)
-├── fractus/                            # package Python (le modele entrainable, vide en L0)
-│   ├── __init__.py                     # expose fractus._core for test
-│   └── nn/__init__.py                  # placeholder for couches ulterieures
+├── Cargo.toml                          # root workspace (links the 2 crates)
+├── fractus/                            # Python package (the trainable model, empty in L0)
+│   ├── __init__.py                     # expose fractus._core for the test
+│   └── nn/__init__.py                  # placeholder for later layers
 └── tests/
     ├── __init__.py
-    └── test_smoke.py                   # LE test fume which traverse tout
+    └── test_smoke.py                   # THE smoke test that crosses everything
 ```
 
-**Responsabilites :**
-- `fractus-core` : computation mathematical pur, testable en Rust seul, no dependance Python.
-- `fractus-py` : Pont Python↔Rust. Ne contient no logical, juste wrappers `#[pyfunction]`.
-- `fractus` (Python) : Le package utilisateur. En L0, juste l'import bridge + placeholder `nn/`.
-- `tests/test_smoke.py` : prouve that all tient.
+**Responsibilities:**
+- `fractus-core`: pure mathematical computation, testable in Rust alone, no Python dependency.
+- `fractus-py`: Python↔Rust bridge. Contains no logic, just `#[pyfunction]` wrappers.
+- `fractus` (Python): the user package. In L0, just the bridge import + `nn/` placeholder.
+- `tests/test_smoke.py`: proves everything holds.
 
 ---
 
-## Task 1: Initialiser the repo and the .gitignore
+## Task 1: Initialize the repo and the .gitignore
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/.gitignore`
 
-- [ ] **Step 1: Creer the dossier fractus and init git**
+- [ ] **Step 1: Create the fractus folder and init git**
 
-Run (cmd or PowerShell) :
+Run (cmd or PowerShell):
 ```bash
 mkdir "C:\Users\PHIL\ZCodeProject\fractus"
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 git init
 git branch -M main
 ```
-Expected: `Initialized empty Git repository in ...` then silencieux for `git branch`.
+Expected: `Initialized empty Git repository in ...` then silent for `git branch`.
 
-- [ ] **Step 2: Ecrire the .gitignore**
+- [ ] **Step 2: Write the .gitignore**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/.gitignore` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/.gitignore`:
 ```gitignore
 # Python
 __pycache__/
@@ -104,7 +104,7 @@ Thumbs.db
 checkpoints/
 ```
 
-- [ ] **Step 3: Commit initial**
+- [ ] **Step 3: Initial commit**
 
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
@@ -115,22 +115,22 @@ Expected: `[main (root-commit) ...] chore: initial commit with .gitignore`
 
 ---
 
-## Task 2: Creer the workspace Cargo racine
+## Task 2: Create the root Cargo workspace
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/Cargo.toml`
 
-- [ ] **Step 1: Ecrire the Cargo.toml workspace**
+- [ ] **Step 1: Write the workspace Cargo.toml**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/Cargo.toml` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/Cargo.toml`:
 ```toml
-# Workspace racine fractus.
-# Les deux crates (fractus-core, fractus-py) are members isoles.
+# fractus root workspace.
+# The two crates (fractus-core, fractus-py) are isolated members.
 [workspace]
 members = ["crate/fractus-core", "crate/fractus-py"]
 resolver = "2"
 
-# Profil release optimise for CPU-only.
+# Release profile optimized for CPU-only.
 [profile.release]
 opt-level = 3
 lto = true
@@ -147,15 +147,15 @@ Expected: `1 file changed`
 
 ---
 
-## Task 3: Creer the crate fractus-core with add() (premier test fume Rust)
+## Task 3: Create the fractus-core crate with add() (first Rust smoke test)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/Cargo.toml`
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs`
 
-- [ ] **Step 1: Ecrire Cargo.toml of fractus-core**
+- [ ] **Step 1: Write fractus-core's Cargo.toml**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/Cargo.toml` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/Cargo.toml`:
 ```toml
 [package]
 name = "fractus-core"
@@ -167,22 +167,22 @@ name = "fractus_core"
 path = "src/lib.rs"
 
 [dependencies]
-# Aucune dependance en L0. nalgebra/serde/etc. ajoutes quand a module en a besoin.
+# No dependencies in L0. nalgebra/serde/etc. added when a module needs them.
 ```
 
-- [ ] **Step 2: Ecrire lib.rs minimal (juste add, for the fume)**
+- [ ] **Step 2: Write a minimal lib.rs (just add, for the smoke test)**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs`:
 ```rust
 //! # fractus-core
 //!
-//! Coeur mathematical pur of fractus. Aucune I/O, no dependance Python.
-//! Toutes the functions ici are testables en Rust seul.
+//! Pure mathematical core of fractus. No I/O, no Python dependency.
+//! All functions here are testable in Rust alone.
 //!
-//! En L0, seule `add` est exposee for the test fume. Les vrais modules
-//! (vortex, siren, causal, proof) are ajoutes in the couches ulterieures.
+//! In L0, only `add` is exposed for the smoke test. The real modules
+//! (vortex, siren, causal, proof) are added in later layers.
 
-/// Addition integere. Existe uniquement for the test fume Python↔Rust.
+/// Integer addition. Exists only for the Python↔Rust smoke test.
 pub fn add(a: i64, b: i64) -> i64 {
     a + b
 }
@@ -199,9 +199,9 @@ mod tests {
 }
 ```
 
-- [ ] **Step 3: Verifier that the crate compile and that the test passe**
+- [ ] **Step 3: Verify the crate compiles and the test passes**
 
-Run :
+Run:
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 cargo test -p fractus-core
@@ -218,15 +218,15 @@ Expected: `2 files changed`
 
 ---
 
-## Task 4: Creer the crate fractus-py (bindings PyO3)
+## Task 4: Create the fractus-py crate (PyO3 bindings)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/Cargo.toml`
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/src/lib.rs`
 
-- [ ] **Step 1: Ecrire Cargo.toml of fractus-py**
+- [ ] **Step 1: Write fractus-py's Cargo.toml**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/Cargo.toml` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/Cargo.toml`:
 ```toml
 [package]
 name = "fractus-py"
@@ -243,29 +243,29 @@ fractus-core = { path = "../fractus-core" }
 pyo3 = { version = "0.22", features = ["extension-module"] }
 ```
 
-Note : `crate-type = ["cdylib"]` est obligatoire for qu'maturin produise a extension Python.
-Le `name = "_core"` does that the module Python s'appellera `fractus._core` (after configuration pyproject).
+Note: `crate-type = ["cdylib"]` is mandatory for maturin to produce a Python extension.
+`name = "_core"` makes the Python module called `fractus._core` (after pyproject configuration).
 
-- [ ] **Step 2: Ecrire lib.rs bindings**
+- [ ] **Step 2: Write the bindings lib.rs**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/src/lib.rs` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-py/src/lib.rs`:
 ```rust
-//! Bindings Python (PyO3) for fractus-core.
+//! Python bindings (PyO3) for fractus-core.
 //!
-//! Ce crate not contient AUCUNE logical — seulement wrappers #[pyfunction]
-//! which deleguent a fractus-core. Le but est d'exposer the Rust a Python
-//! under the nom `fractus._core`.
+//! This crate contains NO logic — only #[pyfunction] wrappers that delegate
+//! to fractus-core. The goal is to expose the Rust to Python under the name
+//! `fractus._core`.
 
 use pyo3::prelude::*;
 
-/// Addition integere — wrapper Python for fractus_core::add.
-/// Exposee uniquement for the test fume en L0.
+/// Integer addition — Python wrapper for fractus_core::add.
+/// Exposed only for the L0 smoke test.
 #[pyfunction]
 fn add(a: i64, b: i64) -> i64 {
     fractus_core::add(a, b)
 }
 
-/// Module Python `fractus._core`.
+/// Python module `fractus._core`.
 #[pymodule]
 fn _core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add, m)?)?;
@@ -273,14 +273,14 @@ fn _core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 ```
 
-- [ ] **Step 3: Verifier that the workspace compile (without maturin, juste cargo check)**
+- [ ] **Step 3: Verify the workspace compiles (without maturin, just cargo check)**
 
-Run :
+Run:
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 cargo check -p fractus-py
 ```
-Expected: `Compiling pyo3 ...` then `Finished`. S'il manque the `Python` linker under Windows, on verra the error ici — a correcteder before of continuer (typiquement : installer the build tools C++ or configurer the linker ; pyo3/maturin s'en occupe normalement automatiquement).
+Expected: `Compiling pyo3 ...` then `Finished`. If the `Python` linker is missing under Windows, the error will show up here — fix it before continuing (typically: install the C++ build tools or configure the linker; pyo3/maturin normally handles it automatically).
 
 - [ ] **Step 4: Commit**
 
@@ -292,17 +292,17 @@ Expected: `2 files changed`
 
 ---
 
-## Task 5: Creer the pyproject.toml racine (configure for maturin)
+## Task 5: Create the root pyproject.toml (configured for maturin)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/pyproject.toml`
 
-- [ ] **Step 1: Ecrire pyproject.toml**
+- [ ] **Step 1: Write pyproject.toml**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/pyproject.toml` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/pyproject.toml`:
 ```toml
-# fractus — package Python construit via maturin (backend Rust).
-# Le module natif vient of crate/fractus-py ; the package Python vient of fractus/.
+# fractus — Python package built via maturin (Rust backend).
+# The native module comes from crate/fractus-py; the Python package comes from fractus/.
 
 [build-system]
 requires = ["maturin>=1.4,<2.0"]
@@ -311,7 +311,7 @@ build-backend = "maturin"
 [project]
 name = "fractus"
 version = "0.1.0"
-description = "Refonte unifiee of the original + the original design : transformer fractal entrainable."
+description = "Unified rebuild of the original systems: a trainable fractal transformer."
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.2",
@@ -325,14 +325,14 @@ dev = [
 ]
 
 [tool.maturin]
-# Le module natif (cdylib _core) sera place in fractus/ → imported comme fractus._core.
+# The native module (cdylib _core) will be placed in fractus/ → importable as fractus._core.
 python-source = "."
 module-name = "fractus._core"
 manifest-path = "crate/fractus-py/Cargo.toml"
 features = ["pyo3/extension-module"]
 ```
 
-Note critique : `module-name = "fractus._core"` + `python-source = "."` does that maturin place the `.pyd` in the package `fractus/`, importable comme `from fractus import _core`. La feature `pyo3/extension-module` est passee a maturin directement (pas in the Cargo.toml crate, for eviter the bug d'the original or `[features] python = ["pyo3"]` was mal configure).
+Critical note: `module-name = "fractus._core"` + `python-source = "."` makes maturin place the `.pyd` in the `fractus/` package, importable as `from fractus import _core`. The `pyo3/extension-module` feature is passed directly to maturin (not in the crate Cargo.toml, to avoid the original's misconfigured `[features] python = ["pyo3"]` bug).
 
 - [ ] **Step 2: Commit**
 
@@ -344,42 +344,42 @@ Expected: `1 file changed`
 
 ---
 
-## Task 6: Creer the package Python fractus (placeholder)
+## Task 6: Create the Python package fractus (placeholder)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/__init__.py`
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/__init__.py`
 
-- [ ] **Step 1: Ecrire fractus/__init__.py**
+- [ ] **Step 1: Write fractus/__init__.py**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/__init__.py` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/__init__.py`:
 ```python
-"""fractus — refonte unifiee of the original + the original design.
+"""fractus — unified rebuild of the original systems.
 
-L0 : seul the pont natif `_core` est expose. Les modules nn/, causal/, reasoning/
-seront ajoutes in the couches ulterieures (L1+).
+L0: only the native bridge `_core` is exposed. The nn/, causal/, reasoning/ modules
+will be added in later layers (L1+).
 """
 
 __version__ = "0.1.0"
 
-# Le module natif fractus._core est construit by maturin and place ici.
-# On l'imported explicitement for qu'il soit accessible via `from fractus import _core`.
+# The native module fractus._core is built by maturin and placed here.
+# We import it explicitly so it is accessible via `from fractus import _core`.
 try:
     from fractus import _core  # noqa: F401
 except ImportError as e:
     raise ImportError(
-        "Le module natif fractus._core est introuvable. "
-        "As-tu lance `maturin develop` ?"
+        "The native module fractus._core was not found. "
+        "Did you run `maturin develop`?"
     ) from e
 ```
 
-- [ ] **Step 2: Ecrire fractus/nn/__init__.py (placeholder)**
+- [ ] **Step 2: Write fractus/nn/__init__.py (placeholder)**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/__init__.py` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/fractus/nn/__init__.py`:
 ```python
-"""Sous-package nn — modules of reseau of neurones (PyTorch).
+"""nn subpackage — neural-network modules (PyTorch).
 
-L0 : vide. Sera rempli en L1 (embedding) then L2 (attention, MoE, blocks).
+L0: empty. Will be filled in L1 (embedding) then L2 (attention, MoE, blocks).
 """
 ```
 
@@ -393,77 +393,77 @@ Expected: `2 files changed`
 
 ---
 
-## Task 7: Creer the test fume Python
+## Task 7: Create the Python smoke test
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/tests/__init__.py`
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/tests/test_smoke.py`
 
-- [ ] **Step 1: Ecrire tests/__init__.py**
+- [ ] **Step 1: Write tests/__init__.py**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/tests/__init__.py` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/tests/__init__.py`:
 ```python
-# Package tests. Les tests are decouverts by pytest a the racine repo.
+# Tests package. Tests are discovered by pytest at the repo root.
 ```
 
-- [ ] **Step 2: Ecrire tests/test_smoke.py**
+- [ ] **Step 2: Write tests/test_smoke.py**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_smoke.py` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/tests/test_smoke.py`:
 ```python
-"""Test fume : prouve that the plomberie Python → PyTorch → Rust tient.
+"""Smoke test: proves that the Python → PyTorch → Rust plumbing holds.
 
-Ces tests not validnt no logical mathematical — juste that the briques
-communiquent. Si a of these tests echoue, rien d'autre not can marcher.
+These tests do NOT validate any mathematical logic — only that the building
+blocks communicate. If any of these tests fail, nothing else can work.
 """
 
 
 def test_torch_available():
-    """PyTorch est installe and fonctionnel."""
+    """PyTorch is installed and functional."""
     import torch
     t = torch.tensor([1.0, 2.0, 3.0])
     assert t.sum().item() == 6.0
 
 
 def test_numpy_available():
-    """NumPy est installe (necessaire for the pont tenseurs)."""
+    """NumPy is installed (needed for the tensor bridge)."""
     import numpy as np
     a = np.array([1, 2, 3])
     assert a.sum() == 6
 
 
 def test_rust_bridge_import():
-    """Le module natif fractus._core est well construit and importable."""
+    """The native module fractus._core is well-built and importable."""
     from fractus import _core
     assert hasattr(_core, "add")
 
 
 def test_rust_bridge_add():
-    """Python can appeler Rust and recuperer the bon result."""
+    """Python can call Rust and recover the correct result."""
     from fractus import _core
     assert _core.add(2, 3) == 5
     assert _core.add(-10, 4) == -6
 
 
 def test_torch_numpy_interop():
-    """PyTorch and numpy s'echangent tenseurs (necessaire for the pont Rust)."""
+    """PyTorch and numpy exchange tensors (needed for the Rust bridge)."""
     import numpy as np
     import torch
     arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     t = torch.from_numpy(arr)
     assert t.dtype == torch.float32
-    # Retour toward numpy
+    # Back to numpy
     back = t.numpy()
     assert np.allclose(back, arr)
 ```
 
-- [ ] **Step 3: Verifier that the tests echouent before installation (sanity check)**
+- [ ] **Step 3: Verify the tests fail before installation (sanity check)**
 
-Run :
+Run:
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 python -m pytest tests/test_smoke.py -v
 ```
-Expected: FAIL — `ModuleNotFoundError: No module named 'fractus'` (le package n'est not encore installe). This is normal, ca confirme that the tests are significatifs.
+Expected: FAIL — `ModuleNotFoundError: No module named 'fractus'` (the package is not installed yet). This is normal; it confirms the tests are meaningful.
 
 - [ ] **Step 4: Commit**
 
@@ -475,18 +475,18 @@ Expected: `2 files changed`
 
 ---
 
-## Task 8: Creer requirements-dev.txt (reproductibilite)
+## Task 8: Create requirements-dev.txt (reproducibility)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/requirements-dev.txt`
 
-- [ ] **Step 1: Ecrire requirements-dev.txt**
+- [ ] **Step 1: Write requirements-dev.txt**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/requirements-dev.txt` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/requirements-dev.txt`:
 ```text
-# Versions epinglees for reproductibilite dev.
-# PyTorch CPU-only wheel (pas of CUDA — l'APU AMD n'est not supportede by ROCm under Windows).
-# IMPORTANT : on Windows, installer torch CPU with l'index-url explicite :
+# Pinned versions for dev reproducibility.
+# PyTorch CPU-only wheel (no CUDA — the AMD APU is not supported by ROCm under Windows).
+# IMPORTANT: on Windows, install CPU torch with the explicit index-url:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 torch>=2.2,<3.0
@@ -505,68 +505,67 @@ Expected: `1 file changed`
 
 ---
 
-## Task 9: Ecrire the README (pitch + setup dev)
+## Task 9: Write the README (pitch + dev setup)
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/README.md`
 
-- [ ] **Step 1: Ecrire README.md**
+- [ ] **Step 1: Write README.md**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/README.md` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/README.md`:
 ```markdown
 # fractus
 
-Refonte unifiee of **the original architecture** and **the original design** (the original author) :
-un transformer fractal **entrainable**, with compression SIREN, raisonnement causal
-NOTEARS, and generation/verification of proofs. CPU-only.
+A unified rebuild of the original systems: a **trainable** fractal transformer, with SIREN
+compression, NOTEARS causal reasoning, and proof generation/verification. CPU-only.
 
-> Etat : **L0 (socle technique)** — the plomberie Python↔Rust tient, no
-> logical mathematical encore. Voir `docs/superpowers/specs/2026-06-19-fractus-unified-design.md`.
+> State: **L0 (technical foundation)** — the Python↔Rust plumbing holds, no
+> mathematical logic yet. See `docs/SPEC.md`.
 
 ## Stack
 
-- **Rust** (`crate/fractus-core`) : coeur mathematical pur (vortex 2-adique, SIREN, NOTEARS,
-  verify of proofs). Hors-graphe autodiff.
-- **Python + PyTorch** (`fractus/`) : modele entrainable, forward/backward, datasets.
-- **maturin** : pont between the deux.
+- **Rust** (`crate/fractus-core`): pure mathematical core (2-adic vortex, SIREN, NOTEARS,
+  proof verification). Off the autodiff graph.
+- **Python + PyTorch** (`fractus/`): trainable model, forward/backward, datasets.
+- **maturin**: the bridge between the two.
 
-## Setup dev (Windows)
+## Dev setup (Windows)
 
-Prerequis : Rust (`cargo`), the launcher `py` (Python 3.10+).
+Prerequisites: Rust (`cargo`), the `py` launcher (Python 3.10+).
 
 ```powershell
 cd C:\Users\PHIL\ZCodeProject\fractus
 
-# 1. Creer the venv dedie (utiliser `py`, not `python` MSYS2 which n'a not pip)
+# 1. Create the dedicated venv (use `py`, not the MSYS2 `python` which has no pip)
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# 2. Installer PyTorch CPU-only + outils dev
+# 2. Install CPU-only PyTorch + dev tools
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements-dev.txt
 
-# 3. Construire and installer the module natif Rust in the venv
+# 3. Build and install the native Rust module into the venv
 maturin develop --release
 
-# 4. Lancer the tests
+# 4. Run the tests
 pytest tests/ -v
 ```
 
-Les 4 commandes `cargo build`, `maturin develop`, `import torch; import fractus`,
-`pytest` must all reussir.
+The 4 commands `cargo build`, `maturin develop`, `import torch; import fractus`,
+`pytest` must all succeed.
 
 ## Layout
 
 ```
-crate/fractus-core/   Rust : coeur mathematical pur (testable seul)
-crate/fractus-py/     Rust : bindings PyO3 (no logical)
-fractus/              Python : modele entrainable (L0 : juste the pont _core)
-tests/                tests d'integration
+crate/fractus-core/   Rust: pure mathematical core (testable alone)
+crate/fractus-py/     Rust: PyO3 bindings (no logic)
+fractus/              Python: trainable model (L0: just the _core bridge)
+tests/                integration tests
 ```
 
 ## Roadmap
 
-Voir the spec : the couches L0 (socle) → L7 (demo). L0 = this repo tel quel.
+See the spec: layers L0 (foundation) → L7 (demo). L0 = this repo as-is.
 ```
 
 - [ ] **Step 2: Commit**
@@ -579,62 +578,62 @@ Expected: `1 file changed`
 
 ---
 
-## Task 10: Installer the venv and validr the test fume (VRAIE verification L0)
+## Task 10: Install the venv and validate the smoke test (REAL L0 verification)
 
-**Files:** (no — this is the validation runtime)
+**Files:** (none — this is runtime validation)
 
-- [ ] **Step 1: Creer the venv**
+- [ ] **Step 1: Create the venv**
 
-Run (PowerShell, depuis `C:\Users\PHIL\ZCodeProject\fractus`) :
+Run (PowerShell, from `C:\Users\PHIL\ZCodeProject\fractus`):
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python --version   # must afficher 3.14.x
+python --version   # must show 3.14.x
 ```
-Expected: dossier `.venv/` cree, prompt modifie with `(.venv)`.
+Expected: a `.venv/` folder created, prompt modified with `(.venv)`.
 
-Si l'activation PowerShell est bloquee by the politique d'execution :
+If PowerShell activation is blocked by execution policy:
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
 
-- [ ] **Step 2: Installer PyTorch CPU-only**
+- [ ] **Step 2: Install CPU-only PyTorch**
 
-Run (in the venv active) :
+Run (in the active venv):
 ```powershell
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
-Expected: telechargement (~200 MB) then `Successfully installed torch-...`. Peut prendre quelques minutes.
+Expected: download (~200 MB) then `Successfully installed torch-...`. May take a few minutes.
 
-Verifier :
+Verify:
 ```powershell
 python -c "import torch; print(torch.__version__); print('cuda:', torch.cuda.is_available())"
 ```
-Expected: version torch, `cuda: False` (CPU-only, this is voulu).
+Expected: a torch version, `cuda: False` (CPU-only, this is intended).
 
-- [ ] **Step 3: Installer the reste dependances dev**
+- [ ] **Step 3: Install the remaining dev dependencies**
 
 ```powershell
 pip install -r requirements-dev.txt
 ```
-Expected: `numpy`, `pytest`, `maturin` installes.
+Expected: `numpy`, `pytest`, `maturin` installed.
 
-- [ ] **Step 4: Construire and installer the module natif with maturin**
+- [ ] **Step 4: Build and install the native module with maturin**
 
 ```powershell
 maturin develop --release
 ```
-Expected: `📦 Built ...` then `🛠 Installed fractus-...`. maturin compile the Rust, produit the `.pyd`, and l'installe in the venv. Peut prendre 2-5 min the premiere fois (compile pyo3).
+Expected: `📦 Built ...` then `🛠 Installed fractus-...`. maturin compiles the Rust, produces the `.pyd`, and installs it into the venv. May take 2-5 min the first time (compiles pyo3).
 
-Si error : verify that the build tools C++ est present (Visual Studio Build Tools or MSVC). maturin/normalement gere automatiquement.
+On error: check that the C++ build tools are present (Visual Studio Build Tools or MSVC). maturin normally handles it automatically.
 
-- [ ] **Step 5: Lancer the tests fume — DOIVENT TOUS PASSER**
+- [ ] **Step 5: Run the smoke tests — THEY MUST ALL PASS**
 
 ```powershell
 pytest tests/ -v
 ```
-Expected output (les 5 tests) :
+Expected output (the 5 tests):
 ```
 tests/test_smoke.py::test_torch_available PASSED
 tests/test_smoke.py::test_numpy_available PASSED
@@ -644,51 +643,51 @@ tests/test_smoke.py::test_torch_numpy_interop PASSED
 ===== 5 passed in ...s =====
 ```
 
-**This is the critere of « L0 termine » :** the 5 tests passent. Si a seul echoue, L0 n'est not termine — deboguer before of passer a L1.
+**This is the "L0 done" criterion:** the 5 tests pass. If even one fails, L0 is not done — debug before moving to L1.
 
-- [ ] **Step 6: (Optionnel but recommande) Ajouter the venv au gitignore s'il a ete oublie**
+- [ ] **Step 6: (Optional but recommended) Add the venv to gitignore if forgotten**
 
-Verifier :
+Verify:
 ```powershell
 git status
 ```
-Si `.venv/` apparait comme non-suivi, this is that the .gitignore of Task 1 a a souci — the correcteder. Sinon, the `git status` not must montrer that fichiers propres (rien, or juste the `target/` si on l'a commis by error).
+If `.venv/` shows up as untracked, the Task 1 .gitignore has an issue — fix it. Otherwise, `git status` should show only clean files (nothing, or just `target/` if committed by mistake).
 
-- [ ] **Step 7: Commit final L0**
+- [ ] **Step 7: L0 final commit**
 
 ```powershell
-git status   # must etre propre
-git log --oneline   # must montrer ~9 commits
+git status   # should be clean
+git log --oneline   # should show ~9 commits
 ```
-Aucun fichier a committer (le venv and target/ are ignores). L0 est termine.
+No file to commit (the venv and target/ are ignored). L0 is done.
 
 ---
 
-## Task 11 (bonus) : Porter vortex.rs depuis the original — preparation L1
+## Task 11 (bonus): Port vortex.rs from the original — preparation for L1
 
-**Note :** Cette tache prepare L1 without l'executer. Le vortex est the seul module d'the original mathematicalment correct ; on the portedd now (en Rust seul) for that L1 demarre vite. Les bindings Python viendront en L1.
+**Note:** This task prepares L1 without executing it. The vortex is the only mathematically correct module of the original; we port it now (in Rust alone) so L1 starts fast. The Python bindings come in L1.
 
 **Files:**
 - Create: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/vortex.rs`
 - Modify: `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs`
 
-- [ ] **Step 1: Ecrire vortex.rs (port correctede depuis the original)**
+- [ ] **Step 1: Write vortex.rs (corrected port from the original)**
 
-Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/vortex.rs` :
+Create `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/vortex.rs`:
 ```rust
-//! # Vortex 2-adique
+//! # 2-adic Vortex
 //!
-//! Port depuis the original design (rust/src/vortex.rs), with corrections :
-//! - L'import `HashMap` inutilise a ete retire.
-//! - Le test tautological `assert!(d1 <= d2.max(d1))` a ete remplace by a true
-//!   test d'ultrametrie : `d(x,z) <= max(d(x,y), d(y,z))` on donnees aleatoires.
+//! Ported from the original system (rust/src/vortex.rs), with corrections:
+//! - The unused `HashMap` import was removed.
+//! - The tautological test `assert!(d1 <= d2.max(d1))` was replaced with a true
+//!   ultrametric test: `d(x,z) <= max(d(x,y), d(y,z))` on random data.
 //!
-//! Nommage honestete : on parle of "hash Collatz" (pas "flot ergodique" — l'ergodicite
-//! of Collatz est non demontree, problem ouvert), of "ultrametric distance" and de
-//! "2-adic norm" (termes exacts).
+//! Honest naming: we speak of a "Collatz hash" (not "ergodic flow" — the ergodicity
+//! of Collatz is unproven, an open problem), of an "ultrametric distance", and of a
+//! "2-adic norm" (exact terms).
 
-/// Valuation 2-adique v_2(x) = max{k : 2^k divise x}.
-/// Pour x=0, on returns 64 (convention for u64).
+/// 2-adic valuation v_2(x) = max{k : 2^k divides x}.
+/// For x=0, returns 64 (convention for u64).
 pub fn valuation_2(x: u64) -> u32 {
     if x == 0 {
         return 64;
@@ -696,10 +695,10 @@ pub fn valuation_2(x: u64) -> u32 {
     x.trailing_zeros()
 }
 
-/// Valuation 3-adique v_3(x) = max{k : 3^k divise x}.
+/// 3-adic valuation v_3(x) = max{k : 3^k divides x}.
 pub fn valuation_3(x: u64) -> u32 {
     if x == 0 {
-        return 0; // convention : v_3(0) = infini, on borne a 0 for u64
+        return 0; // convention: v_3(0) = infinity, we cap at 0 for u64
     }
     let mut val = 0u32;
     let mut n = x;
@@ -710,8 +709,8 @@ pub fn valuation_3(x: u64) -> u32 {
     val
 }
 
-/// Hash Collatz d'un integer. Utilise comme hachage d'etat deterministic.
-/// Note : "ergodicite of Collatz" non demontree — on l'appelle juste "hash".
+/// Collatz hash of an integer. Used as a deterministic state hash.
+/// Note: "ergodicity of Collatz" is unproven — we just call it a "hash".
 pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
     for _ in 0..steps {
         if x == 0 {
@@ -726,8 +725,8 @@ pub fn collatz_hash(mut x: u64, steps: u32) -> u64 {
     x
 }
 
-/// Distance ultrametrique 2-adique : d(a,b) = 2^{v_2(a XOR b)}.
-/// Verifie the property ultrametrique forte : d(x,z) <= max(d(x,y), d(y,z)).
+/// 2-adic ultrametric distance: d(a,b) = 2^{v_2(a XOR b)}.
+/// Verifies the strong ultrametric property: d(x,z) <= max(d(x,y), d(y,z)).
 pub fn ultrametric_distance(a: u64, b: u64) -> u64 {
     let diff = a ^ b;
     if diff == 0 {
@@ -736,11 +735,11 @@ pub fn ultrametric_distance(a: u64, b: u64) -> u64 {
     1u64 << valuation_2(diff)
 }
 
-/// Norme 2-adique : ||x||_2 = 2^{-v_2(x)}.
-/// Retourne en f64 (can etre very small for the grands x pairs).
+/// 2-adic norm: ||x||_2 = 2^{-v_2(x)}.
+/// Returns an f64 (can be very small for large even x).
 pub fn norm_2adic(x: u64) -> f64 {
     if x == 0 {
-        return 0.0; // ||0|| = 0 by convention (v_2(0) = infini)
+        return 0.0; // ||0|| = 0 by convention (v_2(0) = infinity)
     }
     let v = valuation_2(x) as i32;
     2f64.powi(-v)
@@ -767,14 +766,14 @@ mod tests {
         assert_eq!(valuation_3(3), 1);
         assert_eq!(valuation_3(9), 2);
         assert_eq!(valuation_3(27), 3);
-        assert_eq!(valuation_3(56), 0); // 56 n'est not divisible by 3
+        assert_eq!(valuation_3(56), 0); // 56 is not divisible by 3
     }
 
     #[test]
     fn test_collatz_hash_deterministic() {
-        // Meme entree → same sortie (deterministic).
+        // Same input → same output (deterministic).
         assert_eq!(collatz_hash(7, 10), collatz_hash(7, 10));
-        // 0 reste 0.
+        // 0 stays 0.
         assert_eq!(collatz_hash(0, 10), 0);
     }
 
@@ -792,8 +791,8 @@ mod tests {
 
     #[test]
     fn test_ultrametric_strong_triangle_inequality() {
-        // La vraie property ultrametrique : d(x,z) <= max(d(x,y), d(y,z)).
-        // CORRECTION test tautological d'the original.
+        // The true ultrametric property: d(x,z) <= max(d(x,y), d(y,z)).
+        // CORRECTION of the original tautological test.
         let triples: [(u64, u64, u64); 8] = [
             (1, 2, 4),
             (7, 56, 13),
@@ -810,7 +809,7 @@ mod tests {
             let d_xz = ultrametric_distance(x, z);
             assert!(
                 d_xz <= d_xy.max(d_yz),
-                "Echec ultrametrie : d({},{})={} > max(d({},{})={}, d({},{})={})",
+                "Ultrametric failure: d({},{})={} > max(d({},{})={}, d({},{})={})",
                 x, z, d_xz, x, y, d_xy, y, z, d_yz
             );
         }
@@ -827,27 +826,27 @@ mod tests {
 
     #[test]
     fn test_norm_2adic_fuzz_ultrametric() {
-        // Sur donnees pseudo-aleatoires, the norme must etre <= 1 for x != 0.
+        // On pseudo-random data, the norm must be <= 1 for x != 0.
         for x in [1u64, 3, 5, 7, 9, 11, 42, 137, 1023, 65535] {
             let n = norm_2adic(x);
-            assert!(n > 0.0 && n <= 1.0, "norm_2adic({}) = {} hors [0,1]", x, n);
+            assert!(n > 0.0 && n <= 1.0, "norm_2adic({}) = {} outside [0,1]", x, n);
         }
     }
 }
 ```
 
-- [ ] **Step 2: Declarer the module vortex in lib.rs**
+- [ ] **Step 2: Declare the vortex module in lib.rs**
 
-Modify `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs` — remplacer all the contenu by :
+Modify `C:/Users/PHIL/ZCodeProject/fractus/crate/fractus-core/src/lib.rs` — replace all the content with:
 ```rust
 //! # fractus-core
 //!
-//! Coeur mathematical pur of fractus. Aucune I/O, no dependance Python.
-//! Toutes the functions ici are testables en Rust seul.
+//! Pure mathematical core of fractus. No I/O, no Python dependency.
+//! All functions here are testable in Rust alone.
 
 pub mod vortex;
 
-/// Addition integere. Existe uniquement for the test fume Python↔Rust.
+/// Integer addition. Exists only for the Python↔Rust smoke test.
 pub fn add(a: i64, b: i64) -> i64 {
     a + b
 }
@@ -864,14 +863,14 @@ mod tests {
 }
 ```
 
-- [ ] **Step 3: Lancer the tests Rust — DOIVENT TOUS PASSER**
+- [ ] **Step 3: Run the Rust tests — THEY MUST ALL PASS**
 
-Run :
+Run:
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 cargo test -p fractus-core
 ```
-Expected: 9 tests passent (1 `test_add` + 8 tests vortex). Output :
+Expected: 9 tests pass (1 `test_add` + 8 vortex tests). Output:
 ```
 test result: ok. 9 passed; 0 failed
 ```
@@ -886,44 +885,44 @@ Expected: `2 files changed`
 
 ---
 
-## Critere final of L0 « termine »
+## Final "L0 done" criterion
 
-Apres the Task 10 (et bonus Task 11), these 4 verifications must all reussir :
+After Task 10 (and the bonus Task 11), these 4 verifications must all succeed:
 
 ```bash
 cd "C:\Users\PHIL\ZCodeProject\fractus"
 
-# 1. Le Rust compile and its tests passent
+# 1. Rust compiles and its tests pass
 cargo test -p fractus-core
 # → 9 passed (1 add + 8 vortex)
 
-# 2. Le pont Python↔Rust se construit
+# 2. The Python↔Rust bridge builds
 maturin develop --release
 # → 🛠 Installed fractus-...
 
-# 3. Les deux s'importednt
+# 3. Both import
 python -c "import torch; import fractus; print('OK', torch.__version__)"
 # → OK 2.x.x
 
-# 4. Les tests fume passent
+# 4. The smoke tests pass
 pytest tests/ -v
 # → 5 passed
 ```
 
-Si all passe, L0 est termine and on can passer au plan L1 (embedding fractal + vortex branche).
+If everything passes, L0 is done and we can move to the L1 plan (fractal embedding + wired vortex).
 
 ---
 
-## Self-Review (post-ecriture)
+## Self-Review (post-writing)
 
-Verifications effectuees :
+Verifications performed:
 
-**1. Spec coverage :** La section L0 spec demande (a) environnement reproductible → Task 5, 8 ; (b) crate fractus-core → Task 3, 11 ; (c) crate fractus-py bindings → Task 4 ; (d) test fume traversant → Task 7, 10. ✅ Tout couvert.
+**1. Spec coverage:** The L0 spec section requires (a) reproducible environment → Task 5, 8; (b) fractus-core crate → Task 3, 11; (c) fractus-py bindings crate → Task 4; (d) crossing smoke test → Task 7, 10. ✅ All covered.
 
-**2. Placeholder scan :** Aucun « TBD », no « TODO », no section « fill in ». Toutes the etapes contiennent code complete. ✅
+**2. Placeholder scan:** No "TBD", no "TODO", no "fill in" section. All steps contain complete code. ✅
 
-**3. Type consistency :** `add(a, b)` defini in `fractus-core/src/lib.rs` (Task 3), wrappe in `fractus-py/src/lib.rs` (Task 4) comme `#[pyfunction] fn add`, teste in `test_smoke.py` (Task 7). Noms coherents partout. `valuation_2`, `ultrametric_distance`, `norm_2adic` (Task 11) coherents between definition and tests. ✅
+**3. Type consistency:** `add(a, b)` defined in `fractus-core/src/lib.rs` (Task 3), wrapped in `fractus-py/src/lib.rs` (Task 4) as `#[pyfunction] fn add`, tested in `test_smoke.py` (Task 7). Names consistent everywhere. `valuation_2`, `ultrametric_distance`, `norm_2adic` (Task 11) consistent between definition and tests. ✅
 
-**4. Ordre dependances :** Task 4 (fractus-py) depend of Task 3 (fractus-core) → respecte. Task 10 (maturin develop) depend of Tasks 3-9 → respecte. Task 11 (bonus) can etre does after or before L1 without blocage.
+**4. Dependency order:** Task 4 (fractus-py) depends on Task 3 (fractus-core) → respected. Task 10 (maturin develop) depends on Tasks 3-9 → respected. Task 11 (bonus) can be done after or before L1 without blocking.
 
-**5. Commandes Windows-specifiques :** `py` (pas `python` MSYS2), `.\.venv\Scripts\Activate.ps1`, `--index-url https://download.pytorch.org/whl/cpu` for torch CPU. Toutes verifieses contre the machine target. ✅
+**5. Windows-specific commands:** `py` (not the MSYS2 `python`), `.\.venv\Scripts\Activate.ps1`, `--index-url https://download.pytorch.org/whl/cpu` for CPU torch. All verified against the target machine. ✅

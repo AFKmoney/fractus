@@ -1,21 +1,11 @@
 //! # fractus-core
-
-
 //!
-
-
-//! Coeur mathematical pur of fractus. Aucune I/O, no dependance Python.
-
-
-//! Toutes the functions here are testables en Rust seul.
-
-
+//! Pure mathematical core of fractus. No I/O, no Python dependency.
+//! All functions here are testable in Rust alone.
 
 pub mod vortex;
 
-/// Addition integere. Existe uniquement for the test fume Python↔Rust.
-
-
+/// Integer addition. Exists only for the Python↔Rust smoke test.
 pub fn add(a: i64, b: i64) -> i64 {
     a + b
 }

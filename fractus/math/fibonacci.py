@@ -1,21 +1,21 @@
 """Precomputed Fibonacci sequence + Binet's formula for large n.
 
-Ported from the original architecture (src/math/fibonacci.rs).
+Ported from the original system (src/math/fibonacci.rs).
 """
 
 from typing import List
 
 
 class FibonacciSequence:
-    """Suite of Fibonacci precomputationee.
+    """Precomputed Fibonacci sequence.
 
     Args:
-        n : number of termes a precomputationer.
+        n : number of terms to precompute.
     """
 
     def __init__(self, n: int):
         if n < 0:
-            raise ValueError("n must etre >= 0")
+            raise ValueError("n must be >= 0")
         self.n = n
         self.values: List[int] = []
         if n >= 1:
@@ -26,12 +26,12 @@ class FibonacciSequence:
             self.values.append(self.values[i - 1] + self.values[i - 2])
 
     def get(self, i: int) -> int:
-        """Retourne F(i). Pour i < n : table. Pour i >= n : formula of Binet."""
+        """Returns F(i). For i < n: table. For i >= n: Binet's formula."""
         if i < 0:
-            raise ValueError("i must etre >= 0")
+            raise ValueError("i must be >= 0")
         if i < len(self.values):
             return self.values[i]
-        # Binet : F(n) = (φ^n - ψ^n) / √5, ψ = -1/φ.
+        # Binet: F(n) = (φ^n - ψ^n) / √5, ψ = -1/φ.
         sqrt5 = 5 ** 0.5
         phi = (1 + sqrt5) / 2
         psi = (1 - sqrt5) / 2

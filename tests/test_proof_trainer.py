@@ -1,10 +1,10 @@
-"""Tests of ProofTrainer : curriculum, reward shaping, baseline."""
+"""Tests of ProofTrainer: curriculum, reward shaping, baseline."""
 
 import torch
 
 
 def test_shaped_reward_continuous():
-    """shaped_reward must be continu and decroissant with the error."""
+    """shaped_reward must be continuous and decreasing with the error."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     rf = ProofReward()
@@ -14,7 +14,7 @@ def test_shaped_reward_continuous():
         proof = Proof(steps=steps, target=5.0, conclusion=5.0 + err, is_valid=(err < 0.001))
         r = shaped_reward(proof, err < 0.001, rf)
         rewards.append(r)
-    # Doit decroitre.
+    # Must be non-increasing.
     for i in range(len(rewards) - 1):
         assert rewards[i] >= rewards[i + 1], \
             f"reward(err={[0.0,0.1,0.5,1.0,2.0,5.0,10.0][i]})={rewards[i]} < " \
@@ -22,19 +22,19 @@ def test_shaped_reward_continuous():
 
 
 def test_shaped_reward_nonzero_for_large_error():
-    """CRITERE L5+ : shaped_reward must be > 0 same for largee error
-    (contrairement a correctness_reward of the original which s'ecrase a 0)."""
+    """L5+ CRITERION: shaped_reward must be > 0 even for a large error
+    (unlike the original correctness_reward, which got crushed to 0)."""
     from fractus.reasoning.proof_trainer import shaped_reward
     from fractus.reasoning.proof import ProofReward, Proof, ProofStep
     rf = ProofReward()
     steps = [ProofStep(0, "A", [], 5.0, 0.9)]
     proof = Proof(steps=steps, target=5.0, conclusion=10.0, is_valid=False)  # err=5
     r = shaped_reward(proof, False, rf)
-    assert r > 0.0, f"shaped_reward must etre > 0 meme for err=5, eu {r}"
+    assert r > 0.0, f"shaped_reward must be > 0 even for err=5, got {r}"
 
 
 def test_trainer_train_step_runs():
-    """Une etape d'training tourne without crash."""
+    """One training step runs without crashing."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer
     gen = ProofGenerator(hidden_dim=16, max_steps=4)
@@ -47,7 +47,7 @@ def test_trainer_train_step_runs():
 
 
 def test_trainer_baseline_updates():
-    """La baseline must evoluer after quelques steps (EMA reward)."""
+    """The baseline must evolve after a few steps (EMA reward)."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer
     torch.manual_seed(0)
@@ -57,7 +57,7 @@ def test_trainer_baseline_updates():
     initial_baseline = trainer.baseline
     for _ in range(10):
         trainer.train_step(target_range=0.5)
-    # La baseline must have change (non-nulle si rewards non-nuls).
+    # The baseline must have changed (non-zero if rewards are non-zero).
     assert trainer.baseline != initial_baseline
 
 
@@ -74,14 +74,14 @@ def test_trainer_evaluates_median_error():
 
 
 def test_trainer_curriculum_improves_or_runs():
-    """CRITERE L5+ : after training curriculum, the error a ±5 must baisser
-    OU au less not not exploser (proof that ca apprend or stagne, not diverge)."""
+    """L5+ CRITERION: after curriculum training, the ±5 error must drop
+    OR at least not explode (proof that it learns or plateaus, not diverges)."""
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier
     from fractus.reasoning.proof_trainer import ProofTrainer, CurriculumLevel
     torch.manual_seed(42)
     gen = ProofGenerator(hidden_dim=32, max_steps=6)
     ver = ProofVerifier()
-    # Curriculum short for the test (otherwise too long).
+    # Short curriculum for the test (otherwise too long).
     short_curriculum = [
         CurriculumLevel(0.1, 0.30, 50),
         CurriculumLevel(0.5, 0.25, 50),
@@ -89,7 +89,7 @@ def test_trainer_curriculum_improves_or_runs():
     ]
     trainer = ProofTrainer(gen, ver, curriculum=short_curriculum, lr=1e-2)
     metrics = trainer.train(verbose=False)
-    # L'error a ±5 must have baisse d'au less 10% (critere test, more souple
-    # that the demo which vise 30%).
+    # The ±5 error must have dropped by at least 10% (a looser test criterion
+    # than the demo, which targets 30%).
     assert metrics["final_error"] <= metrics["initial_error"] * 1.5, \
-        f"L'error a explose : {metrics['initial_error']} -> {metrics['final_error']}"
+        f"The error exploded: {metrics['initial_error']} -> {metrics['final_error']}"

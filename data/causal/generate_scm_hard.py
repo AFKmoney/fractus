@@ -1,16 +1,15 @@
-"""SCM non-lineaire with topological order INCONNU — validation serieuse of NOTEARS.
+"""Non-linear SCM with UNKNOWN topological order — serious NOTEARS validation.
 
-CORRECTION DU CAS JOUET L4 : en L4, the SCM was lineaire + triangulaire superieur
-(topological order trivial). La demo SHD=0 not prouvait that the pipeline tourne.
+CORRECTION OF THE L4 TOY CASE: in L4, the SCM was linear + upper-triangular
+(trivial topological order). The SHD=0 demo only proved the pipeline runs.
 
-Ici : SCM NON-LINEAIRE (X_j = tanh(Σ W·X_i) + ε) with topological order
-INCONNU (W full, permutation aleatoire variables). NOTEARS must decouvrir
-l'ordre ET the structure. This is the true test of competence.
+Here: a NON-LINEAR SCM (X_j = tanh(Σ W·X_i) + ε) with an UNKNOWN topological
+order (W full, random variable permutation). NOTEARS must discover both the
+order AND the structure. This is the true competence test.
 
-Resultat empirique : NOTEARS lineaire est robuste a the non-linearite moderee
-(tanh ≈ identite for smalles inputs) and recupere the DAG with SHD=0 same
-in this cas difficile. This is a validation scientifique honesty au-dela
-du cas jouet.
+Empirical result: linear NOTEARS is robust to moderate non-linearity
+(tanh ≈ identity for small inputs) and recovers the DAG with SHD=0 even in
+this hard case. This is an honest scientific validation beyond the toy case.
 """
 
 import torch
@@ -23,23 +22,23 @@ def generate_nonlinear_scm(
     noise_std: float = 0.3,
     seed: int = 42,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Genere a SCM NON-LINEAIRE with topological order inconnu.
+    """Generates a NON-LINEAR SCM with unknown topological order.
 
-    X_j = tanh(Σ_i W[i,j] · X_i) + ε_j, or l'ordre topo variables est
-    a permutation aleatoire (therefore W_true n'est PAS triangulaire).
+    X_j = tanh(Σ_i W[i,j] · X_i) + ε_j, where the variable topological order is
+    a random permutation (so W_true is NOT triangular).
 
     Args:
         n_vars    : number of variables.
-        n_samples : number d'echantillons.
-        edge_prob : probabilite d'arete.
-        noise_std : ecart-type bruit.
-        seed      : for reproductibilite.
+        n_samples : number of samples.
+        edge_prob : edge probability.
+        noise_std : Gaussian noise standard deviation.
+        seed      : for reproducibility.
     Returns:
-        W_true : matrix (n_vars, n_vars), NON triangulaire (ordre cache).
-        X      : donnees (n_samples, n_vars).
+        W_true : matrix (n_vars, n_vars), NOT triangular (hidden order).
+        X      : data (n_samples, n_vars).
     """
     g = torch.Generator().manual_seed(seed)
-    # Ordre topological cache : permutation aleatoire.
+    # Hidden topological order: random permutation.
     perm = torch.randperm(n_vars, generator=g)
 
     W_true = torch.zeros(n_vars, n_vars)
@@ -50,7 +49,7 @@ def generate_nonlinear_scm(
                 sign = 1.0 if torch.rand(1, generator=g).item() < 0.5 else -1.0
                 W_true[i, j] = sign * (0.8 + torch.rand(1, generator=g).item())
 
-    # Echantillonner selon l'ordre topo cache, with non-linearite tanh.
+    # Sample according to the hidden topological order, with tanh non-linearity.
     X = torch.zeros(n_samples, n_vars)
     for step in range(n_vars):
         j = int(perm[step])

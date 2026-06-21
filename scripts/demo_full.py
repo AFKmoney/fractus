@@ -1,17 +1,17 @@
-"""Demo L7 : integration complete 3 taches spec fractus.
+"""Demo L7: full integration of the 3 fractus tasks.
 
-Le spec disait (L7) : 3 demos demontrables — texte, raisonnement mathematical,
-inference causale. Cette demo orchestre the 3 en a seul script, and use
-les metriques honestys of fractus.metrics.
+The spec (L7) said: 3 demonstrable demos — text, mathematical reasoning,
+causal inference. This demo orchestrates all 3 in a single script, and uses
+the honest metrics from fractus.metrics.
 
-Ce which marche (already valid in the demos L2b, L4) :
-    - Texte : TinyFractalLM apprend 'hello world', loss 4.73 → 0.65.
-    - Causal : NOTEARS recupere a DAG synthetique, SHD = 0.
-Ce which not marche not (decopen en L5) :
-    - Preuves : REINFORCE pur n'apprend not (error stagne). On documente
-      honestyment instead of pretendre.
+What works (already validated in the L2b, L4 demos):
+    - Text: TinyFractalLM learns 'hello world', loss 4.73 → 0.65.
+    - Causal: NOTEARS recovers a synthetic DAG, SHD = 0.
+What does NOT work (diagnosed in L5):
+    - Proofs: pure REINFORCE does not learn (error plateaus). We document
+      this honestly instead of pretending.
 
-Run :
+Run:
     python scripts/demo_full.py
 """
 
@@ -38,7 +38,7 @@ def section(title: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tache 1 : Generation of texte (FractalBlockFull)
+# Task 1: Text generation (FractalBlockFull)
 # ---------------------------------------------------------------------------
 
 class TinyFractalLM(nn.Module):
@@ -67,7 +67,7 @@ class TinyFractalLM(nn.Module):
 
 
 def demo_text():
-    section("Tâche 1 : Generation de texte (FractalBlockFull complete)")
+    section("Task 1: Text generation (full FractalBlockFull)")
     torch.manual_seed(42)
     text = "hello world " * 8
     vocab = 128
@@ -77,8 +77,8 @@ def demo_text():
     ids = ids[:n_seqs * seq_len].view(n_seqs, seq_len)
 
     model = TinyFractalLM(vocab=vocab, d_model=32, n_blocks=2)
-    print(f"Parametres : {sum(p.numel() for p in model.parameters())}")
-    print(f"Ratio compression (mesure) : {measure_compression_ratio(model):.2f}x")
+    print(f"Parameters: {sum(p.numel() for p in model.parameters())}")
+    print(f"Compression ratio (measured): {measure_compression_ratio(model):.2f}x")
 
     opt = torch.optim.Adam(model.parameters(), lr=3e-3)
     initial_loss = None
@@ -93,11 +93,11 @@ def demo_text():
         opt.step()
     final_loss = ce.item()
 
-    # Perplexite honesty (pas proxy).
+    # Honest perplexity (not a proxy).
     ppl = honest_perplexity(model, ids[:, :-1], ids[:, 1:])
 
-    print(f"\nCE Loss : {initial_loss:.4f} -> {final_loss:.4f} ({(1-final_loss/initial_loss)*100:.0f}% baisse)")
-    print(f"Perplexite honnete : {ppl:.2f}  (= exp(CE))")
+    print(f"\nCE loss: {initial_loss:.4f} -> {final_loss:.4f} ({(1-final_loss/initial_loss)*100:.0f}% drop)")
+    print(f"Honest perplexity: {ppl:.2f}  (= exp(CE))")
 
     # Generation.
     model.eval()
@@ -108,59 +108,59 @@ def demo_text():
             nxt = max(0, min(vocab - 1, int(logits[0, -1].argmax().item())))
             ctx = torch.cat([ctx, torch.tensor([[nxt]])], dim=1)
         gen = "".join(chr(int(i) + 32) for i in ctx[0].tolist())
-    print(f"Generation : '{gen}'")
+    print(f"Generation: '{gen}'")
 
 
 # ---------------------------------------------------------------------------
-# Tache 2 : Raisonnement mathematical (ProofGenerator + Verifier)
+# Task 2: Mathematical reasoning (ProofGenerator + Verifier)
 # ---------------------------------------------------------------------------
 
 def demo_proofs():
-    section("Tâche 2 : Raisonnement mathematical (verify exact)")
+    section("Task 2: Mathematical reasoning (exact verification)")
     from fractus.reasoning.proof import ProofGenerator, ProofVerifier, ProofReward
     from fractus.reasoning.conjecture import ConjectureDiscoveryLoop
 
-    # 2a. Le verify exact est SOUND : all this qu'il acceptedd est true.
+    # 2a. The exact verifier is SOUND: everything it accepts is true.
     verify = ProofVerifier()
     examples = [
-        ("7 est premier", lambda: verify.verify_primality(7, True)),
-        ("8 n'est pas premier", lambda: verify.verify_primality(8, False)),
+        ("7 is prime", lambda: verify.verify_primality(7, True)),
+        ("8 is not prime", lambda: verify.verify_primality(8, False)),
         ("Fermat 2^6 mod 7 = 1", lambda: verify.verify_fermat(2, 7)),
         ("Wilson 6! mod 7 = 6", lambda: verify.verify_wilson(7)),
         ("gcd(12,18)=6, lcm=36, 6*36=216=12*18", lambda: verify.verify_gcd(12, 18)),
     ]
-    print("Verifications exactes (soundness garantie) :")
+    print("Exact verifications (soundness guaranteed):")
     for desc, fn in examples:
         result = fn()
         print(f"  [{'OK' if result else 'KO'}] {desc}")
 
-    # 2b. Decopene of conjectures (Popper).
-    print("\nDecouverte de conjectures (falsification popperienne) :")
+    # 2b. Conjecture discovery (Popper).
+    print("\nConjecture discovery (Popperian falsification):")
     loop = ConjectureDiscoveryLoop(state_dim=32, n_trials=50, seed=42)
     for _ in range(30):
         loop.discover_step()
-    print(f"  Conjectures en memory : {len(loop.memory.discovered)}")
-    print(f"  Decouvertes (survecu + novelty) : {loop.n_discoveries}")
-    print(f"  Taux de decouverte : {loop.discovery_rate():.1%}")
+    print(f"  Conjectures in memory: {len(loop.memory.discovered)}")
+    print(f"  Discoveries (survived + novelty): {loop.n_discoveries}")
+    print(f"  Discovery rate: {loop.discovery_rate():.1%}")
 
-    # 2c. VERDICT HONNETE on REINFORCE.
-    print("\nVERDICT HONNETE (generateur de preuves) :")
-    print("  Le ProofGenerator + REINFORCE pur n'apprend PAS la tâche de preuve")
-    print("  (error stagne, voir demo_proof_reinforce.py). Le verify est")
-    print("  sound, but le generateur ne suffit pas a l'exploiter. Future work.")
-    print("  → Les conjectures, elles, sont testees par falsification exact (marche).")
+    # 2c. HONEST VERDICT on REINFORCE.
+    print("\nHONEST VERDICT (proof generator):")
+    print("  The ProofGenerator + pure REINFORCE does NOT learn the proof task")
+    print("  (error plateaus, see demo_proof_reinforce.py). The verifier is")
+    print("  sound, but the generator is not enough to exploit it. Future work.")
+    print("  → Conjectures, on the other hand, are tested by exact falsification (works).")
 
 
 # ---------------------------------------------------------------------------
-# Tache 3 : Inference causale (NOTEARS + do-computationus)
+# Task 3: Causal inference (NOTEARS + do-calculus)
 # ---------------------------------------------------------------------------
 
 def demo_causal():
-    section("Tâche 3 : Inference causale (NOTEARS + do-calculus)")
+    section("Task 3: Causal inference (NOTEARS + do-calculus)")
     torch.manual_seed(42)
     W_true, X = generate_linear_scm(n_vars=5, n_samples=500, edge_prob=0.5, seed=7)
-    print(f"SCM synthetique : {X.shape[0]} echantillons, {X.shape[1]} variables")
-    print(f"Vrai DAG ({int((W_true != 0).sum())} aretes) :")
+    print(f"Synthetic SCM: {X.shape[0]} samples, {X.shape[1]} variables")
+    print(f"True DAG ({int((W_true != 0).sum())} edges):")
     print((W_true != 0).int())
 
     n_vars = W_true.shape[0]
@@ -177,29 +177,29 @@ def demo_causal():
         opt.step()
 
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
-    print(f"\nDAG appris (seuil 0.3) :")
+    print(f"\nLearned DAG (threshold 0.3):")
     print((W_pred.detach().abs() > 0.3).int())
-    print(f"\nSHD = {shd}  (0 = parfait)")
-    print(f"  (cas jouet lineaire + triangulaire — prouve que le pipeline tourne,")
-    print(f"   pas la competence sur donnees reelles.)")
+    print(f"\nSHD = {shd}  (0 = perfect)")
+    print(f"  (linear + upper-triangular toy case — proves the pipeline runs,")
+    print(f"   not competence on real data.)")
 
-    # do-computationus : effet of do(X_0 = v) on X_4.
+    # do-calculus: effect of do(X_0 = v) on X_4.
     from fractus.causal.do import do_intervention
     X_do = do_intervention(X, var_idx=0, value=2.0)
-    print(f"\ndo(X_0 = 2.0) applique : colonne 0 fixee a 2.0")
-    print(f"  Effet moyen sur X_4 : observationnel {X[:, 4].mean():.3f} → "
-          f"interventionnel {X_do[:, 4].mean():.3f}")
+    print(f"\ndo(X_0 = 2.0) applied: column 0 fixed to 2.0")
+    print(f"  Average effect on X_4: observational {X[:, 4].mean():.3f} → "
+          f"interventional {X_do[:, 4].mean():.3f}")
 
 
 def main():
-    print("FRACTUS — Demo L7 complete (3 tâches integrees)")
-    print("Refonte honnete de the original architecture + the original design")
+    print("FRACTUS — Full demo L7 (3 integrated tasks)")
+    print("Honest rebuild of the original systems")
     demo_text()
     demo_proofs()
     demo_causal()
-    section("FIN")
-    print("Tout ce qui precede use des MESURES HONNETES (pas de hardcode).")
-    print("Voir docs/superpowers/specs/2026-06-19-fractus-unified-design.md.")
+    section("END")
+    print("Everything above uses HONEST MEASUREMENTS (no hardcoding).")
+    print("See docs/SPEC.md.")
 
 
 if __name__ == "__main__":

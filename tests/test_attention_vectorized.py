@@ -1,30 +1,30 @@
-"""Tests d'equivalence : attention vectorisee == attention bouclee.
+"""Equivalence tests: vectorized attention == looped attention.
 
-CRITERE : the version vectorisee must donner EXACTEMENT the sames sorties que
-la version bouclee (a 1e-5 pres), for guaranteedr qu'on n'introduit not of bug
-en optimisant.
+CRITERION: the vectorized version must give EXACTLY the same outputs as the
+looped version (within 1e-5), to guarantee that no bug was introduced during
+the optimization.
 """
 
 import torch
 
 
 def test_vectorized_matches_looped_small():
-    """Sur a small cas (B=2, L=8, D=4), the vectorisee == bouclee."""
+    """On a small case (B=2, L=8, D=4), vectorized == looped."""
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
     attn = FractalLinearAttention(d_model=8, n_heads=2, d_head=4, n_levels=1)
     attn.eval()
     x = torch.randn(2, 8, 8)
     out_looped = attn(x)
-    # La version vectorisee est appelee via _linear_attention_causal_vectorized.
-    # On the compare a the bouclee on the sames q,k,v.
-    # Pour cela on reproduit the projection + feature map.
+    # The vectorized version is called via _linear_attention_causal_vectorized.
+    # We compare it to the looped version on the same q,k,v.
+    # For that, we reproduce the projection + feature map.
     from fractus.nn.stats import elu_plus_one
     B, L, _ = x.shape
     q_all = torch.einsum("bld,de->ble", x, attn.w_qkv[0]) + attn.b_qkv[0]
     k_all = torch.einsum("bld,de->ble", x, attn.w_qkv[1]) + attn.b_qkv[1]
     v_all = torch.einsum("bld,de->ble", x, attn.w_qkv[2]) + attn.b_qkv[2]
-    # Une tete, niveau 0.
+    # One head, level 0.
     q = q_all.view(B, L, 2, 4).transpose(1, 2)[:, 0]
     k = k_all.view(B, L, 2, 4).transpose(1, 2)[:, 0]
     v = v_all.view(B, L, 2, 4).transpose(1, 2)[:, 0]
@@ -33,11 +33,11 @@ def test_vectorized_matches_looped_small():
     out_looped_one = attn._linear_attention_causal_one_head(q, k, v)
     out_vec_one = attn._linear_attention_causal_vectorized(q, k, v)
     assert torch.allclose(out_looped_one, out_vec_one, atol=1e-5), \
-        f"Vectorisee != bouclee : max diff {(out_looped_one - out_vec_one).abs().max()}"
+        f"Vectorized != looped: max diff {(out_looped_one - out_vec_one).abs().max()}"
 
 
 def test_vectorized_matches_looped_larger():
-    """Sur a cas more large (B=4, L=32, D=8)."""
+    """On a larger case (B=4, L=32, D=8)."""
     from fractus.nn.attention import FractalLinearAttention
     from fractus.nn.stats import elu_plus_one
     torch.manual_seed(1)
@@ -59,7 +59,7 @@ def test_vectorized_matches_looped_larger():
 
 
 def test_vectorized_preserves_causality():
-    """La version vectorisee must preserver the causalite."""
+    """The vectorized version must preserve causality."""
     from fractus.nn.attention import FractalLinearAttention
     torch.manual_seed(0)
     attn = FractalLinearAttention(d_model=8, n_heads=2, d_head=4, n_levels=1)
@@ -70,13 +70,13 @@ def test_vectorized_preserves_causality():
     x_mod[0, 4:] = torch.randn(2, 8)
     out2 = attn(x_mod)
     assert torch.allclose(out1[0, :4], out2[0, :4], atol=1e-5), \
-        "Vectorisee must rester causale"
+        "Vectorized must remain causal"
 
 
 def test_vectorized_faster_than_looped():
-    """La version vectorisee must be more rapide that the bouclee.
-    On not does not a benchmark strict, juste a verification that this is
-    significativement more rapide (facteur > 2)."""
+    """The vectorized version must be faster than the looped one.
+    We do not run a strict benchmark, just a check that it is significantly
+    faster (factor > 2)."""
     import time
     from fractus.nn.attention import FractalLinearAttention
     from fractus.nn.stats import elu_plus_one
@@ -98,16 +98,16 @@ def test_vectorized_faster_than_looped():
     attn._linear_attention_causal_one_head(q, k, v)
     attn._linear_attention_causal_vectorized(q, k, v)
 
-    # Bouclee.
+    # Looped.
     t0 = time.time()
     for _ in range(3):
         attn._linear_attention_causal_one_head(q, k, v)
     t_looped = (time.time() - t0) / 3
-    # Vectorisee.
+    # Vectorized.
     t0 = time.time()
     for _ in range(3):
         attn._linear_attention_causal_vectorized(q, k, v)
     t_vec = (time.time() - t0) / 3
     speedup = t_looped / max(t_vec, 1e-9)
-    print(f"\nBouclee : {t_looped*1000:.1f}ms, Vectorisee : {t_vec*1000:.1f}ms, speedup : {speedup:.1f}x")
-    assert speedup > 2.0, f"Vectorisee should etre >2x plus rapide, eu {speedup:.1f}x"
+    print(f"\nLooped: {t_looped*1000:.1f}ms, Vectorized: {t_vec*1000:.1f}ms, speedup: {speedup:.1f}x")
+    assert speedup > 2.0, f"Vectorized should be >2x faster, got {speedup:.1f}x"

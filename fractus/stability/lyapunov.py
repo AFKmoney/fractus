@@ -1,6 +1,6 @@
 """KuramotoLyapunov: Lyapunov function of the Kuramoto subsystem.
 
-TRUE Lyapunov function V(theta) = 0.5 * sum(theta_i - theta*)^2 on the Kuramoto
+A TRUE Lyapunov function V(theta) = 0.5 * sum(theta_i - theta*)^2 on the Kuramoto
 subsystem (the only true dynamical system in the model). Not ||y||^2.
 """
 
@@ -12,11 +12,11 @@ from ..nn.phase_ode import KuramotoLayer
 
 
 class KuramotoLyapunov(nn.Module):
-    """Fonction of Lyapunov under-system Kuramoto.
+    """Lyapunov function of the Kuramoto subsystem.
 
     Args:
-        kuramoto : a KuramotoLayer (dont on veut mesurer the stabilite).
-        target_phase : phase synchronisee target θ* (0.0 by defaut).
+        kuramoto : a KuramotoLayer (whose stability we want to measure).
+        target_phase : synchronized target phase θ* (0.0 by default).
     """
 
     def __init__(self, kuramoto: KuramotoLayer, target_phase: float = 0.0):
@@ -25,21 +25,21 @@ class KuramotoLyapunov(nn.Module):
         self.target_phase = target_phase
 
     def V(self, phases: torch.Tensor) -> torch.Tensor:
-        """V(θ) = 1⁄2·Σi (θi − θ*)2 (definie positive, = 0 si synchronise).
+        """V(θ) = 1⁄2·Σi (θi − θ*)2 (positive definite, = 0 if synchronized).
 
-        phases : (..., N). Retourne a scalar.
+        phases : (..., N). Returns a scalar.
         """
-        # Distance circulaire : min(|θ-θ*|, 2π - |θ-θ*|) for gerer the wrap.
+        # Circular distance: min(|θ-θ*|, 2π - |θ-θ*|) to handle wrapping.
         diff = phases - self.target_phase
-        # Wrap in [-π, π].
+        # Wrap into [-π, π].
         diff = torch.remainder(diff + math.pi, 2 * math.pi) - math.pi
         return 0.5 * (diff ** 2).sum(dim=-1)
 
     def is_stable_trajectory(self, phases_trajectory: list) -> bool:
-        """Verifie that V decroit the long of the trajectoire.
+        """Checks that V decreases along the trajectory.
 
-        phases_trajectory : liste of tenseurs (..., N), a by not of temps.
-        Returns True si V est monotone non-croissante (a epsilon pres).
+        phases_trajectory : list of tensors (..., N), one per time step.
+        Returns True if V is monotonically non-increasing (within an epsilon).
         """
         if len(phases_trajectory) < 2:
             return True

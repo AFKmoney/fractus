@@ -13,14 +13,14 @@ from .moe import PhaseRoutedMoE
 
 
 class FractalBlock(nn.Module):
-    """Bloc transformer fractal minimal (L2a).
+    """Minimal fractal transformer block (L2a).
 
     Args:
-        d_model  : dimension modele.
-        n_heads  : number of tetes d'attention.
-        d_head   : dimension per head (n_heads·d_head == d_model requis).
-        n_levels : niveaux fractals of l'attention.
-        dropout  : taux of dropout (0 by defaut en L2a, on ajoutera en L7).
+        d_model  : model dimension.
+        n_heads  : number of attention heads.
+        d_head   : dimension per head (n_heads·d_head == d_model required).
+        n_levels : fractal levels of the attention.
+        dropout  : dropout rate (0 by default in L2a, will be added in L7).
     """
 
     def __init__(
@@ -37,23 +37,23 @@ class FractalBlock(nn.Module):
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """x : (B, L, d_model) → (B, L, d_model).
+        """x: (B, L, d_model) → (B, L, d_model).
 
-        Connexion residuelle : out = x + dropout(attn(norm(x))).
+        Residual connection: out = x + dropout(attn(norm(x))).
         """
         return x + self.dropout(self.attn(self.norm(x)))
 
 
 class FractalBlockFull(nn.Module):
-    """Bloc transformer fractal complete (L2b) : integre Kuramoto + MoE.
+    """Full fractal transformer block (L2b): integrates Kuramoto + MoE.
 
-    Architecture :
-        x → LN → FractalLinearAttention → + x (residuelle 1)
+    Architecture:
+        x → LN → FractalLinearAttention → + x (residual 1)
               → LN → KuramotoLayer → phases
-              → LN → PhaseRoutedMoE(hidden, phases) → + x (residuelle 2)
+              → LN → PhaseRoutedMoE(hidden, phases) → + x (residual 2)
 
-    Retourne (output, loss_aux) or loss_aux est the load_balance_loss MoE
-    (a ajouter a the loss maine by the caller).
+    Returns (output, loss_aux) where loss_aux is the MoE load_balance_loss
+    (to be added to the main loss by the caller).
     """
 
     def __init__(
@@ -72,7 +72,7 @@ class FractalBlockFull(nn.Module):
         dropout: float = 0.0,
     ):
         super().__init__()
-        # Sous-bloc attention.
+        # Attention sub-block.
         self.norm1 = nn.LayerNorm(d_model)
         self.attn = FractalLinearAttention(d_model, n_heads, d_head, n_levels)
         # Kuramoto + MoE.
@@ -84,12 +84,12 @@ class FractalBlockFull(nn.Module):
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
     def forward(self, x: torch.Tensor):
-        """x : (B, L, d_model) → (output (B, L, d_model), loss_aux scalar)."""
-        # Residuelle 1 : attention.
+        """x: (B, L, d_model) → (output (B, L, d_model), loss_aux scalar)."""
+        # Residual 1: attention.
         x = x + self.dropout(self.attn(self.norm1(x)))
-        # Kuramoto : phases depuis hidden normalise.
+        # Kuramoto: phases from the normalized hidden state.
         phases = self.kuramoto(self.norm_kur(x))  # (B, L, N)
-        # MoE : routing by phases.
+        # MoE: routing by phases.
         moe_out, lb_loss = self.moe(self.norm_moe(x), phases)
         x = x + self.dropout(moe_out)
         return x, lb_loss

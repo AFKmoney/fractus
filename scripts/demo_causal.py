@@ -1,23 +1,23 @@
-"""Demo L4 : NOTEARS recupere a DAG synthetique connu.
+"""Demo L4: NOTEARS recovers a known synthetic DAG.
 
-AVERTISSEMENT D'HONNETETE : cette demo use a SCM LINEAIRE and triangulaire
-superieur (topological order trivial). This is the cas-jouet ideal for NOTEARS —
-il a ete concu exactment for this reglage. SHD=0 here prouve that the PIPELINE
-tourne (les modules communiquent, NOTEARS s'optimise, the penalty functionne),
-PAS that NOTEARS est competent on donnees realles. Un SCM non-lineaire with
-topological order inconnu serait nettement more dur (future work).
+HONESTY DISCLAIMER: this demo uses a LINEAR and upper-triangular SCM (trivial
+topological order). This is the ideal toy case for NOTEARS — it was designed
+exactly for this setting. SHD=0 here proves that the PIPELINE runs (the modules
+communicate, NOTEARS optimizes, the penalty works), NOT that NOTEARS is competent
+on real data. A non-linear SCM with an unknown topological order would be
+noticeably harder (future work).
 
-Etapes :
-    1. Genere a SCM lineaire a 5 variables (DAG connu W_true + donnees X).
-    2. Initialise W_pred aleatoire (trainable).
-    3. Optimise W_pred for minimiser :
+Steps:
+    1. Generate a 5-variable linear SCM (known DAG W_true + data X).
+    2. Initialize a random trainable W_pred.
+    3. Optimize W_pred to minimize:
            reconstruction loss + λ · |notears_penalty(W_pred)|
-       La penalty NOTEARS force W_pred a be acyclic.
-    4. Mesure the SHD between W_pred and W_true.
+       The NOTEARS penalty forces W_pred to be acyclic.
+    4. Measure the SHD between W_pred and W_true.
 
-Critere : SHD <= 3 on 5 variables (cas jouet ideal — must passer).
+Criterion: SHD <= 3 on 5 variables (ideal toy case — must pass).
 
-Run :
+Run:
     python scripts/demo_causal.py
 """
 
@@ -25,7 +25,7 @@ import sys
 import os
 import torch
 
-# Assurer that the package 'data' est importable depuis scripts/.
+# Ensure the 'data' package is importable from scripts/.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fractus.causal.notears import notears_penalty
@@ -36,23 +36,23 @@ from data.causal.generate_scm import generate_linear_scm
 def main():
     torch.manual_seed(42)
 
-    # 1. SCM synthetique.
+    # 1. Synthetic SCM.
     W_true, X = generate_linear_scm(n_vars=5, n_samples=500, edge_prob=0.5, seed=7)
-    print("=== SCM synthetique ===")
-    print("W_true (DAG a 5 variables, triangulaire sup) :")
+    print("=== Synthetic SCM ===")
+    print("W_true (5-variable DAG, upper-triangular):")
     print(W_true)
-    print(f"Donnees X : {X.shape}")
+    print(f"Data X: {X.shape}")
     print()
 
-    # 2. W_pred aleatoire, trainable.
+    # 2. Random trainable W_pred.
     n_vars = W_true.shape[0]
     W_pred = torch.zeros(n_vars, n_vars, requires_grad=True)
     torch.nn.init.normal_(W_pred, std=0.1)
 
     h_init = notears_penalty(W_pred).item()
-    print(f"h(W_pred) initial = {h_init:.4f} (should etre ~0 because W petite)")
+    print(f"h(W_pred) initial = {h_init:.4f} (should be ~0 because W is small)")
 
-    # 3. Optimisation : reconstruction + λ·|NOTEARS|.
+    # 3. Optimization: reconstruction + λ·|NOTEARS|.
     opt = torch.optim.Adam([W_pred], lr=0.05)
     lam = 1.0
     for step in range(500):
@@ -66,24 +66,24 @@ def main():
         if step % 100 == 0 or step == 499:
             print(f"step {step:3d}  recon={recon.item():.4f}  h={h.item():.4f}")
 
-    # 4. Mesure SHD.
+    # 4. Measure SHD.
     print()
-    print("=== Recuperation du DAG ===")
-    print("W_pred appris (seuil 0.3) :")
+    print("=== DAG recovery ===")
+    print("Learned W_pred (threshold 0.3):")
     W_pred_bin = (W_pred.detach().abs() > 0.3).float()
     print(W_pred_bin)
-    print("W_true binary :")
+    print("W_true binary:")
     print((W_true.abs() > 0.3).float())
 
     shd = structural_hamming_distance(W_true, W_pred.detach(), threshold=0.3)
-    print(f"\nSHD = {shd} (sur {n_vars*n_vars} inputs)")
-    print(f"  0 = recuperation parfaite, plus c'est bas mieux c'est.")
-    print(f"  (Note : cas-jouet ideal — SCM lineaire + triangulaire. Ne prouve")
-    print(f"   pas la competence sur donnees reelles, juste que le pipeline tourne.)")
+    print(f"\nSHD = {shd} (over {n_vars*n_vars} entries)")
+    print(f"  0 = perfect recovery, lower is better.")
+    print(f"  (Note: ideal toy case — linear + upper-triangular SCM. Does NOT prove")
+    print(f"   competence on real data, only that the pipeline runs.)")
     if shd <= 3:
-        print(f"\nOK : le pipeline causal tourne (SHD <= 3 sur cas jouet).")
+        print(f"\nOK: the causal pipeline runs (SHD <= 3 on the toy case).")
     else:
-        print(f"\n~ : SHD > 3, le pipeline a un souci meme sur cas jouet.")
+        print(f"\n~: SHD > 3, the pipeline has an issue even on the toy case.")
 
 
 if __name__ == "__main__":

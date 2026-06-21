@@ -1,7 +1,7 @@
-"""HONEST measurement of a model's compression ratio.
+"""Honest measurement of a model's compression ratio.
 
 The ratio is MEASURED: we count the parameters actually used and compare them
-to the size the matrixs would have if they were dense. No hardcoded values.
+to the size the matrices would have if they were dense. No hardcoded values.
 """
 
 import torch
@@ -11,31 +11,31 @@ from ..nn.siren_linear import SirenLinear
 
 
 def _count_params(module: nn.Module) -> int:
-    """Nombre total of parameters trainables d'un module."""
+    """Total number of trainable parameters in a module."""
     return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
 
 def measure_compression_ratio(model: nn.Module) -> float:
-    """Mesure REELLEMENT the ratio of compression d'un modele.
+    """MEASURES the compression ratio of a model.
 
     Args:
-        model : a nn.Module pouvant contenir SirenLinear et/ou nn.Linear.
+        model: an nn.Module that may contain SirenLinear and/or nn.Linear.
     Returns:
-        ratio > 0. Ratio = 1.0 if the model est 100% dense.
-        Ratio > 1 if the model contient SirenLinear (compression effective).
-        Ratio < 1 is possible but rare (SIREN larger that the matrix).
+        ratio > 0. ratio = 1.0 if the model is 100% dense.
+        ratio > 1 if the model contains SirenLinear (effective compression).
+        ratio < 1 is possible but rare (SIREN larger than the matrix).
 
-    LIMITE CONNUE : not gere that SirenLinear, nn.Linear, nn.LayerNorm, nn.Embedding.
-    Any other module (Conv, BatchNorm, RNN, etc.) is ignored sislowly —
-    the ratio serait alors under-estime. Pour usage general, etendre the liste ou
-    ajouter a warn. Suffisant for the demo L3 (MLP) and the transformer fractus.
+    KNOWN LIMITATION: only handles SirenLinear, nn.Linear, nn.LayerNorm, nn.Embedding.
+    Any other module (Conv, BatchNorm, RNN, etc.) is silently ignored —
+    the ratio would then be underestimated. For general use, extend the list or
+    emit a warning. Sufficient for the L3 demo (MLP) and the fractus transformer.
     """
     total_dense_equivalent = 0
     total_actual_params = 0
 
     for module in model.modules():
         if isinstance(module, SirenLinear):
-            # Taille dense equivaslowe : in·out + out (matrix + bias).
+            # Dense-equivalent size: in·out + out (matrix + bias).
             dense_eq = module.in_features * module.out_features
             if module.bias is not None:
                 dense_eq += module.out_features
@@ -43,7 +43,7 @@ def measure_compression_ratio(model: nn.Module) -> float:
             total_dense_equivalent += dense_eq
             total_actual_params += actual
         elif isinstance(module, nn.Linear) and not isinstance(module, SirenLinear):
-            # nn.Linear : dense_eq == actual (no compression).
+            # nn.Linear: dense_eq == actual (no compression).
             dense_eq = module.in_features * module.out_features
             if module.bias is not None:
                 dense_eq += module.out_features
@@ -51,7 +51,7 @@ def measure_compression_ratio(model: nn.Module) -> float:
             total_dense_equivalent += dense_eq
             total_actual_params += actual
         elif isinstance(module, (nn.LayerNorm, nn.Embedding)):
-            # Auvery modules : not of compression (comptes a their taille real).
+            # Other modules: no compression (counted at their real size).
             actual = _count_params(module)
             total_dense_equivalent += actual
             total_actual_params += actual

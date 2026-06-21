@@ -1,6 +1,6 @@
 """NOTEARS acyclicity penalty: h(W) = tr(e^{W*W}) - n.
 
-Ported from the original architecture (src/causal.rs) in pure PyTorch.
+Ported from the original system (src/causal.rs) in pure PyTorch.
 h(W) = 0 iff W is acyclic (DAG). h(W) > 0 if W contains a cycle. Differentiable.
 Approximation: expm via Taylor series with 20 terms.
 """
@@ -9,7 +9,7 @@ import torch
 
 
 def notears_penalty(W: torch.Tensor, n_terms: int = 20) -> torch.Tensor:
-    """Compute h(W) = tr(e^{W⊙W}) − n, a scalar.
+    """Computes h(W) = tr(e^{W⊙W}) − n, a scalar.
 
     Args:
         W: adjacency matrix (n, n), differentiable.

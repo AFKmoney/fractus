@@ -1,7 +1,7 @@
-"""Dataset tinyshakespeare for l'training transformer fractal.
+"""tinyshakespeare dataset for training the fractal transformer.
 
-Charge the texte, encode en ids (niveau caractere), decoupe en sequences
-de longueur fixe for l'training by batch.
+Loads the text, encodes it into ids (character-level), and splits it into
+fixed-length sequences for batched training.
 """
 
 import os
@@ -18,12 +18,12 @@ DEFAULT_PATH = os.path.join(
 
 
 class TinyShakespeareDataset(Dataset):
-    """Dataset tinyshakespeare niveau caractere.
+    """Character-level tinyshakespeare dataset.
 
     Args:
-        seq_len  : longueur sequences.
-        path     : chemin fichier texte (defaut : data/text/tinyshakespeare.txt).
-        vocab    : vocabulaire optionnel (otherwise construit depuis the texte).
+        seq_len  : sequence length.
+        path     : text-file path (default: data/text/tinyshakespeare.txt).
+        vocab    : optional vocabulary (otherwise built from the text).
     """
 
     def __init__(
@@ -38,7 +38,7 @@ class TinyShakespeareDataset(Dataset):
             self.text = f.read()
         self.seq_len = seq_len
 
-        # Vocabulaire : mapping char → id.
+        # Vocabulary: char → id mapping.
         if vocab is not None:
             self.char_to_id = vocab
         else:
@@ -47,19 +47,19 @@ class TinyShakespeareDataset(Dataset):
         self.id_to_char = {i: c for c, i in self.char_to_id.items()}
         self.vocab_size = len(self.char_to_id)
 
-        # Encoder all the texte en ids.
+        # Encode the entire text into ids.
         self.ids = torch.tensor(
             [self.char_to_id[c] for c in self.text if c in self.char_to_id],
             dtype=torch.long,
         )
-        # Nombre of sequences possibles.
+        # Number of possible sequences.
         self.n_seqs = (len(self.ids) - 1) // seq_len
 
     def __len__(self) -> int:
         return self.n_seqs
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Retourne (input_ids, target_ids) or target = input decale of 1."""
+        """Returns (input_ids, target_ids) where target = input shifted by 1."""
         start = idx * self.seq_len
         end = start + self.seq_len
         input_ids = self.ids[start:end]
@@ -67,5 +67,5 @@ class TinyShakespeareDataset(Dataset):
         return input_ids, target_ids
 
     def decode(self, ids: torch.Tensor) -> str:
-        """Decode ids en texte."""
+        """Decodes ids into text."""
         return "".join(self.id_to_char.get(int(i), "?") for i in ids)

@@ -10,5 +10,5 @@ path = "src/lib.rs"
 
 [dependencies]
 fractus-core = { path = "../fractus-core" }
-# pyo3 0.22 not supported that Python ≤3.13 ; the venv target est 3.14 → on monte a 0.29.
+# pyo3 0.22 only supports Python ≤3.13; the target venv is 3.14 → we bump to 0.29.
 pyo3 = { version = "0.29", features = ["extension-module"] }

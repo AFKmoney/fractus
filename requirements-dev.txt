@@ -1,5 +1,5 @@
-# Versions épinglées pour le dev (reproductibilité).
-# PyTorch CPU-only wheel sur Windows :
+# Pinned versions for dev (reproducibility).
+# PyTorch CPU-only wheel on Windows:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 torch>=2.2,<3.0

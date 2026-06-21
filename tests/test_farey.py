@@ -1,10 +1,10 @@
-"""Tests of the Farey sequence and of the selection of phases expert."""
+"""Tests of the Farey sequence and expert phase selection."""
 
 import math
 
 
 def test_farey_sequence_basic():
-    """F_3 = {0/1, 1/3, 1/2, 2/3, 1/1} (5 termes)."""
+    """F_3 = {0/1, 1/3, 1/2, 2/3, 1/1} (5 terms)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(3)
     assert seq == [(0, 1), (1, 3), (1, 2), (2, 3), (1, 1)]
@@ -17,7 +17,7 @@ def test_farey_sequence_order_1():
 
 
 def test_farey_sequence_sorted():
-    """Les fractions must be croissantes (property of Farey)."""
+    """The fractions must be ascending (a Farey property)."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(5)
     values = [p / q for (p, q) in seq]
@@ -25,7 +25,7 @@ def test_farey_sequence_sorted():
 
 
 def test_farey_sequence_all_denominators_le_n():
-    """Dans F_n, all the denominateurs are <= n."""
+    """In F_n, all denominators are <= n."""
     from fractus.nn.farey import farey_sequence
     seq = farey_sequence(6)
     for (p, q) in seq:
@@ -33,7 +33,7 @@ def test_farey_sequence_all_denominators_le_n():
 
 
 def test_expert_phases_count():
-    """expert_phases(n) returns exactment n angles."""
+    """expert_phases(n) returns exactly n angles."""
     from fractus.nn.farey import expert_phases
     for n in [4, 8, 16]:
         phases = expert_phases(n)
@@ -41,7 +41,7 @@ def test_expert_phases_count():
 
 
 def test_expert_phases_in_unit_circle():
-    """Tous the angles ∈ [0, 2π)."""
+    """All angles ∈ [0, 2π)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for theta in phases:
@@ -49,7 +49,7 @@ def test_expert_phases_in_unit_circle():
 
 
 def test_expert_phases_distinct():
-    """Les phases expert must be distinctes (otherwise the routing degenerated)."""
+    """The expert phases must be distinct (otherwise routing degenerates)."""
     from fractus.nn.farey import expert_phases
     phases = expert_phases(8)
     for i in range(len(phases)):

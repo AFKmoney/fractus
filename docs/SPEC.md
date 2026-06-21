@@ -1,327 +1,329 @@
-# Fractus — Refonte unifiee of the original architecture + the original design
+# Fractus — Unified rebuild of the original systems
 
-**Date :** 2026-06-19
-**Auteur original :** the original author (the original architecture, the original design)
-**Statut :** Spec valid by brainstorming, en attente of plan d'implementation
+**Date:** 2026-06-19
+**Original author:** the original system's authors (the two prior architectures)
+**Status:** Spec validated by brainstorming, awaiting an implementation plan
 
 ---
 
-## 1. Contexte and motivation
+## 1. Context and motivation
 
-L'utilisateur dispose of deux systems preexistants, all deux concus by the original author :
+The user has two pre-existing systems, both designed by the original author:
 
-- **the original design** (~830 lignes, Python + Rust via PyO3) — white paper of 33 pages.
-  These : « AGI legere via operateurs fractals on varietes non-archimediennes ».
-  Promesses : compression 20.4×, raisonnement causal O(n), CPU-only, verification Lean 4 + ZK-SNARK.
+- **The first system** (~830 lines, Python + Rust via PyO3) — a 33-page white paper.
+  Thesis: "Lightweight AGI via fractal operators on non-Archimedean manifolds."
+  Promises: 20.4× compression, O(n) causal reasoning, CPU-only, Lean 4 + ZK-SNARK verification.
 
-- **the original architecture** (~10 000 lignes, Rust pur, 265+ tests) — « Fractal Neural Network : A Unified
-  Architecture for AGI ». Transformer fractal with oscillateurs Kuramoto, MoE of Farey/von Mises,
-  NOTEARS causal, generateur/verify of proofs, boucle d'auto-developpement.
+- **The second system** (~10,000 lines, pure Rust, 265+ tests) — "A Fractal Neural Network:
+  A Unified Architecture for AGI". A fractal transformer with Kuramoto oscillators,
+  Farey/von Mises MoE, NOTEARS causality, a proof generator/verifier, and a self-development loop.
 
-Une analyse approfondie (code lu ligne by ligne) a revele that **les deux systems not fonctionnent
-pas comme annonce**, malgre a culture mathematical real and plusieurs modules correctement codes.
+An in-depth analysis (code read line by line) revealed that **neither system works
+as advertised**, despite genuine mathematical culture and several correctly coded modules.
 
-### Erreurs critiques constatees (verifieses in the code source)
+### Critical errors found (verified in the source code)
 
-**the original architecture :**
-- **Pas d'autodiff.** `training.rs:399-426` met a jour the poids with
-  `scale * rand::random::<f64>() * 0.01` (du bruit) au lieu d'un gradient. Le commentaire
-  `training.rs:156` l'admet : « Since we don't have autodiff, we apply a simple loss-scaling signal. »
-  → La `AGILoss` a 11 termes est computationee but never vraiment minimisee.
-- **Perplexite fictive.** `model.rs:537-546` : `perplexity()` renvoie a proxy base on the norme
-  of l'embedding, not a vraie perplexite.
-- **Benchmarks vides.** `benches/fnn_bench.rs` not contient that `fn bench_stub(_c) {}`.
-- **Tests peu profonds.** `tests.rs:1840` : « AGINFNModel is currently a stub with only new(). »
-  Les ~272 tests verifiesnt surtout formes of tenseurs (`.dim()`) and of the finitude.
+**The second system:**
+- **No autodiff.** `training.rs:399-426` updates the weights with
+  `scale * rand::random::<f64>() * 0.01` (noise) instead of a gradient. The comment
+  in `training.rs:156` admits it: "Since we don't have autodiff, we apply a simple loss-scaling signal."
+  → The 11-term `AGILoss` is computed but never truly minimized.
+- **Fictitious perplexity.** `model.rs:537-546`: `perplexity()` returns a proxy based on
+  the embedding norm, not a true perplexity.
+- **Empty benchmarks.** `benches/fnn_bench.rs` contains only `fn bench_stub(_c) {}`.
+- **Shallow tests.** `tests.rs:1840`: "AGINFNModel is currently a stub with only new()."
+  The ~272 tests mostly check tensor shapes (`.dim()`) and finiteness.
 
-**the original design :**
-- **Le Rust not compile pas.** `rust/src/lib.rs:3-4` declare `pub mod causal; pub mod shield;`
-  but the fichiers `causal.rs` and `shield.rs` n'existsnt pas. Le TODO of l'auteur the confirme.
-- **Fausse SIREN.** `torus_siren.py:15-17` utilise `nn.SiLU`, not `sin(ω0·)`.
-- **Le vortex 2-adique est orphaned.** Aucun fichier Python n'imported `omni_fractal_rs`.
-- **W decompressee then jetee.** `training_loop.py:30-37` computatione W, the correctede, then
-  l'causal operator tourne on l'entree brute (W ignoree).
-- **Chiffres hardcodes.** `training_loop.py:52` : `"compression_ratio": 20.4` (litteral).
-  `benchmarks.py:43-46` : `min(causal_acc, 0.98)` (plafonnee exactment a the target).
+**The first system:**
+- **The Rust does not compile.** `rust/src/lib.rs:3-4` declares `pub mod causal; pub mod shield;`
+  but the files `causal.rs` and `shield.rs` do not exist. The author's TODO confirms this.
+- **Fake SIREN.** `torus_siren.py:15-17` uses `nn.SiLU`, not `sin(ω0·)`.
+- **The 2-adic vortex is orphaned.** No Python file imports the Rust vortex module.
+- **W decompressed then discarded.** `training_loop.py:30-37` computes W, corrects it, then
+  the causal operator runs on the raw input (W ignored).
+- **Hardcoded numbers.** `training_loop.py:52`: `"compression_ratio": 20.4` (literal).
+  `benchmarks.py:43-46`: `min(causal_acc, 0.98)` (clamped exactly at the target).
 
-### Modules reallement corrects (a conserver)
+### Modules that are actually correct (to keep)
 
-- **the original** : Kuramoto RK4 bas-rang (`phase_ode.rs`), MoE von Mises/Farey (`moe.rs` + `farey.rs`),
-  attention lineaire causale (`attention.rs`), NOTEARS (`causal.rs`), verify of proofs
-  exact (`proof.rs`), SVD tronque by puissance iteree (`svd.rs`), sampling Gamma Marsaglia-Tsang.
-- **the original design** : arithmetique 2-adique (`vortex.rs`) — valuation v2, ultrametric distance
-  `2^v2(a⊕b)`, norme `2^{-v2}`. Le seul module mathematicalment correct and non trivial.
+- **The second system**: low-rank Kuramoto RK4 (`phase_ode.rs`), von Mises/Farey MoE
+  (`moe.rs` + `farey.rs`), causal linear attention (`attention.rs`), NOTEARS (`causal.rs`),
+  exact proof verification (`proof.rs`), truncated SVD via power iteration (`svd.rs`),
+  Gamma sampling via Marsaglia-Tsang.
+- **The first system**: 2-adic arithmetic (`vortex.rs`) — valuation v2, ultrametric distance
+  `2^v2(a⊕b)`, norm `2^{-v2}`. The only mathematically correct and non-trivial module.
 
-## 2. Objectif
+## 2. Objective
 
-**Prototype demontrable** : a system which tourne on of vraies donnees, dont the loss baisse
-vraiment, with a demo convaincante (texte generated, theorems prouves valids, requetes causales).
+**Demonstrable prototype**: a system that runs on real data, whose loss genuinely
+decreases, with a convincing demo (generated text, proven valid theorems, causal queries).
 
-**Non-objectifs explicites (future work) :** papier publiable, produit commercial, Lean 4,
-ZK-SNARK, scaling a gros modeles, "AGI" au sens fort.
+**Explicit non-goals (future work):** publishable paper, commercial product, Lean 4,
+ZK-SNARK, scaling to large models, "AGI" in the strong sense.
 
-## 3. Stack technique
+## 3. Tech stack
 
-**Hybride Rust + Python**, with a separation stricte :
+**Hybrid Rust + Python**, with a strict separation:
 
-- **Rust (`fractus-core`)** : computation pur, outside the autodiff graph. Mathematiques exacts,
-  verification of proofs, precomputation, metriques exogenes. Aucune I/O, no dataset.
-- **Python (`fractus`, PyTorch)** : modele entrainable, forward/backward, autodiff natif,
-  datasets, boucles d'training, logging.
-- **Pont** : PyO3/maturin. Tenseurs numpy en entree/sortie. Le Rust not participe not au graphe
-  autodiff (ecrire a `torch.autograd.Function` custom for each function serait couteux a
-  maintenir and conduirait a backward fictifs — the piege qu'on veut eviter).
+- **Rust (`fractus-core`)**: pure computation, outside the autodiff graph. Exact
+  mathematics, proof verification, precomputation, exogenous metrics. No I/O, no dataset.
+- **Python (`fractus`, PyTorch)**: trainable model, forward/backward, native autodiff,
+  datasets, training loops, logging.
+- **Bridge**: PyO3/maturin. Numpy tensors in/out. Rust does not participate in the autodiff
+  graph (writing a custom `torch.autograd.Function` for each function would be costly to
+  maintain and would lead to fictitious backwards — the trap we want to avoid).
 
-**Decision of nommage honestete :** « Mandelbrot frequencies » → « Mandelbrot-decayed Fourier
-basis » ; « RKHS Causal Operator » → on implemente a true RKHS (with noyau via RFF en L4),
-therefore on garde the nom but the substance suit ; « Bose-Einstein condensate » (the original `condensate.rs`)
-→ on n'integre not this module in fractus (la SVD incrementale seule not justifie not the nom) ;
-« Lyapunov Shield » → « Lyapunov monitor under-system Kuramoto » ; « Collatz ergodic flow »
-→ « Collatz hash » (l'ergodicite of Collatz est non demontree, problem ouvert).
+**Honest naming decisions:** "Mandelbrot frequencies" → "Mandelbrot-decayed Fourier basis";
+"RKHS Causal Operator" → we implement a true RKHS (with a kernel via RFF in L4),
+therefore we keep the name but the substance follows; "Bose-Einstein condensate" (the
+original `condensate.rs`) → we do not integrate this module into fractus (incremental SVD
+alone does not justify the name); "Lyapunov Shield" → "Lyapunov monitor of the Kuramoto
+subsystem"; "Collatz ergodic flow" → "Collatz hash" (the ergodicity of Collatz is unproven,
+an open problem).
 
 ## 4. Hardware target
 
-Machine of l'utilisateur (diagnostiquee) :
-- CPU : AMD Ryzen 5 5500U, 6 coeurs / 12 threads @ 2.1 GHz
-- RAM : ~12 GB
-- GPU : AMD Radeon integree (APU), ~4 GB **partages** → ROCm not supported not the APU AMD
-  integres under Windows → **training CPU-only effectif**.
+User's machine (diagnosed):
+- CPU: AMD Ryzen 5 5500U, 6 cores / 12 threads @ 2.1 GHz
+- RAM: ~12 GB
+- GPU: integrated AMD Radeon (APU), ~4 GB **shared** → ROCm does not support integrated
+  AMD APUs under Windows → **effective CPU-only training**.
 
-Consequence : modele small (< 1M parameters), dataset minuscule (tinyshakespeare ~1 MB),
-training en quelques heures. Coherent with the these the original « CPU-only deployment ».
+Consequence: small model (< 1M parameters), tiny dataset (tinyshakespeare ~1 MB),
+training in a few hours. Coherent with the original "CPU-only deployment" thesis.
 
-## 5. Organisation depot
+## 5. Repository layout
 
 ```
 fractus/
-├── crate/fractus-core/        # Rust : coeur mathematical pur
-│   └── src/                   #   vortex 2-adique, SIREN (ref.), NOTEARS (ref.),
-│                              #   Kuramoto/Farey (precomputation), verify proofs
-├── crate/fractus-py/          # Rust : bindings PyO3/maturin
-│   └── src/lib.rs             #   expose fractus_core a Python
-├── fractus/                   # Python : the modele entrainable (PyTorch)
-│   ├── nn/                    #   embedding, blocs, attention, MoE, decoder, siren
-│   ├── causal/                #   NOTEARS layer, RKHS, do-computationus
+├── crate/fractus-core/        # Rust: pure mathematical core
+│   └── src/                   #   2-adic vortex, SIREN (ref.), NOTEARS (ref.),
+│                              #   Kuramoto/Farey (precomputation), proof verification
+├── crate/fractus-py/          # Rust: PyO3/maturin bindings
+│   └── src/lib.rs             #   exposes fractus_core to Python
+├── fractus/                   # Python: the trainable model (PyTorch)
+│   ├── nn/                    #   embedding, blocks, attention, MoE, decoder, siren
+│   ├── causal/                #   NOTEARS layer, RKHS, do-calculus
 │   ├── reasoning/             #   proofs (GRU), conjectures, ACT
-│   ├── stability/             #   Lyapunov (under-system Kuramoto)
-│   ├── metrics/               #   compression, causal (SHD), perplexite honestete
-│   ├── train/                 #   boucles, datasets, losses
-│   └── viz/                   #   demos interactives (optionnel)
-├── tests/                     # tests d'integration Rust↔Python
-├── data/                      # tinyshakespeare, datasets maths/causal
+│   ├── stability/             #   Lyapunov (Kuramoto subsystem)
+│   ├── metrics/               #   compression, causal (SHD), honest perplexity
+│   ├── train/                 #   loops, datasets, losses
+│   └── viz/                   #   interactive demos (optional)
+├── tests/                     # Rust↔Python integration tests
+├── data/                      # tinyshakespeare, math/causal datasets
 ├── scripts/                   # train.py, demo.py, benchmark.py, serve.py
-└── docs/                      # spec, white paper revise honestete, results
+└── docs/                      # spec, honest revised white paper, results
 ```
 
-## 6. Les 7 couches d'implementation
+## 6. The 7 implementation layers
 
-Chaque couche = cycle design → code → test → demo autonome. On not passe a the suivante that quand
-la precedente est verifiese. On can s'arreter a n'imported quel moment with quelque chose which marche.
+Each layer = a design → code → test → standalone demo cycle. We only move to the next one
+when the previous one is verified. We can stop at any point with something that works.
 
-### L0 — Socle technique
+### L0 — Technical foundation
 
-**Corrige :** the original not compile not ; pont Python↔Rust never fonctionnel.
+**Fixed:** the original does not compile; the Python↔Rust bridge was never functional.
 
-**Composants :**
-1. `pyproject.toml` with versions epinglees (torch CPU-only, maturin, numpy, pytest).
-2. Crate `fractus-core` : `lib.rs` not declare QUE the modules which have a fichier. Port de
-   `vortex.rs` d'the original (le 2-adic, already correct) with corrections : test tautological
-   `assert!(d1 <= d2.max(d1))` → true test d'ultrametrie `d(x,z) ≤ max(d(x,y), d(y,z))` ;
-   import `HashMap` inutilise retire.
-3. Crate `fractus-py` : configuration maturin standard (`extension-module`), not le
-   `[features] python = ["pyo3"]` mal configure d'the original.
-4. Test fume which traverse all : `tests/test_smoke.py` — `add_in_rust(2,3)==5` + `torch` dispo.
+**Components:**
+1. `pyproject.toml` with pinned versions (CPU-only torch, maturin, numpy, pytest).
+2. `fractus-core` crate: `lib.rs` declares ONLY modules that have a file. Port of the
+   original's `vortex.rs` (the 2-adic part, already correct) with corrections: the tautological
+   test `assert!(d1 <= d2.max(d1))` → a true ultrametric test `d(x,z) ≤ max(d(x,y), d(y,z))`;
+   the unused `HashMap` import removed.
+3. `fractus-py` crate: standard maturin configuration (`extension-module`), not the
+   misconfigured `[features] python = ["pyo3"]` of the original.
+4. A smoke test that crosses everything: `tests/test_smoke.py` — `add_in_rust(2,3)==5` + `torch` available.
 
-**Critere « termine » :** these 4 commandes reussissent :
-`cargo build --release` ; `maturin develop --release` ;
-`python -c "import torch; import fractus"` ; `pytest tests/test_smoke.py`.
+**"Done" criterion:** these 4 commands succeed:
+`cargo build --release`; `maturin develop --release`;
+`python -c "import torch; import fractus"`; `pytest tests/test_smoke.py`.
 
-### L1 — Embedding fractal + vortex 2-adique branche
+### L1 — Fractal embedding + 2-adic vortex wired in
 
-**Corrige :** vortex orphaned ; « Mandelbrot frequencies » mal nommees.
+**Fixed:** orphaned vortex; misnamed "Mandelbrot frequencies".
 
-**Composants :**
-1. `fractus/nn/embedding.py` : fractal codepoint embedding (PyTorch). Base of Fourier with
-   Mandelbrot decay `(φ2)−k` (renommee honestetement), + 16 morphological features
-   (cas, chiffre, ponctuation). Parametre entrainable via `nn.Linear` finale.
-2. `fractus-core/src/vortex.rs` : coeur 2-adique portedd depuis the original.
-3. **Pont (option B valide) :** the hash Collatz 2-adique est computatione en Rust (hors-graphe,
-   exact) and **conditionne a MLP entrainable** (in the graphe) which produit the phases de
-   l'embedding. Le vortex influences learning without pretendre etre differentiable.
+**Components:**
+1. `fractus/nn/embedding.py`: fractal codepoint embedding (PyTorch). Fourier base with
+   Mandelbrot decay `(φ2)−k` (renamed honestly), + 16 morphological features
+   (case, digit, punctuation). Trainable parameter via the final `nn.Linear`.
+2. `fractus-core/src/vortex.rs`: the 2-adic core ported from the original.
+3. **Bridge (validated option B):** the 2-adic Collatz hash is computed in Rust (off-graph,
+   exact) and **conditions a trainable MLP** (in the graph) that produces the embedding
+   phases. The vortex influences learning without pretending to be differentiable.
 
-**Critere « termine » :** `test_fractal_embedding_shape` (sortie `[N, d_model]` finie) +
-`test_vortex_distance_is_ultrametric` (inegalite ultrametrique forte on 1000 triplets aleatoires).
+**"Done" criterion:** `test_fractal_embedding_shape` (output `[N, d_model]` finite) +
+`test_vortex_distance_is_ultrametric` (strong ultrametric inequality on 1000 random triplets).
 
-### L2 — Bloc transformer fractal (scinde en L2a + L2b)
+### L2 — Fractal transformer block (split into L2a + L2b)
 
-**Corrige :** the original n'apprend not (bruit instead of gradients).
+**Fixed:** the original does not learn (noise instead of gradients).
 
-**Scindage (decision post-brainstorming) :** L2 est the couche the more grosse
-(~600 lignes PyTorch + ~30 tests). On the coupe en deux moities validables
-independamment. A the fin of L2a on a already a transformer fractal fonctionnel
-(without Kuramoto/MoE) capable d'apprendre texte — premier jalon demontrable.
+**Split (post-brainstorming decision):** L2 is the biggest layer
+(~600 lines PyTorch + ~30 tests). We cut it into two independently validable halves.
+At the end of L2a we already have a functional fractal transformer
+(without Kuramoto/MoE) capable of learning text — the first demonstrable milestone.
 
-**Composants (all en PyTorch pur for autodiff) :**
-1. `fractus/nn/attention.py` : attention lineaire causale (Katharopoulos `S_t += k_t⊗v_t`),
-   feature map `elu(x + ω_k) + 1`. Vrai `nn.Module` with parameters entrainables.
-2. `fractus/nn/phase_ode.py` : Kuramoto RK4 bas-rang `K = UΛUT`. En PyTorch pur for rester
-   in the graphe.
-3. `fractus/nn/moe.py` : MoE a routing von Mises on phases Farey. Experts = MLP GeLU,
-   loss auxiliaire of load-balance standard.
-4. `fractus/nn/block.py` : assemblage `LayerNorm → FractalLinearAttention → PhaseSoliton →
-   PhaseRoutedMoE`, with KuramotoODE avancant the phases d'un step a each bloc.
+**Components (all in pure PyTorch for autodiff):**
+1. `fractus/nn/attention.py`: causal linear attention (Katharopoulos `S_t += k_t⊗v_t`),
+   feature map `elu(x + ω_k) + 1`. A true `nn.Module` with trainable parameters.
+2. `fractus/nn/phase_ode.py`: low-rank Kuramoto RK4 `K = UΛUT`. In pure PyTorch to stay
+   in the graph.
+3. `fractus/nn/moe.py`: MoE with von Mises routing on Farey phases. Experts = GeLU MLP,
+   standard load-balance auxiliary loss.
+4. `fractus/nn/block.py`: assembly `LayerNorm → FractalLinearAttention → PhaseSoliton →
+   PhaseRoutedMoE`, with KuramotoODE advancing the phases by one step per block.
 
-**L2a (jalon demontrable rapide) :**
-- `fractus/nn/stats.py` : utilitaires (`elu_plus_one`, softmax stable, layer_norm).
-- `fractus/nn/attention.py` : `FractalLinearAttention` (recurrence causale
+**L2a (fast demonstrable milestone):**
+- `fractus/nn/stats.py`: utilities (`elu_plus_one`, stable softmax, layer_norm).
+- `fractus/nn/attention.py`: `FractalLinearAttention` (causal recurrence
   `S_t += φ(k_t) ⊗ v_t`, `y_t = φ(q_t)TS_t / φ(q_t)Tz_t`, feature map
   `elu_plus_one(x + ω_level)`, offsets ω_level = (φ2)^{-level}).
-- `fractus/nn/block.py` : `FractalBlock` minimal = LayerNorm → attention → residuelle.
-- Demo : surfit a sequence of toy tokens — the loss must baisser.
-- **Critere « termine L2a » :** `test_block_forward_backward` prouve that backward
-  propage a gradient fini ET non-nul a CHAQUE parameter bloc.
+- `fractus/nn/block.py`: minimal `FractalBlock` = LayerNorm → attention → residual.
+- Demo: overfit a sequence of toy tokens — the loss must drop.
+- **"L2a done" criterion:** `test_block_forward_backward` proves that backward
+  propagates a finite AND non-zero gradient to EVERY block parameter.
 
-**L2b (greffe Kuramoto + MoE) :**
-- `fractus/nn/farey.py` : Farey sequence + `expert_phases` (precomputation hors-graphe).
-- `fractus/nn/phase_ode.py` : `KuramotoODE` (RK4 bas-rang, `encode_from_hidden`,
+**L2b (Kuramoto + MoE graft):**
+- `fractus/nn/farey.py`: Farey sequence + `expert_phases` (off-graph precomputation).
+- `fractus/nn/phase_ode.py`: `KuramotoODE` (low-rank RK4, `encode_from_hidden`,
   `decode_to_bias`, `phase_loss`).
-- `fractus/nn/moe.py` : `PhaseRoutedMoE` (gate von Mises, top-k, load-balance loss).
-- `fractus/nn/block.py` etendu : integre Kuramoto + MoE in the bloc.
+- `fractus/nn/moe.py`: `PhaseRoutedMoE` (von Mises gate, top-k, load-balance loss).
+- `fractus/nn/block.py` extended: integrates Kuramoto + MoE into the block.
 
-Le Rust garde the functions pures (Farey, `bessel_i0`, `von_mises_pdf`) for precomputation et
-metriques hors-graphe (parameter d'ordre of Kuramoto).
+Rust keeps the pure functions (Farey, `bessel_i0`, `von_mises_pdf`) for precomputation and
+off-graph metrics (Kuramoto order parameter).
 
-**Critere « termine » :** `test_block_forward_backward` — `backward()` marche, all les
-parameters recoivent gradients finis. This is exactment this which manquait a the original.
+**"Done" criterion:** `test_block_forward_backward` — `backward()` works, all parameters
+receive finite gradients. This is exactly what the original was missing.
 
-### L3 — Compression SIREN vraie + mesure honestete
+### L3 — True SIREN compression + honest measurement
 
-**Corrige :** fausse SIREN (SiLU) ; W decompressee then jetee ; 20.4× hardcode.
+**Fixed:** fake SIREN (SiLU); W decompressed then discarded; 20.4× hardcoded.
 
-**Composants :**
-1. `fractus/nn/siren.py` : VRAIE SIREN on the tore T2. Non-linearite `sin(ω0·(Wx+b))` with
-   `ω0 = 30.0` (value empirique papier SIREN Sitzmann 2020, PAS 56). Evalue the SIREN sur
-   the grille `h×w` for regenerate the matrix.
-2. Integration : **les projections d'attention** (`q_proj`, `k_proj`, `v_proj` — celles qui
-   are the more grandes and the more compressibles) are remplacees by `SirenLinear`. La SIREN
-   **EST** the matrix, elle est in the graphe, its parameters are entraines. Les petites
-   matrixs (LayerNorm, biases) restent denses. Le ratio exact est mesure (L3.3), not assume.
-3. `fractus/metrics/compression.py` : `measure_compression_ratio(model)` mesure reallement
-   the ratio (taille dense equivalente / params SIREN). Pas of litteral hardcode.
+**Components:**
+1. `fractus/nn/siren.py`: TRUE SIREN on the torus T2. Non-linearity `sin(ω0·(Wx+b))` with
+   `ω0 = 30.0` (Sitzmann 2020 empirical value, NOT 56). Evaluate the SIREN on the
+   `h×w` grid to regenerate the matrix.
+2. Integration: **the attention projections** (`q_proj`, `k_proj`, `v_proj` — the ones that
+   are the largest and most compressible) are replaced by `SirenLinear`. The SIREN
+   **IS** the matrix, it is in the graph, its parameters are trained. Small matrices
+   (LayerNorm, biases) stay dense. The exact ratio is measured (L3.3), not assumed.
+3. `fractus/metrics/compression.py`: `measure_compression_ratio(model)` genuinely
+   measures the ratio (equivalent dense size / SIREN params). No hardcoded literal.
 
-`fractus-core/src/siren.rs` : implementation of reference non entrainee for validation croisee
-(PyTorch and Rust must donner the same sortie for the memes poids).
+`fractus-core/src/siren.rs`: non-trained reference implementation for cross-validation
+(PyTorch and Rust must give the same output for the same weights).
 
-**Critere « termine » :** `test_siren_produces_real_sinus` (`torch.sin` present, `SiLU` absent) +
-`test_siren_is_in_autograd_graph` (les poids SIREN recoivent gradients) +
-`test_compression_ratio_is_measured_not_hardcoded` (pas of `'20.4'` in the source).
+**"Done" criterion:** `test_siren_produces_real_sinus` (`torch.sin` present, `SiLU` absent) +
+`test_siren_is_in_autograd_graph` (SIREN weights receive gradients) +
+`test_compression_ratio_is_measured_not_hardcoded` (no `'20.4'` in the source).
 
-### L4 — Causal NOTEARS + RKHS on donnees realles
+### L4 — NOTEARS causality + RKHS on real data
 
-**Corrige :** « RKHS Causal » which n'was qu'une projection bas-rang ; « do-computationus » trivial
-(column-zeroing) ; causal accuracy plafonnee a 0.98.
+**Fixed:** the "RKHS Causal" that was only a low-rank projection; the trivial do-calculus
+(column-zeroing); causal accuracy clamped at 0.98.
 
-**Composants :**
-1. `fractus/causal/notears.py` : penalty d'acyclicite NOTEARS `h(W) = tr(e^{W⊙W}) − n` via
-   Taylor a 20 termes, differentiable, integree comme terme of loss.
-2. `fractus/causal/rkhs.py` : VRAI RKHS via Random Fourier Features (Rahimi-Recht 2007) —
-   noyau gaussien approxime, operateur `L = U @ VT` in l'espace features.
-3. `fractus/causal/do.py` : true do-computationus of Pearl (echantillonnage post-intervention),
-   not juste column-zeroing.
-4. Datasets synthetiques : `data/causal/generate_scm.py` (Structural Causal Models connus),
+**Components:**
+1. `fractus/causal/notears.py`: NOTEARS acyclicity penalty `h(W) = tr(e^{W⊙W}) − n` via
+   a 20-term Taylor expansion, differentiable, integrated as a loss term.
+2. `fractus/causal/rkhs.py`: TRUE RKHS via Random Fourier Features (Rahimi-Recht 2007) —
+   approximate Gaussian kernel, operator `L = U @ VT` in feature space.
+3. `fractus/causal/do.py`: true Pearl do-calculus (post-intervention sampling),
+   not just column-zeroing.
+4. Synthetic datasets: `data/causal/generate_scm.py` (known Structural Causal Models),
    `data/causal/lucas.py` (LUCAS, standard).
-5. `fractus/metrics/causal.py` : Structural Hamming Distance (SHD), causal accuracy mesuree
-   (pas of clamp).
+5. `fractus/metrics/causal.py`: Structural Hamming Distance (SHD), measured causal accuracy
+   (no clamp).
 
-`fractus-core/src/causal.rs` (finally cree) : NOTEARS penalty en Rust pur for validation croisee.
-`fractus-core/src/rkhs.rs` : RFF and noyau gaussien en Rust for precomputation/metriques.
+`fractus-core/src/causal.rs` (finally created): NOTEARS penalty in pure Rust for cross-validation.
+`fractus-core/src/rkhs.rs`: RFF and Gaussian kernel in Rust for precomputation/metrics.
 
-**Critere « termine » :** `test_notears_penalty_is_zero_for_dag` (h(W)≈0 for a DAG evident) +
+**"Done" criterion:** `test_notears_penalty_is_zero_for_dag` (h(W)≈0 for an obvious DAG) +
 `test_notears_penalty_is_positive_for_cycle` (h(W)>0.5 for a cycle) +
-`test_causal_recovery_on_known_dag` (SHD ≤ 3 on a SCM a 5 variables after 50 steps).
+`test_causal_recovery_on_known_dag` (SHD ≤ 3 on a 5-variable SCM after 50 steps).
 
-### L5 — Raisonnement (proofs verifieses + conjectures + ACT)
+### L5 — Reasoning (verified proofs + conjectures + ACT)
 
-**Corrige :** (le pipeline proof of the original was already the module the more defendable ; on the rend
-fonctionnel).
+**Fixed:** (the original's proof pipeline was already the most defensible module; we make it
+functional).
 
-**Composants :**
-1. `fractus/reasoning/proof.py` : ProofGenerator GRU entraine by **REINFORCE** (policy
-   gradient, puisque the verification est non-differentiable). Recompense
+**Components:**
+1. `fractus/reasoning/proof.py`: ProofGenerator GRU trained by **REINFORCE** (policy
+   gradient, since verification is non-differentiable). Reward
    `0.6·correctness + 0.3·brevity + 0.1·novelty`.
-2. `fractus-core/src/proof.rs` : verify EXACT en Rust (soundness guaranteed). 20 regles
-   d'inference, specialisations Fermat/Wilson/GCD. Reste hors-graphe comme oracle of reward.
-3. `fractus/reasoning/conjecture.py` : decouvreur of conjectures falsifiables (Popperien) —
-   10 templates, 6 strategies of falsification.
-4. `fractus/reasoning/act.py` : Adaptive Computation Time (Graves 2016).
+2. `fractus-core/src/proof.rs`: EXACT verification in Rust (soundness guaranteed). 20 inference
+   rules, Fermat/Wilson/GCD specializations. Stays off-graph as a reward oracle.
+3. `fractus/reasoning/conjecture.py`: discoverer of falsifiable conjectures (Popperian) —
+   10 templates, 6 falsification strategies.
+4. `fractus/reasoning/act.py`: Adaptive Computation Time (Graves 2016).
 
-**Critere « termine » :** `test_verify_accepts_valid_proof` + `test_verify_rejects_invalid_proof`
-(le Rust accepted/rejette correctement) + `test_proof_generator_can_learn_simple_theorem`
-(reussite > 50% on « pair+pair=pair » after 500 steps REINFORCE — critere ambitieux).
+**"Done" criterion:** `test_verify_accepts_valid_proof` + `test_verify_rejects_invalid_proof`
+(Rust accepts/rejects correctly) + `test_proof_generator_can_learn_simple_theorem`
+(success > 50% on "even+even=even" after 500 REINFORCE steps — ambitious criterion).
 
-### L6 — Stabilite Lyapunov + metriques honestetes
+### L6 — Lyapunov stability + honest metrics
 
-**Corrige :** false Lyapunov (tracking of `‖y‖2` without system dynamique) ; metriques clampees.
+**Fixed:** fake Lyapunov (tracking `‖y‖2` without a dynamical system); clamped metrics.
 
-**Composants :**
-1. `fractus/stability/lyapunov.py` : function of Lyapunov **under-system Kuramoto** (le
-   seul true system dynamique modele). `V(θ) = 1⁄2 Σ (θi − θ*)2`, `dV/dt = ∇V · f(θ) ≤ 0`.
-2. `fractus-core/src/lyapunov.rs` : verify numerique en Rust for validation croisee.
-3. `fractus/metrics/honest.py` : `honest_perplexity` (vraie perplexite `exp(val_loss)`, pas
-   proxy), `honest_compression`, `honest_causal`.
+**Components:**
+1. `fractus/stability/lyapunov.py`: Lyapunov function of the **Kuramoto subsystem** (the
+   only true modeled dynamical system). `V(θ) = 1⁄2 Σ (θi − θ*)2`, `dV/dt = ∇V · f(θ) ≤ 0`.
+2. `fractus-core/src/lyapunov.rs`: numerical verification in Rust for cross-validation.
+3. `fractus/metrics/honest.py`: `honest_perplexity` (true perplexity `exp(val_loss)`, not
+   a proxy), `honest_compression`, `honest_causal`.
 
-**Non-pretentions explicites :** Lyapunov guaranteed seulement on Kuramoto (pas on all le
-reseau) ; Lean 4 and ZK-SNARK omis (absents code, notes future work).
+**Explicit non-claims:** Lyapunov guaranteed only on Kuramoto (not on the whole network);
+Lean 4 and ZK-SNARK omitted (absent from the code, noted as future work).
 
-**Critere « termine » :** `test_lyapunov_decreases_on_sync` (V decroit and monotone sur
-trajectoire of synchronisation) + `test_perplexity_is_real` (between 1 and 1000 for vocabulaire
-~100, computationee on a true dataset).
+**"Done" criterion:** `test_lyapunov_decreases_on_sync` (V decreases and is monotone on
+the synchronization trajectory) + `test_perplexity_is_real` (between 1 and 1000 for a
+~100 vocabulary, computed on a real dataset).
 
-### L7 — Demo (objective final)
+### L7 — Demo (final objective)
 
-Trois demos demontrables :
+Three demonstrable demos:
 
-1. **Generation of texte :** `scripts/train.py --task text --dataset tinyshakespeare --epochs 5`
-   then `scripts/generate.py`. Loss of validation tracee, comparaison dense vs SIREN.
-2. **Raisonnement mathematical :** `scripts/train.py --task proofs` then `scripts/prove.py
-   --theorem even_plus_even`. Courbe « % proofs valids » vs steps.
-3. **Inference causale :** `scripts/train.py --task causal --dataset lucas` then
-   `scripts/causal.py --query`. SHD rapported, reponse contrefactuelle vs observationnelle.
+1. **Text generation:** `scripts/train.py --task text --dataset tinyshakespeare --epochs 5`
+   then `scripts/generate.py`. Validation loss traced, dense vs SIREN comparison.
+2. **Mathematical reasoning:** `scripts/train.py --task proofs` then `scripts/prove.py
+   --theorem even_plus_even`. "% valid proofs" vs steps curve.
+3. **Causal inference:** `scripts/train.py --task causal --dataset lucas` then
+   `scripts/causal.py --query`. SHD reported, counterfactual vs observational answer.
 
-Deploiement CPU-only : `scripts/serve.py --cpu-only` → API HTTP locale on the Ryzen 5.
+CPU-only deployment: `scripts/serve.py --cpu-only` → local HTTP API on the Ryzen 5.
 
-## 7. Synthese corrections
+## 7. Correction summary
 
-| Couche | Corrige | Critere « termine » |
+| Layer | Fixed | "Done" criterion |
 |---|---|---|
-| L0 Socle | the original not compile not | `pytest test_smoke` traverse Python→Rust |
-| L1 Embedding+Vortex | Vortex orphaned | Vortex conditionne MLP + ultrametrie testee |
-| L2 Bloc transformer | the original n'apprend not | `backward()` propage gradients finis partout |
-| L3 SIREN | Fausse SIREN, 20.4× hardcode | Vrai `sin(ω0·)`, W utilisee, ratio mesure |
-| L4 Causal | Faux RKHS, false do-computationus | NOTEARS recupere DAG synthetique (SHD test) |
-| L5 Raisonnement | (deja well code) | Generateur reussit >50% after 500 steps REINFORCE |
-| L6 Stabilite | Faux Lyapunov, metriques clampees | V decroit on Kuramoto, perplexite real |
-| L7 Demo | (n'existait pas) | 3 demos tournent + courbes of loss |
+| L0 Foundation | The original does not compile | `pytest test_smoke` crosses Python→Rust |
+| L1 Embedding+Vortex | Orphaned vortex | Vortex conditions an MLP + ultrametric tested |
+| L2 Transformer block | The original does not learn | `backward()` propagates finite gradients everywhere |
+| L3 SIREN | Fake SIREN, 20.4× hardcoded | True `sin(ω0·)`, W used, ratio measured |
+| L4 Causal | Fake RKHS, fake do-calculus | NOTEARS recovers a synthetic DAG (SHD test) |
+| L5 Reasoning | (already well coded) | Generator succeeds >50% after 500 REINFORCE steps |
+| L6 Stability | Fake Lyapunov, clamped metrics | V decreases on Kuramoto, real perplexity |
+| L7 Demo | (did not exist) | 3 demos run + loss curves |
 
-## 8. Decisions cles
+## 8. Key decisions
 
-- Le Rust reste **outside the autodiff graph** (computation exact, verification, metriques, precomputation).
-- La forward/backward est **PyTorch pur** (autodiff natif, more of bruit).
-- Le vortex 2-adique **conditionne** a MLP entrainable (option B).
-- `ω0 = 30` (justifie by SIREN paper), not 56.
-- Nommage honestete partout : on garde the termes exacts, on renomme ceux which surencherissaient.
+- Rust stays **outside the autodiff graph** (exact computation, verification, metrics, precomputation).
+- The forward/backward is **pure PyTorch** (native autodiff, not noise).
+- The 2-adic vortex **conditions** a trainable MLP (option B).
+- `ω0 = 30` (justified by the SIREN paper), not 56.
+- Honest naming everywhere: we keep the exact terms, we rename those that oversold.
 
-## 9. Ordre d'attaque suggere
+## 9. Suggested attack order
 
-L0 → L1 → L2 d'abord (demo texte rapide), then L3 (compression), then L4 (causal), L5
-(raisonnement), L6 (stabilite), L7 (demos integrees). Chaque couche est livrable independamment.
+L0 → L1 → L2 first (fast text demo), then L3 (compression), then L4 (causal), L5
+(reasoning), L6 (stability), L7 (integrated demos). Each layer is independently deliverable.
 
-**Le plan d'implementation (etape suivante process) sera decoupe by couche.** Chaque
-couche donnera lieu a son propre under-plan with taches granulaires. On not redigera not un
-seul plan monolithique for the 7 couches — this serait ingerable. Concretement : on commencera
-par the plan of L0, then on l'executera, then on passera au plan of L1, etc.
+**The implementation plan (next process step) will be split by layer.** Each
+layer will get its own sub-plan with granular tasks. We will NOT write a
+single monolithic plan for the 7 layers — that would be unmanageable. Concretely: we
+will start with the L0 plan, then execute it, then move to the L1 plan, etc.
 
-## 10. Future work (honestete)
+## 10. Future work (honesty)
 
 Lean 4 formal proofs, ZK-SNARK attestation, K3 automorphic compression, Groth16 timing,
-scaling a gros modeles, evaluation on benchmarks standardises type MMLU/HellaSwag.
+scaling to large models, evaluation on standardized benchmarks like MMLU/HellaSwag.

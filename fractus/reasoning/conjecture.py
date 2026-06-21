@@ -1,24 +1,24 @@
-"""Decopene of conjectures : neural propose, Popperian falsification dispose.
+"""Discovery of conjectures: the neural network proposes, Popperian falsification disposes.
 
-Ported from the original architecture (src/conjecture.rs) in pure PyTorch.
+Ported from the original system (src/conjecture.rs) into pure PyTorch.
 
-Architecture :
-    ConjectureGenerator : MLP qui, depuis a etat of connaissance, propose un
-        template of conjecture + parameters + score of newte.
-    ConjectureTester : Popperian falsification. Pour each template, execute
-        n_trials essais aleatoires. Si TOUS passent → survived=True ; otherwise False.
-        Critere d'acceptation Popper = survie a TOUS the essais.
-    ConjectureMemory : base of connaissances with eviction (privilegie les
-        survivantes). encode_state() produit a vector d'etat for the generateur.
-    ConjectureDiscoveryLoop : assemble generator + tester + memory, execute
-        discover_step() en boucle.
+Architecture:
+    ConjectureGenerator: an MLP that, from a knowledge state, proposes a
+        conjecture template + parameters + novelty score.
+    ConjectureTester: Popperian falsification. For each template, runs
+        n_trials random trials. If ALL pass → survived=True; otherwise False.
+        Popper acceptance criterion = survival across ALL trials.
+    ConjectureMemory: a knowledge base with eviction (favoring survivors).
+        encode_state() produces a state vector for the generator.
+    ConjectureDiscoveryLoop: wires generator + tester + memory together, running
+        discover_step() in a loop.
 
-10 templates (the original conjecture.rs:15-26) : SumIdentity, ProductIdentity,
+10 templates (conjecture.rs:15-26): SumIdentity, ProductIdentity,
 DivisibilityPattern, FermatLittle, WilsonTheorem, EuclidGCD, ModularIdentity,
 PowerIdentity, FibonacciIdentity, QuadraticResidue.
 
-6 strategies of falsification (test_sum_identity, test_fermat, test_wilson,
-test_euclid_gcd, test_modular, more boucles inline for ProductIdentity/
+6 falsification strategies (test_sum_identity, test_fermat, test_wilson,
+test_euclid_gcd, test_modular, plus inline loops for ProductIdentity/
 PowerIdentity/FibonacciIdentity/QuadraticResidue).
 """
 
@@ -35,23 +35,23 @@ from .proof import _mod_pow, _gcd
 
 
 # ---------------------------------------------------------------------------
-# Templates of conjectures (the original conjecture.rs:15-26)
+# Conjecture templates (conjecture.rs:15-26)
 # ---------------------------------------------------------------------------
 
 class ConjectureTemplate:
-    """Labels 10 templates of conjectures."""
+    """Labels for the 10 conjecture templates."""
 
     NAMES = [
         "SumIdentity",          # a + a = 2a
         "ProductIdentity",      # a * 1 = a
-        "DivisibilityPattern",  # motifs of a mod p
+        "DivisibilityPattern",  # patterns of a mod p
         "FermatLittle",         # a^(p-1) ≡ 1 mod p
         "WilsonTheorem",        # (p-1)! ≡ p-1 mod p
         "EuclidGCD",            # gcd(a,b)·lcm(a,b) = a*b
         "ModularIdentity",      # (a mod n + b mod n) ≡ (a+b) mod n
-        "PowerIdentity",        # motifs a^n
+        "PowerIdentity",        # patterns of a^n
         "FibonacciIdentity",    # F(n)+F(n+1)=F(n+2)
-        "QuadraticResidue",     # critere d'Euler
+        "QuadraticResidue",     # Euler criterion
     ]
 
     @classmethod
@@ -64,7 +64,7 @@ class ConjectureTemplate:
 
 
 # ---------------------------------------------------------------------------
-# Dataclass Conjecture (the original conjecture.rs:69-77)
+# Conjecture dataclass (conjecture.rs:69-77)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -80,16 +80,16 @@ class Conjecture:
 
 
 # ---------------------------------------------------------------------------
-# ConjectureTester : falsification (the original conjecture.rs:80-334)
+# ConjectureTester: falsification (conjecture.rs:80-334)
 # ---------------------------------------------------------------------------
 
 class ConjectureTester:
-    """Teste a conjecture by Popperian falsification.
+    """Tests a conjecture via Popperian falsification.
 
     Args:
-        n_trials   : number d'essais aleatoires by template.
-        max_number : borne superieure tirage aleatoire.
-        seed       : for reproductibilite (optionnel).
+        n_trials:   number of random trials per template.
+        max_number: upper bound for the random draws.
+        seed:       for reproducibility (optional).
     """
 
     def __init__(self, n_trials: int = 500, max_number: int = 10000, seed: Optional[int] = None):
@@ -102,7 +102,7 @@ class ConjectureTester:
         return self._rng.randint(1, self.max_number)
 
     def test(self, conjecture: Conjecture) -> Conjecture:
-        """Teste the conjecture selon son template. Met a jour n_tests and survived."""
+        """Tests the conjecture according to its template. Updates n_tests and survived."""
         template_idx = conjecture.template_index
         params = conjecture.parameters
         all_pass = True
@@ -201,16 +201,16 @@ class ConjectureTester:
 
 
 # ---------------------------------------------------------------------------
-# ConjectureGenerator : reseau neuronal proposeur (the original conjecture.rs:364-437)
+# ConjectureGenerator: neural proposer network (conjecture.rs:364-437)
 # ---------------------------------------------------------------------------
 
 class ConjectureGenerator(nn.Module):
-    """MLP which propose a conjecture depuis a etat of connaissance.
+    """An MLP that proposes a conjecture from a knowledge state.
 
     Args:
-        state_dim   : dimension of l'etat d'input (32 by defaut).
-        n_templates : number of templates (10).
-        max_params  : number max of parameters generateds (4, constant the original).
+        state_dim:   dimension of the input state (32 by default).
+        n_templates: number of templates (10).
+        max_params:  maximum number of generated parameters (4, constant in the original system).
     """
 
     MAX_PARAMS = 4
@@ -230,14 +230,14 @@ class ConjectureGenerator(nn.Module):
         self.w_novelty = nn.Parameter(torch.empty(state_dim).uniform_(-scale_n, scale_n))
 
     def forward(self, knowledge_state: torch.Tensor) -> Conjecture:
-        """knowledge_state : (state_dim,). Retourne a Conjecture."""
+        """knowledge_state: (state_dim,). Returns a Conjecture."""
         logits = knowledge_state @ self.w_template  # (n_templates,)
         template_idx = int(logits.argmax().item())
         template_idx = min(template_idx, self.n_templates - 1)
 
         params_logits = knowledge_state @ self.w_params  # (max_params,)
-        # detach() : on not retooropage not in the parameters generateds (ils
-        # serve d'input au tester, which n'est not differentiable).
+        # detach(): we do not backpropagate into the generated parameters (they
+        # serve as input to the tester, which is not differentiable).
         parameters = [abs(float(p.detach())) * 100.0 + 2.0 for p in params_logits]
 
         novelty = abs(float((knowledge_state @ self.w_novelty).detach().item()))
@@ -252,14 +252,14 @@ class ConjectureGenerator(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# ConjectureMemory : base of connaissances (the original conjecture.rs:440-508)
+# ConjectureMemory: knowledge base (conjecture.rs:440-508)
 # ---------------------------------------------------------------------------
 
 class ConjectureMemory:
-    """Base of connaissances with eviction non-survivantes.
+    """Knowledge base with eviction of non-survivors.
 
     Args:
-        max_size : taille maximale (1000 by defaut).
+        max_size: maximum size (1000 by default).
     """
 
     def __init__(self, max_size: int = 1000):
@@ -267,9 +267,9 @@ class ConjectureMemory:
         self.discovered: List[Conjecture] = []
 
     def add(self, conjecture: Conjecture) -> None:
-        """Ajoute a conjecture, en evincant a non-survivante si full."""
+        """Adds a conjecture, evicting a non-survivor if full."""
         if len(self.discovered) >= self.max_size:
-            # Retirer the more oldne NON survivante ; otherwise the more oldne globale.
+            # Remove the oldest NON-survivor; otherwise the oldest overall.
             evict_idx = None
             for i, c in enumerate(self.discovered):
                 if not c.survived:
@@ -281,7 +281,7 @@ class ConjectureMemory:
         self.discovered.append(conjecture)
 
     def encode_state(self, state_dim: int) -> torch.Tensor:
-        """Encode l'etat of the memory en vector (state_dim,). L2-normalise."""
+        """Encodes the memory state into a vector (state_dim,). L2-normalized."""
         state = torch.zeros(state_dim, dtype=torch.float32)
         if not self.discovered:
             return state
@@ -300,7 +300,7 @@ class ConjectureMemory:
         return state
 
     def is_novel(self, conjecture: Conjecture) -> bool:
-        """Une conjecture est nouvelle si no survivante same template n'est conbare."""
+        """A conjecture is novel if no surviving conjecture with the same template is comparable."""
         for c in self.discovered:
             if c.template_index == conjecture.template_index and c.survived:
                 return False
@@ -308,14 +308,14 @@ class ConjectureMemory:
 
 
 # ---------------------------------------------------------------------------
-# ConjectureDiscoveryLoop (the original conjecture.rs:511-556)
+# ConjectureDiscoveryLoop (conjecture.rs:511-556)
 # ---------------------------------------------------------------------------
 
 class ConjectureDiscoveryLoop:
-    """Boucle complete : generated → teste → memorise. Compte the discoverys.
+    """Full loop: generate → test → memorize. Counts the discoveries.
 
     Args:
-        state_dim, n_templates, n_trials, max_number : transmis aux components.
+        state_dim, n_templates, n_trials, max_number: passed to the components.
     """
 
     def __init__(
@@ -332,8 +332,8 @@ class ConjectureDiscoveryLoop:
         self.n_discoveries = 0
 
     def discover_step(self) -> Optional[Conjecture]:
-        """Une iteration : generated, teste, ajoute en memory. Retourne la
-        conjecture si this is a discovery (survived ET novel), otherwise None."""
+        """One iteration: generate, test, add to memory. Returns the
+        conjecture if it is a discovery (survived AND novel), otherwise None."""
         state = self.memory.encode_state(self.generator.state_dim)
         conjecture = self.generator(state)
         tested = self.tester.test(conjecture)

@@ -1,14 +1,14 @@
-"""SelfConsistencyCheck : debat interne by bruit and vote.
+"""SelfConsistencyCheck: internal debate via noise and voting.
 
-Ported from the original architecture (src/reasoning.rs:194-279) in pure PyTorch.
+Ported from the original system (src/reasoning.rs:194-279) into pure PyTorch.
 
-Algorithme :
-    generate_candidates(h, n, noise_scale) : produit n versions bruitees of h.
-        Bruit uniforme U(-noise_scale, +noise_scale) (the original dit "Galsoan-like"
-        but use uniforme — on est faithful a l'implementation).
-    score_candidates(cands, ref) : for each candidat, moyenne of the similarite
-        cosinus with the reference on all the (batch, position).
-    select_best : argmax scores.
+Algorithm:
+    generate_candidates(h, n, noise_scale): produces n noisy versions of h.
+        Uniform noise U(-noise_scale, +noise_scale) (the original calls it "Gaussian-like"
+        but uses uniform noise — we stay faithful to the implementation).
+    score_candidates(cands, ref): for each candidate, the mean cosine similarity
+        with the reference over all (batch, position).
+    select_best: argmax of scores.
 """
 
 from typing import List
@@ -20,11 +20,11 @@ from ..math.stats import cosine_similarity
 
 
 class SelfConsistencyCheck(nn.Module):
-    """Debat interne : generated candidats bruites and vote the more coherent.
+    """Internal debate: generates noisy candidates and votes for the most coherent.
 
     Args:
-        n_candidates : number of candidats bruites.
-        noise_scale  : amplitude bruit uniforme.
+        n_candidates: number of noisy candidates.
+        noise_scale:  uniform noise amplitude.
     """
 
     def __init__(self, n_candidates: int = 5, noise_scale: float = 0.1):
@@ -33,9 +33,9 @@ class SelfConsistencyCheck(nn.Module):
         self.noise_scale = noise_scale
 
     def generate_candidates(self, h: torch.Tensor) -> List[torch.Tensor]:
-        """Produit n_candidates versions bruitees of h.
+        """Produces n_candidates noisy versions of h.
 
-        Bruit uniforme U(-noise_scale, +noise_scale), as the original reasoning.rs:211-220.
+        Uniform noise U(-noise_scale, +noise_scale), as in reasoning.rs:211-220.
         """
         candidates = []
         for _ in range(self.n_candidates):
@@ -46,7 +46,7 @@ class SelfConsistencyCheck(nn.Module):
     def score_candidates(
         self, candidates: List[torch.Tensor], reference: torch.Tensor
     ) -> List[float]:
-        """Score = moyenne of cosine_similarity(cand, ref) on (batch, position)."""
+        """Score = mean of cosine_similarity(cand, ref) over (batch, position)."""
         B, L, _D = reference.shape
         scores = []
         for c in candidates:
@@ -62,7 +62,7 @@ class SelfConsistencyCheck(nn.Module):
     def select_best(
         self, candidates: List[torch.Tensor], reference: torch.Tensor
     ) -> tuple[int, float]:
-        """Retourne (best_idx, best_score)."""
+        """Returns (best_idx, best_score)."""
         if not candidates:
             return 0, 0.0
         scores = self.score_candidates(candidates, reference)

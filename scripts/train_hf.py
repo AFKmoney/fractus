@@ -1,27 +1,27 @@
 #!/usr/bin/env python
-"""Script d'training fractus on datasets HuggingFace.
+"""Training script for fractus on HuggingFace datasets.
 
-Supportedd n'importedd quel dataset texte HF (tinyshakespeare, wikitext, OpenWebText,
-FineWeb, ...) with presets adaptes a differents hardwares.
+Supports any HF text dataset (tinyshakespeare, wikitext, OpenWebText, FineWeb, ...)
+with presets adapted to different hardware.
 
-⚠️ HONNETETE HARDWARE :
-    - cpu-tiny / cpu-small : functionnent on CPU laptop/desktop.
-    - gpu-* : necessitent a GPU CUDA (ou MPS on Apple Silicon).
-    - gpu-1b : necessite A100 80GB or H100. IMPOSSIBLE on CPU or GPU consumer.
-      Le bottleneck main est the Kuramoto RK4 (non vectorise) + SIREN.
+⚠️ HARDWARE HONESTY:
+    - cpu-tiny / cpu-small: work on a laptop/desktop CPU.
+    - gpu-*: require a CUDA GPU (or MPS on Apple Silicon).
+    - gpu-1b: requires an A100 80GB or H100. IMPOSSIBLE on a consumer CPU or GPU.
+      The main bottleneck is the Kuramoto RK4 (not vectorized) + SIREN.
 
-Usage :
-    # Petit modele on tinyshakespeare (CPU, ~2 min)
+Usage:
+    # Small model on tinyshakespeare (CPU, ~2 min)
     python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare
 
     # Medium on wikitext-2 (GPU)
     python scripts/train_hf.py --preset gpu-medium --dataset wikitext-2
 
-    # Dataset HF arbitraire
+    # Arbitrary HF dataset
     python scripts/train_hf.py --dataset HuggingFaceFW/fineweb \
         --text-field text --preset gpu-small --max-samples 100000
 
-    # Configuration fully custom
+    # Fully custom configuration
     python scripts/train_hf.py --dataset tinyshakespeare \
         --d-model 256 --n-blocks 6 --seq-len 128 --batch-size 16 --epochs 3
 """
@@ -36,7 +36,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-# Permettre l'import depuis the racine projet.
+# Allow importing from the project root.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fractus.nn import FractalEmbedding, FractalBlockFull
@@ -44,7 +44,7 @@ from fractus.metrics.perplexity import honest_perplexity
 
 
 # ---------------------------------------------------------------------------
-# Presets (tailles of modele + hyperparameters by hardware)
+# Presets (model sizes + hyperparameters per hardware)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -66,14 +66,14 @@ class Preset:
     description: str
 
     def n_params_approx(self, vocab: int) -> int:
-        """Estimation grossiere number of parameters."""
+        """Rough parameter-count estimate."""
         # Embedding: 16 char + 2*n_freq Fourier + vortex_mlp ~ (16 + 2*n_freq + 32) * d_model
         emb = (16 + 2 * self.n_frequencies + 32) * self.d_model + 32 * (32 + self.n_frequencies)
-        # Par bloc : attention (3 * d_model^2 + d_model^2) + Kuramoto + MoE
+        # Per block: attention (3 * d_model^2 + d_model^2) + Kuramoto + MoE
         attn = 3 * self.d_model * self.d_model + self.d_model * self.d_model + 4 * self.d_model
         kur = self.n_oscillators + self.n_oscillators * self.coupling_rank + self.coupling_rank
         moe = self.n_experts * (self.d_model * 64 + 64 * self.d_model + 64 + self.d_model)
-        block = attn + kur + moe + 2 * self.d_model  # + 2 LayerNorm
+        block = attn + kur + moe + 2 * self.d_model  # + 2 LayerNorms
         # Head.
         head = self.d_model * vocab
         return int(emb + self.n_blocks * block + head + self.d_model)
@@ -96,37 +96,37 @@ PRESETS = {
         name="gpu-small", d_model=256, n_blocks=4, n_heads=8, n_levels=3,
         n_frequencies=32, n_oscillators=16, coupling_rank=8, n_experts=8, top_k=2,
         seq_len=128, batch_size=32, lr=3e-4, epochs=3,
-        description="GPU entry (RTX 3060), ~5M params, ~5 min/epoch",
+        description="Entry GPU (RTX 3060), ~5M params, ~5 min/epoch",
     ),
     "gpu-medium": Preset(
         name="gpu-medium", d_model=512, n_blocks=6, n_heads=8, n_levels=3,
         n_frequencies=64, n_oscillators=32, coupling_rank=16, n_experts=8, top_k=4,
         seq_len=256, batch_size=16, lr=3e-4, epochs=3,
-        description="GPU mid (RTX 4090), ~50M params, ~30 min/epoch",
+        description="Mid GPU (RTX 4090), ~50M params, ~30 min/epoch",
     ),
     "gpu-large": Preset(
         name="gpu-large", d_model=1024, n_blocks=12, n_heads=16, n_levels=4,
         n_frequencies=128, n_oscillators=64, coupling_rank=32, n_experts=16, top_k=4,
         seq_len=512, batch_size=8, lr=3e-4, epochs=3,
-        description="GPU datacenter (A100 40GB), ~300M params, ~2h/epoch",
+        description="Datacenter GPU (A100 40GB), ~300M params, ~2h/epoch",
     ),
     "gpu-1b": Preset(
         name="gpu-1b", d_model=2048, n_blocks=24, n_heads=16, n_levels=4,
         n_frequencies=256, n_oscillators=128, coupling_rank=64, n_experts=32, top_k=8,
         seq_len=1024, batch_size=4, lr=3e-4, epochs=3,
-        description=("GPU datacenter (A100 80GB / H100), ~1B params, ~8h/epoch. "
-                     "IMPOSSIBLE sur CPU ou GPU consumer — OOM garanti."),
+        description=("Datacenter GPU (A100 80GB / H100), ~1B params, ~8h/epoch. "
+                     "IMPOSSIBLE on a consumer CPU or GPU — OOM guaranteed."),
     ),
 }
 
 
 # ---------------------------------------------------------------------------
-# Dataset HuggingFace
+# HuggingFace dataset
 # ---------------------------------------------------------------------------
 
-# Alias of datasets locaux vs HF.
+# Aliases for local vs HF datasets.
 LOCAL_DATASETS = {
-    "tinyshakespeare": None,  # special : fichier local.
+    "tinyshakespeare": None,  # special: local file.
 }
 
 HF_DATASET_DEFAULTS = {
@@ -141,11 +141,11 @@ def load_text_dataset(
     text_field: str,
     max_samples: int,
 ) -> tuple[str, dict]:
-    """Charge a dataset and returns (texte_complete, vocab_char_to_id).
+    """Loads a dataset and returns (full_text, vocab_char_to_id).
 
-    Niveau caractere (as tinyshakespeare).
+    Character-level (like tinyshakespeare).
     """
-    # tinyshakespeare local (already telecharge).
+    # tinyshakespeare local (already downloaded).
     if dataset_name == "tinyshakespeare":
         local_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -155,25 +155,25 @@ def load_text_dataset(
             with open(local_path, "r", encoding="utf-8") as f:
                 text = f.read()
         else:
-            # Fallback HF.
+            # HF fallback.
             try:
                 from datasets import load_dataset
                 ds = load_dataset("tiny_shakespeare", split="train")
                 text = "\n".join(ds[text_field])
             except Exception as e:
                 raise RuntimeError(
-                    f"Impossible de charger tinyshakespeare (ni local ni HF) : {e}"
+                    f"Could not load tinyshakespeare (neither local nor HF): {e}"
                 ) from e
     else:
-        # Dataset HF arbitraire.
+        # Arbitrary HF dataset.
         try:
             from datasets import load_dataset
         except ImportError as e:
             raise RuntimeError(
-                "Library `datasets` non installee. Lance : pip install datasets"
+                "The `datasets` library is not installed. Run: pip install datasets"
             ) from e
 
-        # Parser "name" or "name:config".
+        # Parse "name" or "name:config".
         if ":" in dataset_name:
             name, config = dataset_name.split(":", 1)
         elif dataset_name in HF_DATASET_DEFAULTS:
@@ -183,7 +183,7 @@ def load_text_dataset(
         else:
             name, config = dataset_name, None
 
-        print(f"Chargement dataset HF : {name} (config={config})...")
+        print(f"Loading HF dataset: {name} (config={config})...")
         ds = load_dataset(name, config, split="train")
         texts = []
         for i, ex in enumerate(ds):
@@ -192,22 +192,22 @@ def load_text_dataset(
             texts.append(ex[text_field])
         text = "\n".join(texts)
 
-    if max_samples and len(text) > max_samples * 1000:  # heuristique : ~1000 chars/sample.
+    if max_samples and len(text) > max_samples * 1000:  # heuristic: ~1000 chars/sample.
         text = text[:max_samples * 1000]
 
-    # Vocabulaire niveau caractere.
+    # Character-level vocabulary.
     chars = sorted(set(text))
     char_to_id = {c: i for i, c in enumerate(chars)}
-    print(f"Texte : {len(text):,} caracteres, vocabulaire : {len(chars)} caracteres")
+    print(f"Text: {len(text):,} characters, vocabulary: {len(chars)} characters")
     return text, char_to_id
 
 
 # ---------------------------------------------------------------------------
-# Modele
+# Model
 # ---------------------------------------------------------------------------
 
 class FractalLM(nn.Module):
-    """Modele of langage fractal : Embedding + N×FractalBlockFull + head."""
+    """Fractal language model: Embedding + N×FractalBlockFull + head."""
 
     def __init__(self, vocab, preset: Preset):
         super().__init__()
@@ -242,7 +242,7 @@ class FractalLM(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Tokenizer niveau caractere
+# Character-level tokenizer
 # ---------------------------------------------------------------------------
 
 class CharTokenizer:
@@ -262,7 +262,7 @@ class CharTokenizer:
 
 
 # ---------------------------------------------------------------------------
-# Boucle d'training
+# Training loop
 # ---------------------------------------------------------------------------
 
 def train(args):
@@ -273,12 +273,12 @@ def train(args):
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
-    print(f"Device : {device}")
+    print(f"Device: {device}")
 
     # Preset.
     if args.preset:
         preset = PRESETS[args.preset]
-        # Override by args explicites.
+        # Override with explicit args.
         if args.d_model: preset.d_model = args.d_model
         if args.n_blocks: preset.n_blocks = args.n_blocks
         if args.seq_len: preset.seq_len = args.seq_len
@@ -286,7 +286,7 @@ def train(args):
         if args.epochs: preset.epochs = args.epochs
         if args.lr: preset.lr = args.lr
     else:
-        # Construire a preset depuis the args.
+        # Build a preset from the args.
         preset = Preset(
             name="custom",
             d_model=args.d_model or 64,
@@ -305,46 +305,46 @@ def train(args):
             description="custom",
         )
 
-    print(f"\nPreset : {preset.name} — {preset.description}")
+    print(f"\nPreset: {preset.name} — {preset.description}")
     print(f"  d_model={preset.d_model}, n_blocks={preset.n_blocks}, "
           f"seq_len={preset.seq_len}, batch_size={preset.batch_size}")
 
-    # ⚠️ Disclaimer 1B.
+    # ⚠️ 1B disclaimer.
     if preset.name == "gpu-1b" and device.type == "cpu":
         print("\n" + "=" * 70)
-        print("⚠️  AVERTISSEMENT CRITIQUE")
+        print("⚠️  CRITICAL WARNING")
         print("=" * 70)
-        print("Vous tentez d'trainsr un modele ~1B parameters sur CPU.")
-        print("C'est IMPOSSIBLE en pratique :")
-        print("  - Memoire : ~16 GB minimum requis, vous avez probablement < 16 GB RAM.")
-        print("  - Temps : semaines a mois par epoch.")
-        print("Le preset gpu-1b necessite A100 80GB ou H100.")
-        print("Abandon. Utilisez --preset cpu-small ou --preset gpu-small.")
+        print("You are attempting to train a ~1B-parameter model on CPU.")
+        print("This is IMPOSSIBLE in practice:")
+        print("  - Memory: ~16 GB minimum required, you likely have < 16 GB RAM.")
+        print("  - Time: weeks to months per epoch.")
+        print("The gpu-1b preset requires an A100 80GB or H100.")
+        print("Aborting. Use --preset cpu-small or --preset gpu-small.")
         sys.exit(1)
 
     # Dataset.
-    print(f"\nDataset : {args.dataset}")
+    print(f"\nDataset: {args.dataset}")
     text, char_to_id = load_text_dataset(
         args.dataset, args.text_field, args.max_samples,
     )
     tokenizer = CharTokenizer(char_to_id)
     vocab = tokenizer.vocab_size
 
-    # Estimation params.
+    # Parameter estimate.
     n_params_est = preset.n_params_approx(vocab)
-    print(f"Parametres estimes : {n_params_est:,} ({n_params_est/1e6:.1f}M)")
+    print(f"Estimated parameters: {n_params_est:,} ({n_params_est/1e6:.1f}M)")
     if n_params_est > 100_000_000 and device.type == "cpu":
-        print(f"\n⚠️  {n_params_est/1e6:.0f}M params sur CPU va etre TRES lent.")
-        print("Considerez --preset cpu-small ou un GPU.")
+        print(f"\n⚠️  {n_params_est/1e6:.0f}M params on CPU will be VERY slow.")
+        print("Consider --preset cpu-small or a GPU.")
 
-    # Encoder.
+    # Encode.
     all_ids = tokenizer.encode(text)
     seq_len = preset.seq_len
     n_seqs = (len(all_ids) - 1) // seq_len
     all_ids = all_ids[:n_seqs * seq_len + 1]
-    print(f"Sequences : {n_seqs:,} de longueur {seq_len}")
+    print(f"Sequences: {n_seqs:,} of length {seq_len}")
 
-    # Split train/val (95/5).
+    # Train/val split (95/5).
     n_train = int(0.95 * n_seqs)
     train_ids = all_ids[:n_train * seq_len + 1]
     val_ids = all_ids[n_train * seq_len:]
@@ -357,14 +357,14 @@ def train(args):
         if shuffle:
             perm = torch.randperm(n)
             seqs, targets = seqs[perm], targets[perm]
-        # Batcher.
+        # Batch.
         for i in range(0, n - batch_size + 1, batch_size):
             yield seqs[i:i+batch_size].to(device), targets[i:i+batch_size].to(device)
 
-    # Modele.
+    # Model.
     model = FractalLM(vocab, preset).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"Parametres reels : {n_params:,} ({n_params/1e6:.2f}M)")
+    print(f"Real parameters: {n_params:,} ({n_params/1e6:.2f}M)")
 
     opt = torch.optim.AdamW(model.parameters(), lr=preset.lr, weight_decay=0.01)
 
@@ -374,8 +374,8 @@ def train(args):
     )
     os.makedirs(ckpt_dir, exist_ok=True)
 
-    # Boucle.
-    print(f"\nEntrainement : {preset.epochs} epochs, lr={preset.lr}")
+    # Loop.
+    print(f"\nTraining: {preset.epochs} epochs, lr={preset.lr}")
     best_val_ppl = float("inf")
     for epoch in range(preset.epochs):
         model.train()
@@ -412,12 +412,12 @@ def train(args):
         val_ce = sum(val_ces) / max(len(val_ces), 1)
         val_ppl = math.exp(val_ce) if val_ce < 20 else float("inf")
 
-        print(f"\nEpoch {epoch+1}/{preset.epochs} : "
+        print(f"\nEpoch {epoch+1}/{preset.epochs}: "
               f"train_ce={train_ce:.4f} (ppl={math.exp(min(train_ce,20)):.2f})  "
               f"val_ce={val_ce:.4f} (ppl={val_ppl:.2f})  "
-              f"temps={elapsed:.0f}s")
+              f"time={elapsed:.0f}s")
 
-        # Checkpoint si better.
+        # Checkpoint if better.
         if val_ppl < best_val_ppl:
             best_val_ppl = val_ppl
             ckpt_path = os.path.join(ckpt_dir, f"fractal_{preset.name}_best.pt")
@@ -428,9 +428,9 @@ def train(args):
                 "epoch": epoch + 1,
                 "val_ppl": val_ppl,
             }, ckpt_path)
-            print(f"  → Checkpoint sauvegarde : {ckpt_path}")
+            print(f"  → Checkpoint saved: {ckpt_path}")
 
-    # Generation finale.
+    # Final generation.
     print("\n=== Generation (greedy) ===")
     model.eval()
     prompt = args.prompt or "The "
@@ -447,7 +447,7 @@ def train(args):
             ctx = torch.cat([ctx, torch.tensor([[nxt]], device=device)], dim=1)
     print(tokenizer.decode(ctx[0]))
 
-    print(f"\nTermine. Meilleure perplexite validation : {best_val_ppl:.2f}")
+    print(f"\nDone. Best validation perplexity: {best_val_ppl:.2f}")
 
 
 # ---------------------------------------------------------------------------
@@ -456,42 +456,42 @@ def train(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="Entrainement fractus sur datasets HuggingFace.",
+        description="Train fractus on HuggingFace datasets.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Presets disponibles :
+Available presets:
   cpu-tiny    ~80k params, CPU laptop, ~2 min/epoch
   cpu-small   ~500k params, CPU desktop, ~30 min/epoch
-  gpu-small   ~5M params, GPU entry (RTX 3060)
-  gpu-medium  ~50M params, GPU mid (RTX 4090)
+  gpu-small   ~5M params, entry GPU (RTX 3060)
+  gpu-medium  ~50M params, mid GPU (RTX 4090)
   gpu-large   ~300M params, A100 40GB
   gpu-1b      ~1B params, A100 80GB/H100 (IMPOSSIBLE on CPU)
 
-Datasets predefinis :
+Predefined datasets:
   tinyshakespeare  (local, 1.1 MB)
   wikitext-2       (HF, ~5 MB)
   wikitext-103     (HF, ~500 MB)
-  Ou n'importedd quel dataset HF : --dataset name --text-field field
+  Or any HF dataset: --dataset name --text-field field
 
-Exemples :
+Examples:
   python scripts/train_hf.py --preset cpu-small --dataset tinyshakespeare
   python scripts/train_hf.py --preset gpu-medium --dataset wikitext-2
   python scripts/train_hf.py --dataset HuggingFaceFW/fineweb --text-field text --max-samples 10000 --preset gpu-small
 """,
     )
     p.add_argument("--preset", choices=list(PRESETS.keys()), default=None,
-                   help="Preset de taille/hardware (defaut : cpu-tiny).")
+                   help="Size/hardware preset (default: cpu-tiny).")
     p.add_argument("--dataset", default="tinyshakespeare",
-                   help="Dataset : tinyshakespeare, wikitext-2, ou nom HF.")
+                   help="Dataset: tinyshakespeare, wikitext-2, or an HF name.")
     p.add_argument("--text-field", default=None,
-                   help="Champ texte du dataset HF (defaut : selon dataset).")
+                   help="Text field of the HF dataset (default: depends on the dataset).")
     p.add_argument("--max-samples", type=int, default=0,
-                   help="Max echantillons (0 = tout).")
+                   help="Max samples (0 = all).")
     p.add_argument("--prompt", default=None,
-                   help="Prompt for la generation finale.")
+                   help="Prompt for the final generation.")
     p.add_argument("--checkpoint-dir", default=None,
-                   help="Dossier de checkpoints (defaut : ./checkpoints).")
-    # Overrides custom.
+                   help="Checkpoint folder (default: ./checkpoints).")
+    # Custom overrides.
     p.add_argument("--d-model", type=int, default=None)
     p.add_argument("--n-blocks", type=int, default=None)
     p.add_argument("--n-heads", type=int, default=None)

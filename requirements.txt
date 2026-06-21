@@ -1,5 +1,5 @@
-# Dépendances runtime de fractus.
-# PyTorch CPU-only sur Windows :
+# Runtime dependencies of fractus.
+# PyTorch CPU-only on Windows:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 torch>=2.2,<3.0

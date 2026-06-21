@@ -1,4 +1,4 @@
-"""Tests of PhaseRoutedMoE : gate von Mises, top-k, load-balance, backward."""
+"""Tests of PhaseRoutedMoE: von Mises gate, top-k, load-balance, backward."""
 
 import math
 import torch
@@ -6,7 +6,7 @@ import pytest
 
 
 def test_moe_output_shape():
-    """Sortie (B, L, d_model) + loss auxiliaire scalar."""
+    """Output (B, L, d_model) + scalar auxiliary loss."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
@@ -27,7 +27,7 @@ def test_moe_is_finite():
 
 
 def test_moe_load_balance_nonneg():
-    """Load-balance loss >= 0 (this is a somme of carres ponderee)."""
+    """Load-balance loss >= 0 (it is a weighted sum of squares)."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
@@ -37,7 +37,7 @@ def test_moe_load_balance_nonneg():
 
 
 def test_moe_backward_every_param():
-    """CRITERE L2b : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
+    """L2b CRITERION: backward propagates a finite AND non-zero gradient to EVERY parameter."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)
@@ -50,20 +50,20 @@ def test_moe_backward_every_param():
     assert len(params) > 0
     for name, p in params:
         assert p.requires_grad, f"{name} should requires_grad=True"
-        assert p.grad is not None, f"{name} n'a recu no gradient"
-        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert p.grad is not None, f"{name} received no gradient"
+        assert torch.isfinite(p.grad).all(), f"{name} has a non-finite gradient"
+        assert p.grad.abs().sum().item() > 0, f"{name} received a zero gradient"
 
 
 def test_moe_top_k_at_most_n_experts():
-    """top_k > n_experts must lever a error."""
+    """top_k > n_experts must raise an error."""
     from fractus.nn.moe import PhaseRoutedMoE
     with pytest.raises(ValueError):
         PhaseRoutedMoE(d_model=16, n_experts=4, top_k=8, kappa=4.0)
 
 
 def test_moe_with_uniform_phases_uses_all_experts():
-    """Si all the phases are identiques, the routing not must not crasher."""
+    """If all phases are identical, the routing must not crash."""
     from fractus.nn.moe import PhaseRoutedMoE
     moe = PhaseRoutedMoE(d_model=16, n_experts=4, top_k=2, kappa=4.0)
     h = torch.randn(2, 8, 16)

@@ -1,11 +1,11 @@
-"""Tests of KuramotoLayer : encode/decode, RK4, phase_loss, backward."""
+"""Tests of KuramotoLayer: encode/decode, RK4, phase_loss, backward."""
 
 import math
 import torch
 
 
 def test_kuramoto_output_shape():
-    """Sortie phases (B, L, N_osc) for input (B, L, d_model)."""
+    """Output phases (B, L, N_osc) for input (B, L, d_model)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)
@@ -14,7 +14,7 @@ def test_kuramoto_output_shape():
 
 
 def test_kuramoto_phases_in_unit_circle():
-    """Toutes the phases ∈ [0, 2π) (wrapping modular after RK4)."""
+    """All phases ∈ [0, 2π) (modular wrapping after RK4)."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16) * 10
@@ -31,7 +31,7 @@ def test_kuramoto_is_finite():
 
 
 def test_kuramoto_backward_every_param():
-    """CRITERE L2b : backward propage a gradient fini ET non-nul a CHAQUE parameter."""
+    """L2b CRITERION: backward propagates a finite AND non-zero gradient to EVERY parameter."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)
@@ -43,13 +43,13 @@ def test_kuramoto_backward_every_param():
     assert len(params) > 0
     for name, p in params:
         assert p.requires_grad, f"{name} should requires_grad=True"
-        assert p.grad is not None, f"{name} n'a recu no gradient"
-        assert torch.isfinite(p.grad).all(), f"{name} a un gradient non-fini"
-        assert p.grad.abs().sum().item() > 0, f"{name} a recu un gradient nul"
+        assert p.grad is not None, f"{name} received no gradient"
+        assert torch.isfinite(p.grad).all(), f"{name} has a non-finite gradient"
+        assert p.grad.abs().sum().item() > 0, f"{name} received a zero gradient"
 
 
 def test_kuramoto_phase_loss_shape_and_finite():
-    """phase_loss(phases) returns a scalar fini."""
+    """phase_loss(phases) returns a finite scalar."""
     from fractus.nn.phase_ode import KuramotoLayer
     layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4)
     x = torch.randn(2, 10, 16)

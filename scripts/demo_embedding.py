@@ -1,19 +1,19 @@
-"""Demo L1 : prouve that FractalEmbedding apprend vraiment.
+"""Demo L1: proves that FractalEmbedding truly learns.
 
-Objectif : surfit a target a frequences NON presentes in the base Fourier
-interne of l'embedding. Cela force l'embedding a reallement combiner its trois
-sources (char features + Fourier + vortex conditioning) via sa projection
-trainable, instead of simplement recopier a combinaison of its colonnes
-d'input (ce qu'une Linear does trivialement).
+Goal: overfit a target whose frequencies are NOT present in the embedding's
+internal Fourier basis. This forces the embedding to actually combine its three
+sources (char features + Fourier + vortex conditioning) via its trainable
+projection, rather than simply copying a combination of its input columns
+(which a Linear does trivially).
 
-Les frequences of the base interne are ω_k = (φ2)^{-k} for k=0..n_freq-1,
-soit decroissantes a partir of 1.0. On chooses therefore frequences targets
-independantes : croissantes (1.3, 0.7) which not are PAS in the base.
+The frequencies of the internal basis are ω_k = (φ2)^{-k} for k=0..n_freq-1,
+i.e. decreasing starting from 1.0. We therefore pick independent target
+frequencies: increasing (1.3, 0.7) which are NOT in the basis.
 
-This is the proof minimale honesty that l'autodiff traverse l'embedding fractal
-(ce that the original architecture not savait not faire — training.rs:399 utilisait bruit).
+This is the minimal honest proof that autodiff flows through the fractal
+embedding (which the original system could not do — training.rs:399 used noise).
 
-Run :
+Run:
     python scripts/demo_embedding.py
 """
 
@@ -27,21 +27,21 @@ def main():
     vocab = 64
     d_model = 32
     emb = FractalEmbedding(vocab_size=vocab, d_model=d_model, n_frequencies=12)
-    print(f"Parametres entrainables : {sum(p.numel() for p in emb.parameters())}")
+    print(f"Trainable parameters: {sum(p.numel() for p in emb.parameters())}")
 
-    # Cible independante of l'espace d'input : sinus a frequences qui
-    # not are PAS in the base (φ2)^{-k}. Les frequences of the base sont
-    # decroissantes a partir of 1.0 ; on chooses frequences positives
-    # variees (0.7, 1.3, 2.1) which demandent a approximation non-triviale.
+    # Target independent of the input space: sinusoids at frequencies that
+    # are NOT in the (φ2)^{-k} basis. The basis frequencies are decreasing
+    # from 1.0; we pick varied positive frequencies (0.7, 1.3, 2.1) that
+    # require a non-trivial approximation.
     ids = torch.arange(vocab, dtype=torch.float32).unsqueeze(1)  # (V, 1)
-    freqs_cible = torch.linspace(0.3, 2.1, d_model)  # (d_model,)
-    phases = freqs_cible * ids  # (V, d_model)
-    # Cible = melange non-lineaire (sin + cos a phases differentes) for
-    # forcer a regression real, not a simple copie.
+    freqs_target = torch.linspace(0.3, 2.1, d_model)  # (d_model,)
+    phases = freqs_target * ids  # (V, d_model)
+    # Target = non-linear mix (sin + cos at different phases) to force a real
+    # regression, not a simple copy.
     target = torch.sin(phases) * 0.6 + torch.cos(phases * 1.7 + 0.3) * 0.4
 
     opt = torch.optim.Adam(emb.parameters(), lr=3e-3)
-    # Cosine schedule : aide the convergesnce fine en fin d'training.
+    # Cosine schedule: helps fine convergence near the end of training.
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=600)
 
     initial_loss = None
@@ -60,24 +60,22 @@ def main():
 
     final_loss = loss.item()
     print()
-    print(f"Loss initial : {initial_loss:.6f}")
-    print(f"Loss finale   : {final_loss:.6f}")
-    print(f"Baisse        : {(1 - final_loss / initial_loss) * 100:.1f}%")
+    print(f"Initial loss : {initial_loss:.6f}")
+    print(f"Final loss   : {final_loss:.6f}")
+    print(f"Reduction    : {(1 - final_loss / initial_loss) * 100:.1f}%")
 
-    # Critere honesty : the target n'est PAS trivialement in l'espace d'input,
-    # therefore a baisse of ÷3 (67%) prouve already that l'autodiff traverse le
-    # pipeline (char + Fourier + vortex → MLP → proj). On not vise not ÷10000.
+    # Honest criterion: the target is NOT trivially in the input space,
+    # so a 3× reduction (67%) already proves that autodiff flows through the
+    # pipeline (char + Fourier + vortex → MLP → proj). We do not aim for 10000×.
     if final_loss < initial_loss / 3.0:
-        print("\n✓ SUCCES : l'embedding fractal apprend (loss divisee par >3 sur "
-              "une cible hors de l'espace d'input — preuve honnete d'autodiff).")
+        print("\n✓ SUCCESS: the fractal embedding learns (loss divided by >3 on a "
+              "target outside the input space — honest autodiff proof).")
     elif final_loss < initial_loss / 2.0:
-        print("\n✓ PARTIEL : loss divisee par >2 — l'autodiff marche but la "
-              "capacite d'approximation est limitee (acceptable for la demo L1).")
+        print("\n✓ PARTIAL: loss divided by >2 — autodiff works but the approximation "
+              "capacity is limited (acceptable for the L1 demo).")
     else:
-        print("\n✗ ECHEC : la loss ne baisse pas assez — investiguer.")
+        print("\n✗ FAILURE: the loss does not drop enough — investigate.")
 
 
 if __name__ == "__main__":
     main()
-
-

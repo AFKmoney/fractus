@@ -1,23 +1,22 @@
-"""Demo Scaling : transformer fractal on tinyshakespeare (training short).
+"""Scaling demo: fractal transformer on tinyshakespeare (short training).
 
-Entraine TinyFractalLM on a SOUS-ENSEMBLE of tinyshakespeare (200 batches),
-mesure the perplexite honesty, and generated texte.
+Trains TinyFractalLM on a SUBSET of tinyshakespeare (200 batches), measures
+the honest perplexity, and generates text.
 
-HONNETETE SUR LA LIMITE CPU : l'training complete (1 epoch = ~900 batches)
-prend ~10 min on the Ryzen 5 because of Kuramoto RK4 (4 under-steps) and du
-masque triangulaire of l'attention. Cette demo does a training COURT
-(200 batches, ~3 min) which prouve that the modele APPREND on true texte,
-but without convergesnce complete. Pour a training complete : GPU ou
-vectorisation approfondie Kuramoto (future work).
+HONESTY ABOUT THE CPU LIMIT: the full training (1 epoch = ~900 batches) takes
+~10 min on the Ryzen 5 because of the Kuramoto RK4 (4 sub-steps) and the
+triangular attention mask. This demo does a SHORT training (200 batches, ~3 min)
+that proves the model LEARNS on real text, but without full convergence.
+For full training: a GPU or deeper Kuramoto vectorization (future work).
 
-Setup (CPU-only) :
+Setup (CPU-only):
     vocab = 65 (tinyshakespeare)
     d_model = 48
     n_blocks = 2
     seq_len = 32
     ~40k params
 
-Run :
+Run:
     python scripts/demo_shakespeare.py
 """
 
@@ -65,9 +64,9 @@ def main():
     torch.manual_seed(42)
     seq_len = 32
     dataset = TinyShakespeareDataset(seq_len=seq_len)
-    print(f"Dataset : {len(dataset)} sequences de {seq_len} tokens, vocab={dataset.vocab_size}")
+    print(f"Dataset: {len(dataset)} sequences of {seq_len} tokens, vocab={dataset.vocab_size}")
 
-    # Split train/val (90/10).
+    # Train/val split (90/10).
     n_train = int(0.9 * len(dataset))
     n_val = len(dataset) - n_train
     train_ds, val_ds = random_split(
@@ -78,20 +77,20 @@ def main():
 
     model = ShakespeareFractalLM(vocab=dataset.vocab_size, d_model=48, n_blocks=2)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"Modele : {n_params} parameters ({n_params/1000:.0f}k)")
+    print(f"Model: {n_params} parameters ({n_params/1000:.0f}k)")
 
     opt = torch.optim.Adam(model.parameters(), lr=3e-3)
 
-    # Evaluer perplexite initial.
+    # Evaluate initial perplexity.
     model.eval()
     with torch.no_grad():
         inp, tgt = next(iter(val_loader))
         initial_ppl = honest_perplexity(model, inp, tgt)
-    print(f"Perplexite initial : {initial_ppl:.2f}  (= vocab ≈ {dataset.vocab_size})")
+    print(f"Initial perplexity: {initial_ppl:.2f}  (= vocab ≈ {dataset.vocab_size})")
 
-    # Entrainement COURT : 200 batches (under-ensemble, ~3 min on CPU).
+    # SHORT training: 200 batches (subset, ~3 min on CPU).
     n_batches = 200
-    print(f"\nEntrainement court : {n_batches} batches (under-ensemble du dataset)...")
+    print(f"\nShort training: {n_batches} batches (dataset subset)...")
     t0 = time.time()
     model.train()
     losses = []
@@ -114,12 +113,12 @@ def main():
         if batch_idx % 50 == 0 or batch_idx == n_batches - 1:
             avg_recent = sum(losses[-50:]) / max(len(losses[-50:]), 1)
             print(f"  batch {batch_idx:4d}/{n_batches}  ce={ce.item():.4f}  "
-                  f"(moy recent={avg_recent:.4f}, ppl={torch.exp(torch.tensor(avg_recent)):.2f})")
+                  f"(recent avg={avg_recent:.4f}, ppl={torch.exp(torch.tensor(avg_recent)):.2f})")
 
     elapsed = time.time() - t0
-    print(f"\nTemps : {elapsed:.0f}s ({elapsed/60:.1f} min)")
+    print(f"\nTime: {elapsed:.0f}s ({elapsed/60:.1f} min)")
 
-    # Evaluer perplexite finale on validation.
+    # Final perplexity on validation.
     model.eval()
     val_ces = []
     with torch.no_grad():
@@ -130,8 +129,8 @@ def main():
             )
             val_ces.append(ce.item())
     final_ppl = torch.exp(torch.tensor(sum(val_ces) / len(val_ces))).item()
-    print(f"Perplexite finale (val) : {final_ppl:.2f}")
-    print(f"Baisse : {(1 - final_ppl/initial_ppl)*100:.1f}%")
+    print(f"Final perplexity (val): {final_ppl:.2f}")
+    print(f"Reduction: {(1 - final_ppl/initial_ppl)*100:.1f}%")
 
     # Generation.
     print("\n=== Generation (greedy, 150 chars) ===")
@@ -148,12 +147,12 @@ def main():
     print(generated)
 
     if final_ppl < initial_ppl * 0.7:
-        print(f"\nOK : le transformer fractal apprend sur tinyshakespeare real "
+        print(f"\nOK: the fractal transformer learns on real tinyshakespeare "
               f"(ppl {initial_ppl:.1f} -> {final_ppl:.1f}, ÷{initial_ppl/final_ppl:.1f}).")
-        print(f"  Note : trainsment court (200 batches). Convergence complete")
-        print(f"  necessiterait GPU ou vectorisation Kuramoto (future work).")
+        print(f"  Note: short training (200 batches). Full convergence")
+        print(f"  would require a GPU or Kuramoto vectorization (future work).")
     else:
-        print(f"\n~ : ppl baisse peu. Plus de batches / modele plus gros aiderait.")
+        print(f"\n~: ppl drops little. More batches / a larger model would help.")
 
 
 if __name__ == "__main__":

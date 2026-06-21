@@ -1,45 +1,45 @@
-"""Utilitaires numeriques for fractus.
+"""Numerical utilities for fractus.
 
-Ported from the original architecture (src/math/stats.rs) in pure PyTorch, differentiable.
+Ported from the original system (src/math/stats.rs) in pure PyTorch, differentiable.
 
-elu_more_one : feature map strictly positive for linear attention.
-    φ(x, α) = x + 1              si x > 0
+elu_plus_one : strictly positive feature map for linear attention.
+    φ(x, α) = x + 1              if x > 0
             = α(e^x - 1) + 1     otherwise
-    Avec α=1 (defaut), φ est strictly positive (min e^x > 0 for x→-∞,
-    = 1 en x=0). Cette positifast guaranteedt that the denominateur of l'attention
-    lineaire causale reste well defini.
+    With α=1 (default), φ is strictly positive (min e^x > 0 for x→-∞,
+    = 1 at x=0). This positivity guarantees that the denominator of causal
+    linear attention stays well-defined.
 
-stable_softmax : softmax with soustraction max (pas d'overflow).
+stable_softmax : softmax with max subtraction (no overflow).
 """
 
 import torch
 
 
 def elu_plus_one(x: torch.Tensor, alpha: float = 1.0) -> torch.Tensor:
-    """Feature map ELU+1 strictly positive, differentiable.
+    """ELU+1 strictly positive feature map, differentiable.
 
     Args:
-        x : tenseur of shape arbitraire.
-        alpha : coefficient ELU (1.0 by defaut, as the original).
+        x : tensor of arbitrary shape.
+        alpha : ELU coefficient (1.0 by default, as in the original).
     Returns:
-        tenseur of same shape, strictly positif.
+        tensor of the same shape, strictly positive.
     """
-    # We use the direct formula ( differentiable via torch.where ) :
-    # branche positive : x + 1 ; branche negative : alpha * (exp(x) - 1) + 1.
+    # We use the direct formula (differentiable via torch.where):
+    # positive branch: x + 1; negative branch: alpha * (exp(x) - 1) + 1.
     pos = x + 1.0
     neg = alpha * (torch.exp(x) - 1.0) + 1.0
     return torch.where(x > 0, pos, neg)
 
 
 def stable_softmax(logits: torch.Tensor, dim: int = -1) -> torch.Tensor:
-    """Softmax numeriquement stable (soustraction max).
+    """Numerically stable softmax (max subtraction).
 
-    Si the somme exponentielles est < 1e-10, returns l'uniforme 1/N
-    (comporteddment aux limites herite of the original stats.rs:56-57).
+    If the exponential sum is < 1e-10, returns the uniform 1/N
+    (limit behavior inherited from the original stats.rs:56-57).
     """
     max_logits, _ = logits.max(dim=dim, keepdim=True)
     exp = torch.exp(logits - max_logits)
     denom = exp.sum(dim=dim, keepdim=True)
-    # Comporteddment aux limites : uniforme si denom ~ 0.
+    # Limit behavior: uniform if denom ~ 0.
     uniform = torch.full_like(exp, 1.0 / exp.shape[dim])
     return torch.where(denom > 1e-10, exp / denom, uniform)

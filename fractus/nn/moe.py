@@ -1,6 +1,6 @@
 """PhaseRoutedMoE: mixture-of-experts with von Mises phase routing.
 
-Ported from the original architecture (src/moe.rs + farey.rs) in pure PyTorch.
+Ported from the original system (src/moe.rs + farey.rs) in pure PyTorch.
 
 Expert phases drawn from Farey sequence. Von Mises gate with top-k routing.
 Load-balance loss as auxiliary. End-to-end differentiable.
@@ -14,22 +14,22 @@ from .farey import expert_phases
 
 
 def _gelu(x: torch.Tensor) -> torch.Tensor:
-    """GeLU approximation tanh (as moe.rs:14-17)."""
+    """Tanh GeLU approximation (as in moe.rs:14-17)."""
     return 0.5 * x * (1.0 + torch.tanh(
         math.sqrt(2.0 / math.pi) * (x + 0.044715 * x ** 3)
     ))
 
 
 class PhaseRoutedMoE(nn.Module):
-    """Mixture-of-experts a routing of phase von Mises on phases Farey.
+    """Mixture-of-experts with von Mises phase routing on Farey phases.
 
     Args:
-        d_model     : dimension d'input/sortie.
-        n_experts   : number d'experts E.
-        top_k       : number d'experts actives by token (<= E).
-        kappa       : concentration von Mises.
-        temperature : temperature gate (κ_eff = κ/temperature).
-        d_ff        : dimension cachee experts (64 by defaut as the original).
+        d_model     : input/output dimension.
+        n_experts   : number of experts E.
+        top_k       : number of active experts per token (<= E).
+        kappa       : von Mises concentration.
+        temperature : gate temperature (κ_eff = κ/temperature).
+        d_ff        : expert hidden dimension (64 by default, as in the original).
     """
 
     def __init__(
@@ -45,7 +45,7 @@ class PhaseRoutedMoE(nn.Module):
         if n_experts < 1:
             raise ValueError("n_experts >= 1")
         if top_k < 1 or top_k > n_experts:
-            raise ValueError(f"top_k must etre in [1, {n_experts}], eu {top_k}")
+            raise ValueError(f"top_k must be in [1, {n_experts}], got {top_k}")
         self.d_model = d_model
         self.n_experts = n_experts
         self.top_k = top_k
@@ -53,11 +53,11 @@ class PhaseRoutedMoE(nn.Module):
         self.temperature = temperature
         self.d_ff = d_ff
 
-        # Phases expert (precomputation Farey, hors-graphe).
+        # Expert phases (Farey precomputation, off-graph).
         phases = expert_phases(n_experts)
         self.register_buffer("expert_phases", torch.tensor(phases, dtype=torch.float32))
 
-        # Poids experts : E × (W1, b1, W2, b2). Init Xavier uniforme.
+        # Expert weights: E × (W1, b1, W2, b2). Xavier uniform init.
         scale1 = math.sqrt(2.0 / d_model)
         scale2 = math.sqrt(2.0 / d_ff)
         self.w1 = nn.Parameter(torch.empty(n_experts, d_model, d_ff).uniform_(-scale1, scale1))
@@ -66,9 +66,9 @@ class PhaseRoutedMoE(nn.Module):
         self.b2 = nn.Parameter(torch.zeros(n_experts, d_model))
 
     def _compute_gates(self, phases: torch.Tensor) -> torch.Tensor:
-        """Calcule the gates von Mises for each token.
+        """Computes the von Mises gates for each token.
 
-        phases : (B, L, n_phases). Retourne gates (B, L, E).
+        phases: (B, L, n_phases). Returns gates (B, L, E).
         """
         sin_p = torch.sin(phases).sum(dim=-1)  # (B, L)
         cos_p = torch.cos(phases).sum(dim=-1)
@@ -84,9 +84,9 @@ class PhaseRoutedMoE(nn.Module):
         return gates
 
     def _expert_forward(self, h: torch.Tensor) -> torch.Tensor:
-        """h : (B, L, d_model) → sorties of all the experts (B, L, E, d_model).
+        """h: (B, L, d_model) → outputs of all experts (B, L, E, d_model).
 
-        Pour each expert e : gelu(h @ w1[e] + b1[e]) @ w2[e] + b2[e].
+        For each expert e: gelu(h @ w1[e] + b1[e]) @ w2[e] + b2[e].
         """
         B, L, D = h.shape
         # h: (B, L, D=d), w1: (E, D=d, F=f) → for each (b,l,e,f) : Σ_d h[b,l,d]·w1[e,d,f].
@@ -99,8 +99,8 @@ class PhaseRoutedMoE(nn.Module):
     def forward(
         self, h: torch.Tensor, phases: torch.Tensor
     ):
-        """h : (B, L, d_model), phases : (B, L, n_phases).
-        Retourne (output (B, L, d_model), load_balance_loss scalar).
+        """h: (B, L, d_model), phases: (B, L, n_phases).
+        Returns (output (B, L, d_model), load_balance_loss scalar).
         """
         gates = self._compute_gates(phases)  # (B, L, E)
 
