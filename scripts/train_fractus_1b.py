@@ -75,62 +75,67 @@ def build_data_iterator(tokenizer, seq_len=512, batch_size=4, max_samples_per_da
     """Build a streaming mixed data iterator.
 
     Yields (input_ids, target_ids) batches of shape (batch_size, seq_len).
+    Falls back to local tinyshakespeare + synthetic data if HF datasets fail.
     """
     all_token_chunks = []
+    import random
+    random.seed(42)
 
-    print("Loading and tokenizing datasets...")
+    print("Loading and tokenizing datasets...", flush=True)
+
+    # Try to load datasets one by one, gracefully skipping failures.
     for name, config, field, weight in DATASETS:
         try:
-            split = "train" if config is None or config != "mlqa.translate.fr.en" else "test"
+            target_count = max(10, int(max_samples_per_dataset * weight * 10))
             if config:
-                ds = load_dataset(name, config, split=split, streaming=True, trust_remote_code=True)
+                ds = load_dataset(name, config, split="train", streaming=True, trust_remote_code=True)
             else:
-                ds = load_dataset(name, split=split, streaming=True, trust_remote_code=True)
+                ds = load_dataset(name, split="train", streaming=True, trust_remote_code=True)
 
             count = 0
-            target_count = int(max_samples_per_dataset * weight * 10)
             for example in ds:
                 if count >= target_count:
                     break
-                # Extract text.
                 text = example.get(field, "")
                 if isinstance(text, dict):
-                    # opus_books translation field is a dict.
                     text = text.get("fr", "") or text.get("en", "") or str(text)
                 if not text or len(str(text)) < 20:
                     continue
                 text = str(text)
-
-                # Tokenize.
                 ids = tokenizer.encode(text)
-                if len(ids) < seq_len:
-                    # Pad short sequences.
-                    ids = ids + [0] * (seq_len - len(ids))
-                # Split into chunks of seq_len.
                 for i in range(0, len(ids) - seq_len, seq_len):
                     chunk = ids[i:i + seq_len]
                     if len(chunk) == seq_len:
                         all_token_chunks.append(chunk)
                 count += 1
-
-            print(f"  {name}: {count} examples → {len(all_token_chunks)} chunks total so far")
+            print(f"  {name}: {count} examples, {len(all_token_chunks)} total chunks", flush=True)
         except Exception as e:
-            print(f"  WARNING: could not load {name}: {e}")
+            print(f"  SKIP {name}: {e}", flush=True)
             continue
 
-    if not all_token_chunks:
-        # Fallback: generate synthetic data.
-        print("WARNING: no datasets loaded, using synthetic data.")
-        import random
-        random.seed(42)
-        for _ in range(1000):
+    # Always try local tinyshakespeare as a guaranteed source.
+    ts_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "text", "tinyshakespeare.txt",
+    )
+    if os.path.exists(ts_path):
+        with open(ts_path, "r", encoding="utf-8") as f:
+            ts_text = f.read()
+        ids = tokenizer.encode(ts_text)
+        for i in range(0, len(ids) - seq_len, seq_len):
+            chunk = ids[i:i + seq_len]
+            if len(chunk) == seq_len:
+                all_token_chunks.append(chunk)
+        print(f"  tinyshakespeare (local): {len(all_token_chunks)} total chunks", flush=True)
+
+    # Fallback: synthetic data if nothing loaded.
+    if len(all_token_chunks) < 50:
+        print("WARNING: insufficient data, generating synthetic...", flush=True)
+        for _ in range(500):
             chunk = [random.randint(0, tokenizer.vocab_size - 1) for _ in range(seq_len)]
             all_token_chunks.append(chunk)
 
-    print(f"Total token chunks: {len(all_token_chunks)}")
-
-    # Shuffle and batch.
-    import random
+    print(f"Total token chunks: {len(all_token_chunks)}", flush=True)
     random.shuffle(all_token_chunks)
 
     def iterator():
