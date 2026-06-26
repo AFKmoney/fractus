@@ -127,7 +127,8 @@ class FractalLinearAttention(nn.Module):
         return torch.stack(outputs, dim=1)  # (B, L, D)
 
     def _linear_attention_causal_vectorized(
-        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
+        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
+        carry: tuple = None,
     ) -> torch.Tensor:
         """Vectorized version of _linear_attention_causal_one_head.
 
@@ -137,8 +138,15 @@ class FractalLinearAttention(nn.Module):
 
         Equivalence guaranteed by test_attention_vectorized.py (atol 1e-5).
 
-        Complexity: O(L · D2) but in parallel tensor operations,
-        instead of O(L) sequential Python calls.
+        L8 STATE-CARRY: if `carry = (S0, z0)` is provided (each (B, D, D) and
+        (B, D)), the running state is INITIALIZED with (S0, z0) instead of
+        zeros — letting the attention continue across a chunk boundary.
+
+        Returns:
+            y : (B, L, D) — always the output.
+            state : (S_final, z_final) — ONLY returned when `carry is not None`
+                (i.e. a state-carry call). A plain call returns just `y` to
+                preserve backward compatibility with existing callers.
         """
         B, L, D = q.shape
 
@@ -153,6 +161,14 @@ class FractalLinearAttention(nn.Module):
         # z_t = Σ_{i<=t} k_i ∈ R^{B, L, D}.
         z = torch.einsum("tj,bjp->btp", mask, k)  # (B, L, D)
 
+        # L8 state-carry: add the carried (S0, z0) to every position. The
+        # carried state represents the sum over all PAST tokens, so it
+        # contributes equally to every S_t and z_t in this chunk.
+        if carry is not None:
+            S0, z0 = carry  # each (B, D, D) and (B, D)
+            S = S + S0.unsqueeze(1)   # broadcast over the L dim
+            z = z + z0.unsqueeze(1)
+
         # y_t = (q_t · S_t) / (q_t · z_t) for all t.
         # num[b,t,q] = Σ_p q[b,t,p] · S[b,t,p,q].
         num = torch.einsum("btp,btpq->btq", q, S)  # (B, L, D)
@@ -161,41 +177,61 @@ class FractalLinearAttention(nn.Module):
         # Output 0 if |denom| < 1e-10 (limit behavior of the original).
         safe = denom.abs() > 1e-10
         y = torch.where(safe, num / (denom + 1e-20), torch.zeros_like(num))
+
+        if carry is not None:
+            # Final state = cumulative sum over the WHOLE chunk (position L-1),
+            # INCLUDING the carried initial state.
+            S_final = S[:, -1]   # (B, D, D)
+            z_final = z[:, -1]   # (B, D)
+            return y, (S_final, z_final)
         return y  # (B, L, D)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """x: (B, L, d_model) → output (B, L, d_model)."""
+        """x: (B, L, d_model) → output (B, L, d_model).
+
+        L8 OPTIMIZATION: the original forward looped over levels AND heads
+        (n_levels × n_heads Python calls to the vectorized attention). Profiling
+        showed this Python overhead + per-call kernel launch was the dominant
+        cost (not Kuramoto as the README claimed). We now batch ALL heads and
+        ALL levels into ONE call to _linear_attention_causal_vectorized by
+        treating (B, n_levels, n_heads) as a single batch dimension.
+        """
         B, L, _ = x.shape
-        # Project Q, K, V (direct einsum, differentiable).
+        H, D = self.n_heads, self.d_head
+        nlev = self.n_levels
+
+        # Project Q, K, V once (shared across levels).
         q_all = torch.einsum("bld,de->ble", x, self.w_qkv[0]) + self.b_qkv[0]
         k_all = torch.einsum("bld,de->ble", x, self.w_qkv[1]) + self.b_qkv[1]
         v_all = torch.einsum("bld,de->ble", x, self.w_qkv[2]) + self.b_qkv[2]
-        # (B, L, d_qkv) each
+        # (B, L, H·D) each → (B, L, H, D)
+        q_all = q_all.view(B, L, H, D)
+        k_all = k_all.view(B, L, H, D)
+        v_all = v_all.view(B, L, H, D)
 
-        level_weights = stable_softmax(self.level_logits, dim=-1)  # (n_levels,)
+        # Stack levels: (B, nlev, L, H, D) for q,k; v broadcast over levels.
+        offsets = self.level_offsets  # (nlev,)
+        # Apply per-level feature map by broadcasting the offset.
+        # (B,1,L,H,D) + (nlev,1,1,1,1) → (B,nlev,L,H,D)
+        q_lev = q_all.unsqueeze(1) + offsets.view(nlev, 1, 1, 1)
+        k_lev = k_all.unsqueeze(1) + offsets.view(nlev, 1, 1, 1)
+        q_feat = elu_plus_one(q_lev, alpha=1.0)
+        k_feat = elu_plus_one(k_lev, alpha=1.0)
+        # v is not feature-mapped; broadcast over levels.
+        v_lev = v_all.unsqueeze(1).expand(B, nlev, L, H, D)
 
-        output = torch.zeros(B, L, self.d_model, dtype=x.dtype, device=x.device)
-        for level in range(self.n_levels):
-            # Reshape into heads: (B, L, n_heads, d_head) → (B, n_heads, L, d_head)
-            q = q_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
-            k = k_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
-            v = v_all.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
-            # Apply feature map to q and k (NOT to v).
-            q = self.feature_map(q, level)
-            k = self.feature_map(k, level)
+        # Flatten (B, nlev, H) into one batch dim → ONE vectorized call.
+        # Move H before L so the layout is (B, nlev, H, L, D) → (B·nlev·H, L, D).
+        q_flat = q_feat.permute(0, 1, 3, 2, 4).reshape(B * nlev * H, L, D)
+        k_flat = k_feat.permute(0, 1, 3, 2, 4).reshape(B * nlev * H, L, D)
+        v_flat = v_lev.permute(0, 1, 3, 2, 4).reshape(B * nlev * H, L, D)
+        y_flat = self._linear_attention_causal_vectorized(q_flat, k_flat, v_flat)
+        # → (B·nlev·H, L, D) → (B, nlev, H, L, D) → (B, nlev, L, H·D)
+        y = y_flat.reshape(B, nlev, H, L, D).permute(0, 1, 3, 2, 4).reshape(B, nlev, L, H * D)
 
-            # Attention per head — vectorized version (17x faster than the loop).
-            head_outputs = []
-            for h in range(self.n_heads):
-                yh = self._linear_attention_causal_vectorized(
-                    q[:, h], k[:, h], v[:, h]
-                )  # (B, L, d_head)
-                head_outputs.append(yh)
-            # Concatenate heads: (B, L, n_heads·d_head) = (B, L, d_qkv)
-            attn = torch.cat(head_outputs, dim=-1)
+        level_weights = stable_softmax(self.level_logits, dim=-1)  # (nlev,)
+        # Weighted sum over levels: (B, L, H·D).
+        attn = (y * level_weights.view(1, nlev, 1, 1)).sum(dim=1)
 
-            # Output projection + weighted addition.
-            projected = attn @ self.w_out + self.b_out  # (B, L, d_model)
-            output = output + level_weights[level] * projected
-
-        return output
+        # Output projection.
+        return attn @ self.w_out + self.b_out  # (B, L, d_model)

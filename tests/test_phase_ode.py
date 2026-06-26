@@ -67,3 +67,39 @@ def test_kuramoto_decode_to_bias_shape():
     bias = layer.decode_to_bias(phases, d_model=16)
     assert bias.shape == (2, 10, 16)
     assert torch.isfinite(bias).all()
+
+
+def test_rk4_vectorized_matches_reference():
+    """L8 CRITERION: the unrolled RK4 (single end-wrap) must match the looped
+    reference (per-step wrap) within atol=1e-5. Proves the optimization didn't
+    change the dynamics, only removed Python overhead.
+
+    With dt=0.1, n_steps=4 the accumulated drift from delayed wrapping is tiny;
+    we assert it stays well within the linear-attention noise floor.
+    """
+    from fractus.nn.phase_ode import KuramotoLayer
+    torch.manual_seed(0)
+    # Use n_steps=4 (the default in FractalBlockFull) to exercise the unroll.
+    layer = KuramotoLayer(d_model=16, n_oscillators=8, rank=4, n_steps=4, dt=0.1)
+    x = torch.randn(3, 12, 16)
+    theta_init = layer._encode_from_hidden(x)
+
+    out_vec = layer._rk4_integrate(theta_init)
+    out_ref = layer._rk4_integrate_looped(theta_init)
+
+    max_diff = (out_vec - out_ref).abs().max().item()
+    assert torch.allclose(out_vec, out_ref, atol=1e-6), \
+        f"unrolled RK4 differs from looped reference: max diff {max_diff}"
+
+
+def test_rk4_single_step_n_steps_1():
+    """n_steps=1 must still integrate one full RK4 step (not a no-op)."""
+    from fractus.nn.phase_ode import KuramotoLayer
+    torch.manual_seed(0)
+    layer = KuramotoLayer(d_model=8, n_oscillators=4, rank=2, n_steps=1, dt=0.1)
+    x = torch.randn(2, 5, 8)
+    theta_init = layer._encode_from_hidden(x)
+    out = layer._rk4_integrate(theta_init)
+    # Must differ from the init (integration happened).
+    assert not torch.allclose(out, theta_init, atol=1e-6)
+    assert torch.isfinite(out).all()
