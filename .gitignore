@@ -27,6 +27,9 @@ Thumbs.db
 *.log
 checkpoints/
 
+# Benchmark artifacts (local measurements, regenerated per-machine)
+scripts/bench_*.json
+
 # Downloaded datasets (too large for git)
 data/text/tinyshakespeare.txt
 data/text/*.txt
