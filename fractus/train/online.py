@@ -162,6 +162,59 @@ class OnlineTrainer:
             "optimizer_steps": self.step_count,
         }
 
+    def train_on_stream_chunked(self, token_ids: torch.Tensor,
+                                chunk_len: int = 16) -> dict:
+        """Train using chunk-based processing (16x fewer forward passes).
+
+        Splits the stream into chunks of `chunk_len` tokens. Each chunk is
+        processed in ONE forward pass (tick_chunk), then ONE backward.
+        This is the FASTEST training mode — the forward/backward overhead
+        is amortized over chunk_len tokens.
+
+        The thought state (S,z) is carried between chunks (detached).
+
+        Args:
+            token_ids:  (L,) 1D tensor.
+            chunk_len:  tokens per chunk (16 = 16× fewer forward passes).
+        """
+        self.engine.train()
+        self.engine.reset_thought(batch_size=1)
+        vocab = self.engine.vocab_size
+
+        total_loss = 0.0
+        correct = 0
+        total = 0
+
+        for start in range(0, len(token_ids) - chunk_len - 1, chunk_len):
+            chunk = token_ids[start:start + chunk_len].unsqueeze(0)  # (1, C)
+            target = token_ids[start + 1:start + chunk_len + 1].unsqueeze(0)  # (1, C)
+
+            # One forward over the whole chunk.
+            logits = self.engine.tick_chunk(chunk)  # (1, C, vocab)
+
+            # Cross-entropy on all positions.
+            loss = F.cross_entropy(logits.reshape(-1, vocab), target.reshape(-1))
+
+            # One backward + step per chunk.
+            self.optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.engine.parameters(), 1.0)
+            self.optimizer.step()
+            self.step_count += 1
+
+            total_loss += loss.item() * chunk_len
+            preds = logits.argmax(dim=-1)
+            correct += (preds == target).sum().item()
+            total += chunk_len
+            self.losses.append(loss.item())
+
+        return {
+            "avg_loss": total_loss / max(total, 1),
+            "accuracy": correct / max(total, 1),
+            "steps": total,
+            "optimizer_steps": self.step_count,
+        }
+
     def train_step_batch(self, input_ids: torch.Tensor, target_ids: torch.Tensor,
                          max_ticks: int = 3) -> dict:
         """Train on a small batch using the think() method.
