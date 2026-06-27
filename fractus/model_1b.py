@@ -152,12 +152,6 @@ class SparseStructuredMoE(nn.Module):
         output = flat_output.reshape(B, L, D)
         return output, lb_loss
 
-        # Load-balance loss.
-        P = gates.mean(dim=(0, 1))
-        lb_loss = self.n_experts * ((P - 1.0 / self.n_experts) ** 2).sum()
-        output = flat_output.reshape(B, L, D)
-        return output, lb_loss
-
 
 class FractalBlockSparse(nn.Module):
     """One transformer block: attention + Kuramoto + sparse MoE."""
@@ -194,6 +188,22 @@ class FractalBlockSparse(nn.Module):
         phases = self.kuramoto(self.norm_kur(x))
         # Sparse MoE.
         moe_out, lb_loss = self.moe(self.norm_moe(x), phases)
+
+        # L9 SKIP-BACKWARD OPTIMIZATION: when no expert's SIREN cache is
+        # refreshing this step, the cached weights are detached → the MoE
+        # backward is wasted work (gradients die at the detached cache).
+        # We detach moe_out to skip the backward through the MoE entirely
+        # on non-refresh steps. The residual (x + moe_out) still lets
+        # gradients flow to the attention/embedding via x.
+        # On refresh steps (1 in 8), we keep moe_out attached so the
+        # experts' U/V/SIREN params get their gradient.
+        is_refresh = any(
+            (e._call_count % e.refresh_every == 1)
+            for e in self.moe.experts_w1
+        )
+        if not is_refresh:
+            moe_out = moe_out.detach()
+
         x = x + moe_out
         return x, lb_loss
 
