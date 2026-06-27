@@ -112,38 +112,47 @@ def export_onnx(engine, tokenizer, path="fractus_continuous.onnx"):
 
 
 def upload_to_hf(engine, tokenizer, perplexity, step):
-    """Upload checkpoint to HuggingFace Hub."""
+    """Upload checkpoint to HuggingFace Hub. NEVER crashes the training."""
+    # ALWAYS save locally first (so we never lose progress).
+    local_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "checkpoints",
+    )
+    os.makedirs(local_dir, exist_ok=True)
+    local_path = os.path.join(local_dir, f"checkpoint_{step}.pt")
+    torch.save({
+        "model_state": engine.state_dict(),
+        "config": {"d_model": engine.d_model, "vocab_size": engine.vocab_size},
+        "step": step,
+        "perplexity": perplexity,
+    }, local_path)
+    print(f"  Local checkpoint saved: {local_path} ({os.path.getsize(local_path)/1e6:.1f} MB)", flush=True)
+
+    # Try HF upload (non-fatal if it fails).
     if not HF_TOKEN:
-        print("  No HF_TOKEN, skipping upload.", flush=True)
         return
     try:
         from huggingface_hub import HfApi
         api = HfApi(token=HF_TOKEN)
-        api.create_repo(repo_id=HF_REPO_ID, repo_type="model", exist_ok=True)
+        # Check if we can access the repo (create if needed).
+        try:
+            api.repo_info(repo_id=HF_REPO_ID, repo_type="model")
+        except Exception:
+            try:
+                api.create_repo(repo_id=HF_REPO_ID, repo_type="model", exist_ok=True)
+            except Exception as ce:
+                print(f"  HF: cannot create repo ({ce}), keeping local only.", flush=True)
+                return
 
-        import tempfile, json
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Save model state.
-            torch.save({
-                "model_state": engine.state_dict(),
-                "config": {"d_model": engine.d_model, "vocab_size": engine.vocab_size},
-                "step": step,
-                "perplexity": perplexity,
-            }, os.path.join(tmpdir, "checkpoint.pt"))
-
-            # Save benchmark.
-            with open(os.path.join(tmpdir, "benchmark.json"), "w") as f:
-                json.dump({"step": step, "perplexity": perplexity}, f)
-
-            api.upload_folder(
-                folder_path=tmpdir,
-                repo_id=HF_REPO_ID,
-                repo_type="model",
-                path_in_repo=f"continuous/checkpoint_{step}",
-            )
-            print(f"  Uploaded checkpoint_{step} to {HF_REPO_ID}", flush=True)
+        api.upload_file(
+            path_or_fileobj=local_path,
+            path_in_repo=f"checkpoints/checkpoint_{step}.pt",
+            repo_id=HF_REPO_ID,
+            repo_type="model",
+        )
+        print(f"  HF uploaded checkpoint_{step}", flush=True)
     except Exception as e:
-        print(f"  HF upload failed: {e}", flush=True)
+        print(f"  HF upload skipped ({type(e).__name__}), local checkpoint is safe.", flush=True)
 
 
 def main():
