@@ -45,3 +45,8 @@ NUL
 CON
 PRN
 AUX
+checkpoints/
+*.onnx.data
+*.pt
+training_*.log
+*.onnx.data
