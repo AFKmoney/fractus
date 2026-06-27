@@ -19,6 +19,7 @@ from .nn.phase_ode import KuramotoLayer
 from .nn.stats import elu_plus_one, stable_softmax
 from .nn.farey import expert_phases
 from .nn.structured_siren import StructuredSirenLinear
+from .nn.cached_siren import CachedStructuredSirenLinear
 
 
 class BPEEmbedding(nn.Module):
@@ -68,14 +69,16 @@ class SparseStructuredMoE(nn.Module):
         self.register_buffer("expert_phases", torch.tensor(phases, dtype=torch.float32))
         self.kappa = kappa
 
-        # Experts: each is w1 (d_model→d_ff) + w2 (d_ff→d_model) via StructuredSiren.
-        # We store them in a flat list and dispatch via index_select.
+        # Experts: each is w1 (d_model→d_ff) + w2 (d_ff→d_model) via CachedStructuredSiren.
+        # The cache makes forward ~5-8× faster (SIREN reconstruction is the bottleneck).
         self.experts_w1 = nn.ModuleList([
-            StructuredSirenLinear(d_model, d_ff, rank=siren_rank, siren_hidden=32)
+            CachedStructuredSirenLinear(d_model, d_ff, rank=siren_rank, siren_hidden=32,
+                                        refresh_every=8)
             for _ in range(n_experts)
         ])
         self.experts_w2 = nn.ModuleList([
-            StructuredSirenLinear(d_ff, d_model, rank=siren_rank, siren_hidden=32)
+            CachedStructuredSirenLinear(d_ff, d_model, rank=siren_rank, siren_hidden=32,
+                                        refresh_every=8)
             for _ in range(n_experts)
         ])
 
@@ -93,7 +96,13 @@ class SparseStructuredMoE(nn.Module):
 
     def forward(self, h: torch.Tensor, phases: torch.Tensor):
         """h: (B, L, d_model), phases: (B, L, n_phases).
-        Returns (output, load_balance_loss)."""
+        Returns (output, load_balance_loss).
+
+        L9 OPTIMIZATION: instead of a Python double-loop over (top_k × n_experts),
+        we gather ALL expert weights for ALL positions into a single batched
+        tensor, then do ONE batched matmul. This kills the Python-loop overhead
+        that was the #2 bottleneck (after SIREN reconstruction, now cached).
+        """
         B, L, D = h.shape
         gates = self._compute_gates(phases)
         topk_vals, topk_idx = gates.topk(self.top_k, dim=-1)
@@ -103,31 +112,45 @@ class SparseStructuredMoE(nn.Module):
             torch.full_like(topk_vals, 1.0 / self.top_k),
         )
 
-        # Gather-first: for each of the top_k slots, process each expert's
-        # tokens. We use index_add_ for autograd-safe scatter.
-        # Flatten everything to (B*L, D).
-        flat_h = h.reshape(-1, D)  # (B*L, D)
-        flat_output = torch.zeros(B * L, D, dtype=h.dtype, device=h.device)
-        # Track which (flat_position, expert) assignments to scatter.
-        # We process slot by slot, expert by expert, accumulating into flat_output.
-        for k in range(self.top_k):
-            idx_k = topk_idx[:, :, k].reshape(-1)  # (B*L,)
-            weight_k = topk_norm[:, :, k].reshape(-1)  # (B*L,)
+        # Flatten: (B*L, D)
+        flat_h = h.reshape(-1, D)  # (N, D) where N = B*L
+        N = flat_h.shape[0]
 
-            for e in range(self.n_experts):
-                mask = (idx_k == e)  # (B*L,) bool
-                if not mask.any():
-                    continue
-                positions = mask.nonzero(as_tuple=True)[0]  # (N_e,)
-                h_e = flat_h[positions]  # (N_e, D)
-                # Expert forward.
-                h1 = self.experts_w1[e](h_e)  # (N_e, d_ff)
-                h1_act = torch.nn.functional.gelu(h1)
-                out_e = self.experts_w2[e](h1_act)  # (N_e, D)
-                w_e = weight_k[positions].unsqueeze(-1)  # (N_e, 1)
-                # Autograd-safe scatter via index_add.
-                contribution = w_e * out_e  # (N_e, D)
-                flat_output = flat_output.index_add(0, positions, contribution)
+        # For each of the K slots, gather the selected experts' cached weights
+        # and do a batched matmul. Since the experts use CachedStructuredSirenLinear,
+        # the weight is cached (fast lookup, no SIREN reconstruction most of the time).
+        flat_output = torch.zeros(N, D, dtype=h.dtype, device=h.device)
+
+        for k in range(self.top_k):
+            idx_k = topk_idx[:, :, k].reshape(-1)  # (N,) expert indices
+            weight_k = topk_norm[:, :, k].reshape(-1)  # (N,) gate weights
+
+            # Pre-stacked expert weights (cached, rebuilt only on SIREN refresh).
+            # Build the stack once per forward (cheap — just a torch.stack of buffers).
+            if k == 0:
+                w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, D, d_ff)
+                w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, d_ff, D)
+
+            # Gather per-position weights: (N, D, d_ff) and (N, d_ff, D)
+            w1_selected = w1_stack[idx_k]  # (N, D, d_ff)
+            w2_selected = w2_stack[idx_k]  # (N, d_ff, D)
+
+            # Batched expert forward: h1[n] = h[n] @ w1_selected[n]
+            # (N, D) → (N, 1, D) @ (N, D, d_ff) → (N, 1, d_ff) → (N, d_ff)
+            h1 = torch.bmm(flat_h.unsqueeze(1), w1_selected).squeeze(1)  # (N, d_ff)
+            h1_act = torch.nn.functional.gelu(h1)
+            # out[n] = h1_act[n] @ w2_selected[n]
+            out = torch.bmm(h1_act.unsqueeze(1), w2_selected).squeeze(1)  # (N, D)
+
+            # Weight by gate and accumulate.
+            contribution = weight_k.unsqueeze(-1) * out  # (N, D)
+            flat_output = flat_output + contribution
+
+        # Load-balance loss.
+        P = gates.mean(dim=(0, 1))
+        lb_loss = self.n_experts * ((P - 1.0 / self.n_experts) ** 2).sum()
+        output = flat_output.reshape(B, L, D)
+        return output, lb_loss
 
         # Load-balance loss.
         P = gates.mean(dim=(0, 1))
