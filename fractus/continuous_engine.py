@@ -352,3 +352,52 @@ class ContinuousThoughtEngine(nn.Module):
                     break
             outputs.append(logits)
         return torch.stack(outputs, dim=1)  # (B, L, vocab)
+
+    @torch.no_grad()
+    def generate(self, prompt_tokens: list, n_new: int = 50,
+                 temperature: float = 0.8, top_k: int = 40,
+                 chunk_len: int = 16) -> list:
+        """Generate text using chunk-based processing + temperature sampling.
+
+        Args:
+            prompt_tokens: list of token ids to seed.
+            n_new: number of NEW tokens to generate.
+            temperature: sampling temperature (1.0=normal, <1=conservative).
+            top_k: only sample from the top-k logits (0 = no truncation).
+            chunk_len: tokens per chunk forward.
+        Returns:
+            list of all token ids (prompt + generated).
+        """
+        self.eval()
+        self.reset_thought(batch_size=1)
+        all_tokens = list(prompt_tokens)
+
+        # Process the prompt in chunks.
+        for start in range(0, len(all_tokens), chunk_len):
+            chunk = torch.tensor([all_tokens[start:start + chunk_len]], dtype=torch.long)
+            if chunk.shape[1] == 0:
+                break
+            logits = self.tick_chunk(chunk)  # (1, C, vocab)
+            last_logits = logits[0, -1, :]  # (vocab,)
+
+        # Generate new tokens one at a time (using the chunk's last logits).
+        for _ in range(n_new):
+            # Temperature + top-k sampling.
+            logits = last_logits / max(temperature, 1e-8)
+            if top_k > 0:
+                topk_vals, topk_idx = logits.topk(min(top_k, logits.shape[-1]))
+                probs = F.softmax(topk_vals, dim=-1)
+                next_idx = torch.multinomial(probs, 1).item()
+                next_token = topk_idx[next_idx].item()
+            else:
+                probs = F.softmax(logits, dim=-1)
+                next_token = torch.multinomial(probs, 1).item()
+            all_tokens.append(next_token)
+
+            # Feed the new token via a chunk of 1.
+            chunk = torch.tensor([[next_token]], dtype=torch.long)
+            logits = self.tick_chunk(chunk)
+            last_logits = logits[0, -1, :]
+
+        self.train()
+        return all_tokens

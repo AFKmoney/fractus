@@ -194,9 +194,7 @@ def main():
 
     for epoch in range(args.epochs):
         t0 = time.perf_counter()
-        m = trainer.train_on_stream_minibatch(
-            tokens, max_ticks=1, accum_steps=args.accum_steps,
-        )
+        m = trainer.train_on_stream_chunked(tokens, chunk_len=args.accum_steps)
         elapsed = time.perf_counter() - t0
         tps = len(tokens) / elapsed
 
