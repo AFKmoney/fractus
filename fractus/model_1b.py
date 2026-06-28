@@ -256,12 +256,33 @@ class Fractus1B(nn.Module):
         self.lm_head.weight = self.embed.tok_embed.weight
 
     def forward(self, ids: torch.Tensor):
-        """ids: (B, L) → (logits (B, L, vocab), aux_loss scalar)."""
+        """ids: (B, L) → (logits (B, L, vocab), aux_loss scalar).
+
+        L9 GRADIENT CHECKPOINTING: each block is checkpointed so the autograd
+        graph is NOT retained between layers. During backward, the forward is
+        recomputed per-block. This reduces peak memory from O(n_layers ×
+        activation_size) to O(activation_size), making the 1B model trainable
+        on CPU without OOM.
+        """
+        from torch.utils.checkpoint import checkpoint
+
         x = self.embed(ids)
         aux_loss = torch.tensor(0.0, device=x.device)
+
+        def run_block(block, h):
+            """Wrapper for gradient checkpointing."""
+            def custom_fwd(*args):
+                out, lb = block(args[0])
+                return out, lb
+            return custom_fwd
+
         for block in self.blocks:
-            x, lb = block(x)
+            # Gradient checkpoint: don't store intermediate activations.
+            # checkpoint() recompute forward during backward.
+            x_new, lb = checkpoint(block, x, use_reentrant=False)
+            x = x_new
             aux_loss = aux_loss + lb
+
         x = self.norm(x)
         logits = self.lm_head(x)
         return logits, aux_loss
