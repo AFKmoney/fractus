@@ -126,7 +126,7 @@ def main():
         "data", "fractus_corpus.pt",
     )
     print(f"Loading corpus: {corpus_path}", flush=True)
-    tokens = torch.load(corpus_path, weights_only=False)
+    tokens = torch.load(corpus_path, weights_only=False).long()
     print(f"Corpus: {len(tokens):,} tokens", flush=True)
 
     # Tokenizer.

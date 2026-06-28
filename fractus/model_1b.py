@@ -131,15 +131,16 @@ class SparseStructuredMoE(nn.Module):
                 w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, D, d_ff)
                 w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, d_ff, D)
 
-            # Gather per-position weights: (N, D, d_ff) and (N, d_ff, D)
-            w1_selected = w1_stack[idx_k]  # (N, D, d_ff)
-            w2_selected = w2_stack[idx_k]  # (N, d_ff, D)
+            # Gather per-position weights.
+            # _cached_W is (out_features, in_features), so:
+            #   w1: (d_ff, D) → transpose to (D, d_ff) for bmm
+            #   w2: (D, d_ff) → transpose to (d_ff, D) for bmm
+            w1_selected = w1_stack[idx_k].transpose(-1, -2)  # (N, D, d_ff)
+            w2_selected = w2_stack[idx_k].transpose(-1, -2)  # (N, d_ff, D)
 
             # Batched expert forward: h1[n] = h[n] @ w1_selected[n]
-            # (N, D) → (N, 1, D) @ (N, D, d_ff) → (N, 1, d_ff) → (N, d_ff)
             h1 = torch.bmm(flat_h.unsqueeze(1), w1_selected).squeeze(1)  # (N, d_ff)
             h1_act = torch.nn.functional.gelu(h1)
-            # out[n] = h1_act[n] @ w2_selected[n]
             out = torch.bmm(h1_act.unsqueeze(1), w2_selected).squeeze(1)  # (N, D)
 
             # Weight by gate and accumulate.
