@@ -50,3 +50,12 @@ checkpoints/
 *.pt
 training_*.log
 *.onnx.data
+
+# Training artifacts (regenerated, don't track)
+*.onnx
+*.onnx.data
+training_*.log
+training_*.txt
+continuous_training.log
+checkpoints/
+data/fractus_corpus.pt
