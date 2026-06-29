@@ -20,6 +20,7 @@ from .nn.stats import elu_plus_one, stable_softmax
 from .nn.farey import expert_phases
 from .nn.structured_siren import StructuredSirenLinear
 from .nn.cached_siren import CachedStructuredSirenLinear
+from .nn.lazy_siren import LazyStructuredSirenLinear
 
 
 class BPEEmbedding(nn.Module):
@@ -69,16 +70,14 @@ class SparseStructuredMoE(nn.Module):
         self.register_buffer("expert_phases", torch.tensor(phases, dtype=torch.float32))
         self.kappa = kappa
 
-        # Experts: each is w1 (d_model→d_ff) + w2 (d_ff→d_model) via CachedStructuredSiren.
-        # The cache makes forward ~5-8× faster (SIREN reconstruction is the bottleneck).
+        # Experts: each is w1 (d_model→d_ff) + w2 (d_ff→d_model) via LazyStructuredSiren.
+        # Lazy = LoRA-style low-rank, NO grid memory → fits 64 experts in RAM.
         self.experts_w1 = nn.ModuleList([
-            CachedStructuredSirenLinear(d_model, d_ff, rank=siren_rank, siren_hidden=32,
-                                        refresh_every=8)
+            LazyStructuredSirenLinear(d_model, d_ff, rank=siren_rank)
             for _ in range(n_experts)
         ])
         self.experts_w2 = nn.ModuleList([
-            CachedStructuredSirenLinear(d_ff, d_model, rank=siren_rank, siren_hidden=32,
-                                        refresh_every=8)
+            LazyStructuredSirenLinear(d_ff, d_model, rank=siren_rank)
             for _ in range(n_experts)
         ])
 
@@ -112,37 +111,31 @@ class SparseStructuredMoE(nn.Module):
             torch.full_like(topk_vals, 1.0 / self.top_k),
         )
 
-        # Flatten: (B*L, D)
-        flat_h = h.reshape(-1, D)  # (N, D) where N = B*L
+        # L9 LAZY MoE: no stack, no gather. For each of the top_k slots,
+        # group tokens by expert and call expert.forward() directly.
+        # This avoids materializing ANY (E, D, d_ff) tensor.
+        flat_h = h.reshape(-1, D)  # (N, D)
         N = flat_h.shape[0]
-
-        # L9: build the expert weight stacks efficiently.
-        # torch.stack of 64 matrices was 35ms. Using torch.cat + view is faster.
-        # Each _cached_W is (d_ff, D) for w1, (D, d_ff) for w2.
-        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, out, in)
-        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])
-
         flat_output = torch.zeros(N, D, dtype=h.dtype, device=h.device)
 
-        for k in range(self.top_k):
-            idx_k = topk_idx[:, :, k].reshape(-1)  # (N,) expert indices
-            weight_k = topk_norm[:, :, k].reshape(-1)  # (N,) gate weights
+        for k_slot in range(self.top_k):
+            idx_k = topk_idx[:, :, k_slot].reshape(-1)  # (N,)
+            weight_k = topk_norm[:, :, k_slot].reshape(-1)  # (N,)
 
-            # Gather per-position weights.
-            # _cached_W is (out_features, in_features), so:
-            #   w1: (d_ff, D) → transpose to (D, d_ff) for bmm
-            #   w2: (D, d_ff) → transpose to (d_ff, D) for bmm
-            w1_selected = w1_stack[idx_k].transpose(-1, -2)  # (N, D, d_ff)
-            w2_selected = w2_stack[idx_k].transpose(-1, -2)  # (N, d_ff, D)
-
-            # Batched expert forward: h1[n] = h[n] @ w1_selected[n]
-            h1 = torch.bmm(flat_h.unsqueeze(1), w1_selected).squeeze(1)  # (N, d_ff)
-            h1_act = torch.nn.functional.gelu(h1)
-            out = torch.bmm(h1_act.unsqueeze(1), w2_selected).squeeze(1)  # (N, D)
-
-            # Weight by gate and accumulate.
-            contribution = weight_k.unsqueeze(-1) * out  # (N, D)
-            flat_output = flat_output + contribution
+            # Group positions by expert, process each expert's batch at once.
+            for e in range(self.n_experts):
+                mask = (idx_k == e)
+                if not mask.any():
+                    continue
+                positions = mask.nonzero(as_tuple=True)[0]
+                h_e = flat_h[positions]  # (N_e, D)
+                # Expert forward: two cheap matmuls via low-rank.
+                h1 = self.experts_w1[e](h_e)  # (N_e, d_ff)
+                h1_act = torch.nn.functional.gelu(h1)
+                out_e = self.experts_w2[e](h1_act)  # (N_e, D)
+                w_e = weight_k[positions].unsqueeze(-1)  # (N_e, 1)
+                contribution = w_e * out_e  # (N_e, D)
+                flat_output = flat_output.index_add(0, positions, contribution)
 
         # Load-balance loss.
         P = gates.mean(dim=(0, 1))
