@@ -116,20 +116,17 @@ class SparseStructuredMoE(nn.Module):
         flat_h = h.reshape(-1, D)  # (N, D) where N = B*L
         N = flat_h.shape[0]
 
-        # For each of the K slots, gather the selected experts' cached weights
-        # and do a batched matmul. Since the experts use CachedStructuredSirenLinear,
-        # the weight is cached (fast lookup, no SIREN reconstruction most of the time).
+        # L9: build the expert weight stacks efficiently.
+        # torch.stack of 64 matrices was 35ms. Using torch.cat + view is faster.
+        # Each _cached_W is (d_ff, D) for w1, (D, d_ff) for w2.
+        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, out, in)
+        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])
+
         flat_output = torch.zeros(N, D, dtype=h.dtype, device=h.device)
 
         for k in range(self.top_k):
             idx_k = topk_idx[:, :, k].reshape(-1)  # (N,) expert indices
             weight_k = topk_norm[:, :, k].reshape(-1)  # (N,) gate weights
-
-            # Pre-stacked expert weights (cached, rebuilt only on SIREN refresh).
-            # Build the stack once per forward (cheap — just a torch.stack of buffers).
-            if k == 0:
-                w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, D, d_ff)
-                w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, d_ff, D)
 
             # Gather per-position weights.
             # _cached_W is (out_features, in_features), so:
