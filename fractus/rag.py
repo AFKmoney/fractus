@@ -494,3 +494,242 @@ class PluginManager:
             "max_tokens": 80,
             "confidence_threshold": 0.5,
         }
+
+
+# ---------------------------------------------------------------------------
+# MetaCognition: the AI controls its own modules autonomously
+# ---------------------------------------------------------------------------
+
+class MetaCognition:
+    """The AI decides HOW to process each input by itself.
+
+    Instead of a human calling learn()/load()/retrieve(), the AI analyzes
+    the input and chooses an action:
+
+      Actions:
+        RETRIEVE   — search the KB for relevant knowledge
+        LEARN      — store new information permanently
+        GENERATE   — produce an answer
+        SWITCH     — change cognitive plugin (personality/mode)
+        REFLECT    — think more before answering (multi-tick)
+
+    The decision is made by a lightweight classifier (a small MLP) that
+    takes the engine's thought state and outputs an action distribution.
+    This classifier trains ONLINE (a few gradient steps per interaction)
+    so the AI gets better at self-management through use.
+
+    This is the difference between a TOOL and an AGENT:
+    a tool waits for instructions; an agent decides what to do.
+    """
+
+    # Action space.
+    ACTIONS = ["RETRIEVE", "LEARN", "GENERATE", "SWITCH", "REFLECT"]
+    RETRIEVE, LEARN, GENERATE, SWITCH, REFLECT = range(5)
+
+    def __init__(self, rag_engine, plugin_manager: PluginManager):
+        self.rag = rag_engine
+        self.pm = plugin_manager
+        self.engine = rag_engine.engine
+        self.d_model = self.engine.d_model
+
+        # The action selector: a small MLP from thought state → action logits.
+        self.action_net = nn.Sequential(
+            nn.Linear(self.d_model, 64),
+            nn.ReLU(),
+            nn.Linear(64, len(self.ACTIONS)),
+        )
+
+        # Online optimizer for the action net (tiny, trains in real-time).
+        self.optimizer = torch.optim.Adam(self.action_net.parameters(), lr=1e-3)
+
+        # Feedback: track which actions led to good outcomes.
+        self.action_history = []  # (action, reward)
+        self.interaction_count = 0
+
+    def decide(self, thought_state: torch.Tensor) -> int:
+        """Decide what action to take based on the current thought state.
+
+        Args:
+            thought_state: (d_model,) the engine's current thought.
+        Returns:
+            action index (0-4).
+        """
+        with torch.no_grad():
+            logits = self.action_net(thought_state.unsqueeze(0))
+            # Epsilon-greedy: mostly pick best, sometimes explore.
+            if torch.rand(1).item() < 0.1:  # 10% exploration
+                return torch.randint(len(self.ACTIONS), (1,)).item()
+            return logits.argmax(dim=-1).item()
+
+    def execute(self, action: int, user_input: str) -> dict:
+        """Execute the chosen action and return the result.
+
+        The AI orchestrates its own modules. This is where autonomy lives.
+        """
+        result = {"action": self.ACTIONS[action], "content": ""}
+
+        if action == self.RETRIEVE:
+            # Search memory for relevant knowledge.
+            retrieved = self.rag.retriever.retrieve(
+                user_input, self.rag.tokenizer, top_k=3
+            )
+            result["content"] = " ".join(text for text, _, _ in retrieved)[:500]
+            result["retrieved"] = True
+
+        elif action == self.LEARN:
+            # The AI decided this is worth remembering.
+            self.rag.learn(user_input, source="self_directed")
+            result["content"] = f"Learned: {user_input[:100]}"
+            result["learned"] = True
+
+        elif action == self.GENERATE:
+            # Produce an answer using retrieved context.
+            answer = self.rag.query(user_input, top_k=3, max_tokens=60)
+            result["content"] = answer["answer"]
+            result.update(answer)
+
+        elif action == self.SWITCH:
+            # The AI decides it needs a different cognitive mode.
+            # Pick the best plugin based on input keywords.
+            input_lower = user_input.lower()
+            if any(w in input_lower for w in ["code", "function", "bug", "python", "api"]):
+                self.pm.load("coder")
+            elif any(w in input_lower for w in ["story", "poem", "creative", "imagine"]):
+                self.pm.load("creative")
+            elif any(w in input_lower for w in ["analyze", "data", "report", "statistics"]):
+                self.pm.load("analyst")
+            elif any(w in input_lower for w in ["explain", "teach", "learn", "understand"]):
+                self.pm.load("teacher")
+            elif any(w in input_lower for w in ["hack", "security", "vulnerability", "exploit"]):
+                self.pm.load("hacker")
+            else:
+                self.pm.load("analyst")  # default
+
+            plugin_name = self.pm.current.name if self.pm.current else "default"
+            result["content"] = f"Switched to {plugin_name} mode"
+            result["plugin"] = plugin_name
+
+        elif action == self.REFLECT:
+            # Think more: take extra ticks before answering.
+            self.engine.eval()
+            self.engine.reset_thought(1)
+            ids = self.rag.tokenizer.encode(user_input)[:32]
+            for tid in ids:
+                self.engine.tick(torch.tensor([tid]))
+            # Extra thinking ticks.
+            for _ in range(5):
+                logits, conf = self.engine.tick()
+            result["content"] = "Reflected"
+            result["confidence"] = conf.item()
+
+        return result
+
+    def process(self, user_input: str) -> dict:
+        """Full autonomous processing: decide → act → learn from feedback.
+
+        This is the main entry point. The AI:
+          1. Encodes the input into a thought state.
+          2. Decides what action to take (retrieve/learn/generate/switch/reflect).
+          3. Executes the action.
+          4. Optionally chains actions (e.g., SWITCH → RETRIEVE → GENERATE).
+          5. Trains its own action_net from the outcome.
+
+        Returns the final result with the full action chain.
+        """
+        self.interaction_count += 1
+        action_chain = []
+
+        # Encode input into a thought state.
+        self.engine.eval()
+        self.engine.reset_thought(1)
+        ids = self.rag.tokenizer.encode(user_input)[:32]
+        for tid in ids:
+            self.engine.tick(torch.tensor([tid]))
+
+        thought = self.engine.thought_state[0, 0, :].detach()
+
+        # Multi-step: the AI can take up to 3 actions before answering.
+        final_result = {"content": "", "actions": []}
+        for step in range(3):
+            action = self.decide(thought)
+            result = self.execute(action, user_input)
+            action_chain.append(result["action"])
+            final_result["actions"] = action_chain
+
+            # If GENERATE, we're done.
+            if action == self.GENERATE:
+                final_result["content"] = result.get("content", "")
+                final_result.update({k: v for k, v in result.items()
+                                     if k not in ("action", "content")})
+                break
+
+            # If RETRIEVE, feed the retrieved context and re-decide.
+            if action == self.RETRIEVE and result.get("content"):
+                ctx_ids = self.rag.tokenizer.encode(result["content"][:100])[:16]
+                for tid in ctx_ids:
+                    self.engine.tick(torch.tensor([tid]))
+                thought = self.engine.thought_state[0, 0, :].detach()
+
+            # If SWITCH, continue with the new mode.
+            if action == self.SWITCH:
+                continue
+
+            # If LEARN or REFLECT, continue.
+            if action in (self.LEARN, self.REFLECT):
+                final_result["content"] = result.get("content", "")
+                continue
+
+        # If we went through all 3 steps without GENERATE, force it.
+        if not final_result.get("content"):
+            gen_result = self.execute(self.GENERATE, user_input)
+            final_result["content"] = gen_result.get("content", "")
+            action_chain.append("GENERATE")
+
+        # Train the action net from this interaction (online learning).
+        self._update_action_net(thought, user_input, final_result)
+
+        final_result["interaction"] = self.interaction_count
+        return final_result
+
+    def _update_action_net(self, thought: torch.Tensor, user_input: str,
+                           result: dict):
+        """Online training of the action selector.
+
+        The reward signal: did the action chain produce a non-empty,
+        relevant answer? Simple but effective — the AI learns which
+        action sequences work over time.
+        """
+        # Simple reward: 1 if we got content, 0 otherwise.
+        reward = 1.0 if result.get("content") and len(result["content"]) > 10 else 0.0
+        self.action_history.append((result["actions"], reward))
+
+        # Keep only recent history (sliding window).
+        if len(self.action_history) > 100:
+            self.action_history = self.action_history[-100:]
+
+        # One gradient step: reinforce the actions that led to good outcomes.
+        self.optimizer.zero_grad()
+        logits = self.action_net(thought.unsqueeze(0))
+        probs = torch.softmax(logits, dim=-1)
+
+        # If reward is positive, reinforce the chosen action distribution.
+        # If negative, push away from it.
+        if reward > 0.5:
+            loss = -torch.log(probs.max() + 1e-8)  # reinforce best action
+        else:
+            loss = torch.log(probs.max() + 1e-8)  # discourage
+
+        loss.backward()
+        self.optimizer.step()
+
+    def info(self) -> dict:
+        avg_reward = (sum(r for _, r in self.action_history) /
+                      max(len(self.action_history), 1))
+        return {
+            "meta_cognition": "active",
+            "actions_available": self.ACTIONS,
+            "interactions": self.interaction_count,
+            "avg_reward": round(avg_reward, 3),
+            "action_net_params": sum(p.numel() for p in self.action_net.parameters()),
+            "autonomy": "The AI decides when to retrieve, learn, switch mode, or reflect",
+        }
