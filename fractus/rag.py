@@ -83,8 +83,13 @@ class KnowledgeBase:
 
         # Top-k.
         k = min(top_k, len(self.chunks))
-        top_indices = np.argpartition(-sims, k)[:k]
-        top_indices = top_indices[np.argsort(-sims[top_indices])]
+        if k == 0:
+            return []
+        if k == 1:
+            top_indices = np.array([np.argmax(sims)])
+        else:
+            top_indices = np.argpartition(-sims, k - 1)[:k]
+            top_indices = top_indices[np.argsort(-sims[top_indices])]
 
         results = []
         for idx in top_indices:
@@ -328,4 +333,164 @@ class RAGEngine:
             "kb_size_mb": sum(len(c) for c in self.kb.chunks) / 1e6,
             "long_term_memory": "YES (KnowledgeBase persists to disk)",
             "learns_without_retraining": "YES (every conversation adds knowledge)",
+            "plugins": list(self.plugins.keys()) if hasattr(self, 'plugins') else [],
+        }
+
+
+# ---------------------------------------------------------------------------
+# CognitivePlugins: hot-swappable behavior modules (no retraining)
+# ---------------------------------------------------------------------------
+
+class CognitivePlugin:
+    """A hot-swappable behavior modifier. Loaded/unloaded at runtime.
+
+    Plugins modify HOW the engine thinks, not WHAT it knows.
+    Knowledge comes from the KB (RAG); behavior comes from plugins.
+
+    A plugin has:
+      - name: identifier
+      - system_prompt: injected before the engine thinks (like a system message)
+      - temperature: controls creativity (0.3=precise, 1.0=creative, 1.5=wild)
+      - top_k: controls vocabulary diversity
+      - max_tokens: controls response length
+      - confidence_threshold: when to emit output
+    """
+
+    def __init__(
+        self,
+        name: str,
+        system_prompt: str = "",
+        temperature: float = 0.7,
+        top_k: int = 40,
+        max_tokens: int = 80,
+        confidence_threshold: float = 0.5,
+    ):
+        self.name = name
+        self.system_prompt = system_prompt
+        self.temperature = temperature
+        self.top_k = top_k
+        self.max_tokens = max_tokens
+        self.confidence_threshold = confidence_threshold
+
+    def apply(self, rag_engine) -> dict:
+        """Apply this plugin's settings to the RAG engine."""
+        return {
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "max_tokens": self.max_tokens,
+            "confidence_threshold": self.confidence_threshold,
+        }
+
+
+# Pre-built plugins (like apps on a phone).
+BUILTIN_PLUGINS = {
+    "analyst": CognitivePlugin(
+        name="analyst",
+        system_prompt="You are a precise data analyst. Be factual, concise, and structured.",
+        temperature=0.3,
+        top_k=20,
+        max_tokens=100,
+        confidence_threshold=0.7,
+    ),
+    "creative": CognitivePlugin(
+        name="creative",
+        system_prompt="You are a creative writer. Be imaginative and expressive.",
+        temperature=1.2,
+        top_k=60,
+        max_tokens=120,
+        confidence_threshold=0.3,
+    ),
+    "coder": CognitivePlugin(
+        name="coder",
+        system_prompt="You are a senior software engineer. Write clean, correct code.",
+        temperature=0.2,
+        top_k=15,
+        max_tokens=150,
+        confidence_threshold=0.8,
+    ),
+    "teacher": CognitivePlugin(
+        name="teacher",
+        system_prompt="You are a patient teacher. Explain things simply with examples.",
+        temperature=0.5,
+        top_k=40,
+        max_tokens=120,
+        confidence_threshold=0.6,
+    ),
+    "hacker": CognitivePlugin(
+        name="hacker",
+        system_prompt="You are a cybersecurity expert. Think like both an attacker and defender.",
+        temperature=0.4,
+        top_k=30,
+        max_tokens=100,
+        confidence_threshold=0.7,
+    ),
+}
+
+
+class PluginManager:
+    """Manages hot-swappable cognitive plugins.
+
+    Allows changing the engine's personality, style, and behavior
+    at runtime WITHOUT any retraining. Like installing/uninstalling
+    apps on a phone.
+
+    Usage:
+        pm = PluginManager(rag)
+        pm.load("coder")        # engine now thinks like a coder
+        pm.load("creative")     # switch to creative mode
+        pm.unload()             # back to default
+        pm.custom("name", temperature=0.9, ...)  # create custom plugin
+    """
+
+    def __init__(self, rag_engine):
+        self.rag = rag_engine
+        self.current: Optional[CognitivePlugin] = None
+        self.available = dict(BUILTIN_PLUGINS)
+
+    def load(self, name: str):
+        """Load a plugin by name. Changes behavior instantly."""
+        if name not in self.available:
+            raise ValueError(f"Unknown plugin '{name}'. Available: {list(self.available.keys())}")
+        self.current = self.available[name]
+        return self.current
+
+    def unload(self):
+        """Remove the current plugin. Back to default behavior."""
+        self.current = None
+
+    def custom(
+        self,
+        name: str,
+        system_prompt: str = "",
+        temperature: float = 0.7,
+        top_k: int = 40,
+        max_tokens: int = 80,
+        confidence_threshold: float = 0.5,
+    ):
+        """Create and load a custom plugin on the fly."""
+        plugin = CognitivePlugin(
+            name=name,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            top_k=top_k,
+            max_tokens=max_tokens,
+            confidence_threshold=confidence_threshold,
+        )
+        self.available[name] = plugin
+        self.current = plugin
+        return plugin
+
+    def list_available(self) -> List[str]:
+        """List all available plugins."""
+        return list(self.available.keys())
+
+    def get_settings(self) -> dict:
+        """Get current effective settings (plugin or default)."""
+        if self.current:
+            return self.current.apply(self.rag)
+        return {
+            "temperature": 0.7,
+            "top_k": 40,
+            "max_tokens": 80,
+            "confidence_threshold": 0.5,
         }
