@@ -43,7 +43,7 @@ def main():
 
     # Load quality corpus.
     cpath = args.corpus or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                        "data", "quality_corpus.pt")
+                                        "data", "quality_500k.pt")
     print(f"Loading quality corpus: {cpath}", flush=True)
     tokens = torch.load(cpath, weights_only=False).long()
     print(f"Corpus: {len(tokens):,} tokens (Alpaca + OpenAssistant + Dolly)", flush=True)
