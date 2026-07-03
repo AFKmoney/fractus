@@ -1,148 +1,174 @@
 # Fractus
 
-**A continuous-thought AI engine and 1B-capacity language model, trained entirely on a consumer CPU laptop.**
+**A continuous-thought AI with persistent memory, cognitive modes, and autonomous self-management — runs on any laptop.**
 
-Fractus is not another GPT clone. It is a fundamentally different architecture: a **dynamical system** that thinks in continuous time, remembers across sessions, exhibits cognitive modes, and generates structured output through planning. It runs and trains on any laptop — no datacenter required.
+Fractus is not another GPT clone. It is a fundamentally different architecture built on five pillars:
 
-> **Start here:** [`docs/OVERVIEW.md`](docs/OVERVIEW.md) — the complete A-to-Z walkthrough.
-> **Full paper:** [`Fractus_White_Paper.pdf`](Fractus_White_Paper.pdf) — 10-page technical document.
+1. **Continuous Thought Engine** — thinks tick-by-tick like a dynamical system, not a static forward pass
+2. **Retrieval-Augmented Generation (RAG)** — a vector knowledge base that provides unlimited external memory
+3. **Online Learning** — learns new facts from every conversation without retraining
+4. **Cognitive Plugins** — hot-swappable personality modules (coder, creative, hacker, teacher, analyst)
+5. **MetaCognition** — the AI decides for itself when to retrieve, learn, switch mode, or reflect
 
 ---
 
-## What makes Fractus different
+## Quick test
 
-| Property | GPT / Claude | Fractus |
-|---|---|---|
-| **Processing** | Static function (1 forward pass) | Continuous thought engine (tick-based) |
-| **Memory** | Context window (amnesic) | Persistent memory bank (survives restarts) |
-| **Skills** | Generic monolith | Specialized MoE experts (1 expert = 1 domain) |
-| **Mental state** | Stateless | Cognitive modes (Kuramoto phase patterns) |
-| **Generation** | Token-by-token (no plan) | Plan-then-fill (generative planning) |
-| **Training** | Datacenter GPU cluster | Consumer CPU (AMD Ryzen 5 5500U) |
-| **Deployment** | Cloud API (centralized) | Local device (decentralized) |
+```bash
+git clone https://github.com/AFKmoney/fractus.git
+cd fractus
+py -m venv .venv && .venv\Scripts\Activate.ps1
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+maturin develop --release
+
+python -c "
+from fractus.continuous_engine import ContinuousThoughtEngine
+from fractus.tokenizer import FractusTokenizer
+from fractus.rag import KnowledgeBase, RAGEngine, PluginManager, MetaCognition
+import torch
+
+engine = ContinuousThoughtEngine(vocab_size=50257, d_model=128)
+tok = FractusTokenizer.gpt2_compatible()
+kb = KnowledgeBase(d_model=128)
+rag = RAGEngine(engine, tok, kb)
+pm = PluginManager(rag)
+meta = MetaCognition(rag, pm)
+
+# Teach it
+rag.learn('Python is a programming language.')
+rag.learn('Neural networks learn via backpropagation.')
+
+# Ask it
+result = rag.query('What is Python?', top_k=2, max_tokens=30)
+print(result['answer'])
+
+# Let it manage itself
+result = meta.process('Remember: my name is Philippe')
+print(result['actions'])  # AI chose: LEARN
+result = meta.process('What do you know about me?')
+print(result['actions'])  # AI chose: RETRIEVE → GENERATE
+"
+```
+
+---
+
+## How it works
+
+### The brain (13M params, trained)
+
+The ContinuousThoughtEngine is a fractal transformer with:
+- **Causal linear attention** (Katharopoulos 2020) with batched heads × levels
+- **Kuramoto oscillators** (low-rank RK4) as a "consciousness clock"
+- **Sparse MoE** (4 experts, top-2, von Mises/Farey routing)
+- **Tick-based processing**: each tick advances the oscillators, updates the attention state, routes through experts, and estimates confidence
+- **Chunk-based training**: processes 16 tokens per forward at 117 tokens/sec on CPU
+
+### The memory (unlimited, grows with use)
+
+The KnowledgeBase stores text chunks + their embeddings (computed by the engine's own embedding layer). Retrieval is cosine similarity. Key operations:
+- `learn(text)` — adds knowledge instantly, no retraining
+- `converse(input)` — learns from every interaction, responds, learns from its own response
+- The KB saves to disk (`data/fractus_memory.pkl`) and reloads on restart
+
+### The personality (hot-swappable, 5 built-in modes)
+
+CognitivePlugins change the engine's behavior at runtime:
+- **analyst** — precise, factual, structured (temp=0.3)
+- **creative** — imaginative, expressive (temp=1.2)
+- **coder** — clean, correct code (temp=0.2)
+- **teacher** — patient, simple explanations (temp=0.5)
+- **hacker** — cybersecurity mindset (temp=0.4)
+- `custom(name, ...)` — create your own
+
+### The autonomy (the AI manages itself)
+
+MetaCognition gives the AI a tiny action network (8.5K params) that decides:
+- **RETRIEVE** — search memory for relevant knowledge
+- **LEARN** — store new information permanently
+- **GENERATE** — produce an answer
+- **SWITCH** — change cognitive mode (analyst → coder → creative...)
+- **REFLECT** — think more before answering
+
+The action network trains online from feedback — the AI gets better at self-management through use.
 
 ---
 
 ## Architecture
 
-Fractus combines a fractal transformer backbone with a continuous-time reasoning engine:
-
 ```
-Rust Core (exact, off-graph)
-└── 2-adic Vortex: valuation, ultrametric distance, Collatz hash
-
-PyTorch Backbone (trainable, differentiable)
-├── Fractal Embedding: 16 char features + Mandelbrot-decayed Fourier + vortex conditioning
-├── Causal Linear Attention: multi-level, state-space, batched heads×levels
-├── Kuramoto Oscillators: low-rank RK4, the "consciousness clock"
-├── Sparse MoE: von Mises / Farey-routed, top-2 of 64 experts
-└── LazyStructuredSiren: low-rank weight compression W = scale·U·Vᵀ
-
-Continuous Thought Engine (the paradigm shift)
-├── Tick-based reasoning: think → accumulate → emit when confident
-├── Persistent Memory: recall + consolidate + save/load to disk
-├── Cognitive Modes: Kuramoto phases → mental state classification
-├── Expert Specialization: diversity loss forces distinct skill domains
-└── Generative Planner: plan structural anchors, then fill content
-```
-
-### The key breakthrough: LazyStructuredSirenLinear
-
-The 1B model fits on a CPU because each expert weight matrix is stored as a **low-rank decomposition** `W = scale · U·Vᵀ` (rank 16), not as a dense grid. This gives:
-
-- **0.86B effective capacity** from **88M trainable parameters** (9.8× compression)
-- **0.4 GB RAM** for the full 64-expert model
-- **5.9s per training step** on a Ryzen 5 (no gradient checkpointing needed)
-- **Zero grid memory** — the bottleneck that caused OOM in prior SIREN implementations
-
----
-
-## What's in the repo
-
-```
-fractus/
-├── crate/fractus-core/       Rust: 2-adic vortex (pure math, testable alone)
-├── crate/fractus-py/         Rust: PyO3 bindings
+Fractus/
+├── crate/fractus-core/           Rust: 2-adic vortex (exact math, off-graph)
+├── crate/fractus-py/             Rust: PyO3 bindings
 ├── fractus/
-│   ├── nn/                   embedding, attention, Kuramoto, MoE, SIREN variants
-│   ├── causal/               NOTEARS, RKHS, Pearl do-calculus
-│   ├── reasoning/            proofs, conjectures, prime generation, ACT
-│   ├── stability/            Lyapunov on Kuramoto
-│   ├── metrics/              honest measurements (compression, SHD, perplexity)
-│   ├── train/                online, mini-batch, surprise-gated, forward-forward trainers
-│   ├── continuous_engine.py  the ContinuousThoughtEngine
-│   ├── model_1b.py           the Fractus-1B model (0.86B capacity)
-│   ├── memory.py             persistent cross-session memory
-│   ├── cognitive_modes.py    phase-to-mode classifier
-│   ├── generative_planner.py plan-then-fill generation
-│   ├── specialization.py     expert diversity loss
-│   └── tokenizer.py          GPT-2 byte-level BPE
-├── data/                     tinyshakespeare + synthetic SCMs + fractus_corpus
-├── tests/                    28 test files, 166+ tests
-├── scripts/                  demos, training, benchmark, dataset builder, white paper
-├── docs/                     OVERVIEW, SPEC, layer plans L0–L9
-├── Fractus_White_Paper.pdf   10-page technical document
-└── MODEL_CARD.md             model card for HF Hub
+│   ├── continuous_engine.py      The tick-based reasoning engine (13M params)
+│   ├── model_1b.py               The 1B-capacity model architecture (LazyStructuredSiren)
+│   ├── rag.py                    RAG + KnowledgeBase + Plugins + MetaCognition
+│   ├── memory.py                 Persistent cross-session memory
+│   ├── cognitive_modes.py        Kuramoto phase → mental state classifier
+│   ├── generative_planner.py     Plan-then-fill generation
+│   ├── specialization.py         Expert diversity loss
+│   ├── tokenizer.py              GPT-2 byte-level BPE
+│   ├── nn/                       embedding, attention, Kuramoto, MoE, SIREN variants
+│   ├── causal/                   NOTEARS, RKHS, Pearl do-calculus
+│   ├── reasoning/                proofs, conjectures, primes, ACT
+│   ├── stability/                Lyapunov on Kuramoto
+│   ├── metrics/                  honest measurements (compression, SHD, perplexity)
+│   └── train/                    online, mini-batch, surprise-gated, forward-forward
+├── data/                         quality datasets (Alpaca, OASST, Dolly, FineWeb, TinyStories)
+├── tests/                        28 test files, 166+ tests
+├── scripts/                      training, demos, benchmarks, dataset builder, white paper
+├── docs/                         OVERVIEW, SPEC, layer plans, white paper PDF
+├── Fractus_White_Paper.pdf       10-page technical document (signed)
+└── MODEL_CARD.md                 HuggingFace model card
 ```
 
 ---
 
-## Measured results
+## Training data
 
-### Small model (13M params, ContinuousThoughtEngine, 30k tokens)
-| Epoch | Loss | Perplexity | Accuracy |
-|-------|------|------------|----------|
-| 1     | 6.29 | 539        | 20.5%    |
-| 10    | 2.37 | 10.7       | 47.0%    |
-| 20    | 1.29 | 3.6        | 70.0%    |
-| 30    | 1.00 | 2.7        | 77.0%    |
+The model was trained on 500k tokens from a 45M-token quality corpus:
 
-### Fractus-1B (88M trainable, 0.86B capacity)
-- Config: d_model=768, 8 layers, 64 experts, top-2 routing, rank-16 LazyStructuredSiren
-- Training: 500k-token multi-domain corpus (code, literature, math, knowledge)
-- Throughput: 5–8 tokens/sec on Ryzen 5 5500U (CPU-only)
-- Published: [huggingface.co/thefinalboss/Fractus-1B](https://huggingface.co/thefinalboss/Fractus-1B)
+| Source | Type | Tokens |
+|---|---|---|
+| FineWeb (sample-10BT) | Web text (general knowledge) | 20M available |
+| Alpaca | Instruction QA pairs | 6M available |
+| OpenAssistant | Human chat conversations | 10M available |
+| TinyStories | Creative writing | 8M available |
+| Dolly | Instruction tuning | 1.5M available |
+
+Build your own subset: `python scripts/build_large_dataset.py`
+
+---
+
+## Measured performance
+
+| Config | Tokens/sec | Hardware |
+|---|---|---|
+| 13M, single-token tick | 25 | Ryzen 5 5500U |
+| 13M, chunk-based (16 tok) | 117 | Ryzen 5 5500U |
+| 1B (88M trainable, LazySiren) | 5-8 | Ryzen 5 5500U |
 
 ### Training optimizations (all profile-measured)
-| Optimization | Before | After | Speedup |
-|---|---|---|---|
-| Attention: batch heads×levels | 17.3 ms | 6.6 ms | 2.6× |
-| Chunk-based tick (16 tokens) | 25 tok/s | 117 tok/s | 4.7× |
-| LazyStructuredSiren (vs CachedSiren) | 43 s/step | 5.9 s/step | 7.3× |
-| LazyStructuredSiren (RAM) | 3.2 GB (OOM) | 0.4 GB | 8× |
+| Optimization | Before → After | Speedup |
+|---|---|---|
+| Batch heads × levels in attention | 17.3ms → 6.6ms | 2.6× |
+| Chunk-based tick (16 tokens) | 25 → 117 tok/s | 4.7× |
+| LazyStructuredSiren (vs grid SIREN) | 43s → 5.9s/step | 7.3× |
 
 ---
 
-## Quick start
+## Why Fractus is different from GPT/Claude
 
-```bash
-git clone https://github.com/AFKmoney/fractus.git
-cd fractus
-
-# Setup
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
-maturin develop --release
-
-# Run tests (166+ tests)
-pytest tests/ -q
-
-# Demo: continuous thought engine learns text
-python scripts/demo_transformer.py
-
-# Train the ContinuousThoughtEngine
-python scripts/train_continuous.py --epochs 30 --d-model 128
-
-# Train Fractus-1B
-python scripts/train_1b_final.py --epochs 3 --d-model 768
-
-# Benchmark training throughput
-python scripts/bench_train.py --runs 3
-```
-
-**Prerequisites:** Rust (`cargo`), Python 3.10+ with the `py` launcher, maturin.
+| Property | GPT / Claude | Fractus |
+|---|---|---|
+| Processing | Static (1 forward) | Continuous (ticks) |
+| Memory | Context window | Persistent KB + retrieval |
+| Learning | Retraining needed | Online (every conversation) |
+| Skills | Generic monolith | Hot-swappable plugins |
+| Autonomy | Waits for instructions | Decides actions itself |
+| Training | Datacenter GPU | Consumer CPU |
+| Deployment | Cloud API | Local device |
 
 ---
 
@@ -150,24 +176,20 @@ python scripts/bench_train.py --runs 3
 
 | Document | Content |
 |---|---|
-| [`docs/OVERVIEW.md`](docs/OVERVIEW.md) | **Start here.** Complete A-to-Z walkthrough. |
-| [`Fractus_White_Paper.pdf`](Fractus_White_Paper.pdf) | 10-page technical paper (signed, dated). |
-| [`docs/SPEC.md`](docs/SPEC.md) | Full specification (layers L0–L7). |
-| [`docs/2026-06-26-fractus-L8-lightweight-training.md`](docs/2026-06-26-fractus-L8-lightweight-training.md) | Training optimizations (profile-driven). |
-| [`docs/2026-06-26-fractus-L9-continuous-thought-engine.md`](docs/2026-06-26-fractus-L9-continuous-thought-engine.md) | The 5 innovations + paradigm shift. |
-| [`docs/2026-06-19-fractus-L0-socle.md`](docs/2026-06-19-fractus-L0-socle.md) → [`L4-causal.md`](docs/2026-06-19-fractus-L4-causal.md) | Per-layer implementation plans. |
-| [`MODEL_CARD.md`](MODEL_CARD.md) | Model card for HuggingFace Hub. |
+| [docs/OVERVIEW.md](docs/OVERVIEW.md) | Complete A-to-Z walkthrough |
+| [Fractus_White_Paper.pdf](Fractus_White_Paper.pdf) | 10-page technical paper |
+| [docs/SPEC.md](docs/SPEC.md) | Full specification (L0-L7) |
+| [docs/2026-06-26-fractus-L9-continuous-thought-engine.md](docs/2026-06-26-fractus-L9-continuous-thought-engine.md) | The 5 innovations |
+| [docs/2026-06-26-fractus-L8-lightweight-training.md](docs/2026-06-26-fractus-L8-lightweight-training.md) | Training optimizations |
 
 ---
 
 ## Honest limitations
 
-1. **Generation quality:** the trained model produces repetitive text. More data and epochs needed.
-2. **1B training speed:** 5–8 tokens/sec on CPU is feasible but slow. GPU would yield 50–100×.
-3. **Cognitive modes untrained:** the classifier exists but hasn't been trained on labeled data.
-4. **Generative planner is proof-of-concept:** the plan/fill pipeline needs a well-trained engine.
-5. **State-carry is attention-level:** carrying (S,z) through the full block stack is future work.
-6. **No formal verification:** Lean 4 / ZK-SNARK are honestly absent.
+1. **Generation quality** — the model needs more training epochs for coherent text generation
+2. **RAG quality** — the retrieval works but embeddings need training for precision
+3. **MetaCognition is early** — the action net is 8.5K params, improves with use
+4. **1B training is slow** — 5-8 tok/s on CPU (GPU would give 50-100×)
 
 ---
 
@@ -177,9 +199,9 @@ MIT. This project belongs to the user, not a corporation.
 
 ## Author
 
-**Philippe-Antoine Robert** — 29 June 2026
+**Philippe-Antoine Robert** — 2026
 
 ## Links
 
 - **GitHub:** [github.com/AFKmoney/fractus](https://github.com/AFKmoney/fractus)
-- **HuggingFace:** [huggingface.co/thefinalboss/Fractus-1B](https://huggingface.co/thefinalboss/Fractus-1B)
+- **HuggingFace:** [huggingface.co/thefinalboss/Fractus](https://huggingface.co/thefinalboss/Fractus)
