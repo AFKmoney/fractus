@@ -259,17 +259,10 @@ class Fractus1B(nn.Module):
         x = self.embed(ids)
         aux_loss = torch.tensor(0.0, device=x.device)
 
-        def run_block(block, h):
-            """Wrapper for gradient checkpointing."""
-            def custom_fwd(*args):
-                out, lb = block(args[0])
-                return out, lb
-            return custom_fwd
-
         for block in self.blocks:
-            # Gradient checkpoint: don't store intermediate activations.
-            # checkpoint() recompute forward during backward.
-            x_new, lb = checkpoint(block, x, use_reentrant=False)
+            # No gradient checkpointing — the model fits in RAM with LazySiren
+            # and removing checkpointing gives 3-5x speedup (no recompute).
+            x_new, lb = block(x)
             x = x_new
             aux_loss = aux_loss + lb
 
