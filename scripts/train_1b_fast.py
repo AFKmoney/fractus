@@ -38,7 +38,7 @@ def main():
     torch.set_num_threads(os.cpu_count() or 6)
     torch.manual_seed(42)
 
-    corpus = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "quality_500k.pt")
+    corpus = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mega_500k.pt")
     tokens = torch.load(corpus, weights_only=False).long()[:args.max_tokens]
     print(f"Corpus: {len(tokens):,} tokens", flush=True)
 
