@@ -30,7 +30,7 @@ def save_ckpt(model, epoch, loss, acc, d):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--epochs", type=int, default=5)
+    p.add_argument("--epochs", type=int, default=15)
     p.add_argument("--seq-len", type=int, default=32)
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--max-tokens", type=int, default=200000)
