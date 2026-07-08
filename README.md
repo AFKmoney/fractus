@@ -1,167 +1,129 @@
----
-language: ["en", "fr", "code"]
-tags:
-  - continuous-thought-engine
-  - rag
-  - metacognition
-  - decentralized-ai
-  - cpu-trained
-  - agi
-license: mit
----
-
 # Fractus
 
-**Le premier système d'IA à pensée continue, mémoire persistante et autonomie cognitive — qui s'entraîne et vit sur un laptop ordinaire.**
+**The first AI with continuous thought, persistent memory, and autonomous cognition — trained from scratch on a consumer laptop.**
 
-Fractus n'est pas un autre GPT. C'est une architecture fondamentalement différente où l'IA pense en temps réel (pas input→output statique), se souvient de chaque interaction entre les sessions, apprend sans réentraînement, change de personnalité à la volée, et décide elle-même quand chercher, apprendre, réfléchir ou répondre.
+Fractus is not another GPT clone. It is a fundamentally different architecture where the AI thinks in real-time (not static input→output), remembers every interaction across sessions, learns new things without retraining, switches cognitive modes on the fly, and decides for itself when to search its memory, learn a fact, reflect longer, or generate a response.
 
-> **Aucune corporation ne peut le contrôler.** L'IA tourne sur la machine de l'utilisateur. Les données ne quittent jamais l'appareil.
+**No corporation can control it.** The AI runs on the user's machine. Data never leaves the device.
 
 ---
 
-## Les trois couches de Fractus
+## The Three Layers
 
-### Couche 1 : Le Cerveau (Fractus-1B)
+### Layer 1: The Brain (Fractus-1B)
 
-Un transformer fractal propriétaire de **0.86 milliard de paramètres de capacité effective**, compressé en seulement **88M paramètres entraînables** via LazyStructuredSiren (décomposition low-rank W = scale·U·Vᵀ).
+A proprietary fractal transformer with **0.86 billion effective parameters** compressed into only **88 million trainable parameters** using LazyStructuredSiren (low-rank decomposition W = scale·U·Vᵀ, rank 16).
 
-**Architecture :**
-- **LazyStructuredSiren** : chaque matrice de poids est stockée comme U·Vᵀ (rank 16), pas comme une matrice dense. Résultat : 0.86B capacité dans 0.4 GB de RAM. Aucune grid SIREN — pas de fuite mémoire.
-- **64 experts MoE sparse** : seulement top-2 experts actifs par token (routing von Mises sur phases Farey). Compute proportionnel à 2/64 du total.
-- **Attention linéaire causale multi-niveaux** (Katharopoulos 2020) avec batching des heads×levels (optimisation mesurée à 2.6× speedup).
-- **Oscillateurs Kuramoto RK4 low-rang** : un système dynamique couplé qui sert d'"horloge de conscience" — les phases déterminent le routing cognitif.
-- **Vortex 2-adique (Rust)** : arithmétique p-adique exacte pour le conditionnement des tokens, hors graphe autodiff.
+- **LazyStructuredSiren**: every weight matrix stored as U·Vᵀ — no dense grid, no SIREN reconstruction. 0.86B capacity in 0.4 GB RAM.
+- **64 sparse MoE experts** (top-2 active per token, von Mises routing on Farey-distributed phases). Compute proportional to 2/64 of total capacity.
+- **Multi-level causal linear attention** (Katharopoulos 2020) with batched heads×levels (measured 2.6× speedup).
+- **Low-rank Kuramoto RK4 oscillators**: a coupled dynamical system acting as a "consciousness clock" — phases determine cognitive routing.
+- **2-adic vortex** (Rust core): exact p-adic arithmetic for token conditioning, outside the autodiff graph.
 
-**Entraînement from scratch sur CPU :**
-| Epoch | Loss | Perplexity |
-|-------|------|------------|
-| 1 | 5.322 | 205 |
-| 5 | 5.045 | 155 |
-| 9 | 4.799 | 121 |
-| 10 | 4.730 | 113 |
-| 11 | 4.635 | 103 |
+**Training (from scratch, CPU-only):**
 
-Vitesse : **19-21 tokens/sec** sur AMD Ryzen 5 5500U (6 cœurs, CPU-only).
-Données : 500k tokens d'un corpus de 12.8M (code Python 26%, web knowledge, instructions QA, chat humain, creative writing).
+| Epoch | Loss | Perplexity | Tokens/sec |
+|-------|------|------------|------------|
+| 1 | 5.322 | 205 | 21 |
+| 5 | 5.045 | 155 | 19 |
+| 9 | 4.799 | 121 | 19 |
+| 10 | 4.730 | 113 | 19 |
+| 11 | 4.635 | 103 | 18 |
 
-### Couche 2 : Le Continuous Thought Engine (CTE)
+Hardware: AMD Ryzen 5 5500U (6 cores, 12 threads). No GPU.
+Data: 500k tokens from a 12.8M-token mega corpus (26% Python code, web knowledge, instruction QA, human chat, creative writing).
 
-Le cerveau ne fonctionne pas en input→output. Il **tick** comme un cerveau biologique :
+### Layer 2: The Continuous Thought Engine (CTE)
 
-1. **Chaque tick** : les oscillateurs Kuramoto avancent d'un step RK4 → l'état d'attention (S,z) accumule le contexte → le MoE transforme la pensée → une head de confiance décide si l'IA a quelque chose à dire.
+The brain doesn't process input→output. It **ticks** like a biological brain:
 
-2. **Profondeur adaptative** : une question facile = 1 tick (réponse immédiate). Une question difficile = 10 ticks (l'IA réfléchit, accumule de l'évidence, puis répond quand elle est confiante). C'est du **raisonnement énergie-proportionnel**.
+1. **Each tick**: Kuramoto oscillators advance one RK4 step → attention state (S,z) accumulates context → MoE transforms the thought → confidence head decides if the AI has something to say.
+2. **Adaptive depth**: easy question = 1 tick. Hard question = 10 ticks. This is **energy-proportional reasoning** — spend compute proportional to difficulty.
+3. **Proactive**: the CTE can emit output without being prompted — when internal dynamics push confidence above threshold. GPT and Claude wait for a question. Fractus can initiate.
+4. **Chunk-based processing**: 16 tokens per forward pass (117 tok/s on 13M model, 19 tok/s on 1B).
 
-3. **Proactif** : le CTE peut émettre un output sans être sollicité — quand la dynamique interne fait traverser le seuil de confiance. GPT et Claude attendent une question. Fractus peut initier.
+### Layer 3: The Cognitive Layer (RAG + MetaCognition)
 
-4. **Chunk-based processing** : 16 tokens par forward pass (117 tok/s sur le 13M, 19 tok/s sur le 1B) au lieu d'un token à la fois.
+This is what makes Fractus an **agent**, not a tool:
 
-### Couche 3 : La Couche Cognitive (RAG + MetaCognition)
+#### Persistent Memory — `rag.learn()`
+The AI stores every fact, conversation, and interaction in a **vector knowledge base** that:
+- **Survives restarts** (saved to disk, reloaded on boot)
+- **Retrieves by cosine similarity**: ask a question → AI finds relevant passages in its memory
+- **Grows without retraining**: `rag.learn("new fact")` adds knowledge instantly — zero gradients, zero backward passes
 
-C'est ce qui transforme Fractus d'un **outil** en un **agent** :
+#### Continuous Learning — `rag.converse()`
+Every conversation is a learning opportunity:
+1. User input is **stored** in the knowledge base
+2. AI **retrieves** relevant past context
+3. AI **generates** a response
+4. Its own response is also **stored** (the AI learns from what it says)
 
-#### Mémoire Persistante (`rag.learn()`)
-L'IA stocke chaque fait, chaque conversation, chaque interaction dans une **base de connaissances vectorielle** qui :
-- **Survit aux redémarrages** (sauvegarde sur disque, recharge au démarrage)
-- **Récupère par similarité cosinus** : pose une question → l'IA trouve les passages pertinents dans sa mémoire
-- **Grandit sans réentraînement** : `rag.learn("nouveau fait")` ajoute du savoir instantanément, sans un seul gradient
+**The model never stops learning. You never retrain it.** It accumulates experience like a human.
 
-```
-rag.learn("Python est un langage créé par Guido van Rossum.")
-rag.learn("L'utilisateur s'appelle Philippe et préfère les réponses concises.")
+#### Cognitive Plugins — hot-swappable personality
+Five thinking modes, switchable instantly:
 
-# Plus tard :
-result = rag.query("Qui a créé Python ?")
-# → retrieve "Python est un langage créé par Guido van Rossum."
-# → génère une réponse basée sur ce contexte
-```
-
-#### Apprentissage Continu (`rag.converse()`)
-Chaque conversation est une opportunité d'apprentissage :
-1. L'input de l'utilisateur est **stocké** dans la KB (l'IA s'en souvient)
-2. L'IA **récupère** le contexte pertinent de ses souvenirs passés
-3. L'IA **génère** une réponse
-4. Sa propre réponse est aussi **stockée** (l'IA apprend de ce qu'elle dit)
-
-**Le modèle ne s'arrête jamais d'apprendre.** Il ne faut JAMAIS le réentraîner pour lui apprendre quelque chose de nouveau. C'est comme un humain qui accumule de l'expérience.
-
-#### Plugins Cognitifs (personnalité hot-swappable)
-5 modes de pensée, changeables instantanément comme des apps :
-
-| Plugin | Température | Style |
+| Plugin | Temperature | Style |
 |--------|-------------|-------|
-| analyst | 0.3 | Précis, factuel, structuré |
-| creative | 1.2 | Imaginatif, expressif |
-| coder | 0.2 | Code propre, correct |
-| teacher | 0.5 | Patient, exemples simples |
-| hacker | 0.4 | Cybersécurité, attaquant+défenseur |
+| analyst | 0.3 | Precise, factual, structured |
+| creative | 1.2 | Imaginative, expressive |
+| coder | 0.2 | Clean, correct code |
+| teacher | 0.5 | Patient, simple explanations |
+| hacker | 0.4 | Cybersecurity mindset |
 
-```python
-pm.load("coder")      # l'IA pense comme un développeur
-pm.load("creative")   # switch immédiat vers mode créatif
-pm.custom("philosophe", temperature=0.9)  # ton propre style
-```
+Custom plugins: `pm.custom("philosopher", temperature=0.9)`
 
-#### MétaCognition (autonomie)
-Un réseau d'action de **8.5K paramètres** qui décide **ce que l'IA fait** à chaque interaction :
+#### MetaCognition — the AI manages itself
+An 8.5K-parameter action network that decides **what the AI does** at each interaction:
 
-- **RETRIEVE** : chercher dans la mémoire
-- **LEARN** : stocker une nouvelle information
-- **GENERATE** : produire une réponse
-- **SWITCH** : changer de mode cognitif
-- **REFLECT** : réfléchir plus avant de répondre
+- **RETRIEVE** — search memory for relevant knowledge
+- **LEARN** — store new information permanently
+- **GENERATE** — produce an answer
+- **SWITCH** — change cognitive mode (coder → creative → analyst)
+- **REFLECT** — think more ticks before answering
 
-L'IA analyse l'input, choisit une séquence d'actions (jusqu'à 3), l'exécute, et **apprend de l'outcome**. Le réseau d'action s'entraîne en temps réel — l'IA devient meilleure à se gérer avec l'usage.
-
-```python
-# L'IA décide elle-même :
-meta.process("Remember: my API key is sk-1234")
-# → Actions: ['LEARN'] — elle a décidé de mémoriser
-
-meta.process("What is my API key?")
-# → Actions: ['RETRIEVE', 'GENERATE'] — elle cherche puis répond
-```
+The action network trains online from feedback. The AI gets better at self-management through use.
 
 ---
 
-## Pourquoi Fractus est différent de GPT/Claude
+## How Fractus differs from GPT and Claude
 
-| Propriété | GPT-4 / Claude | Fractus |
+| Property | GPT-4 / Claude | Fractus |
 |---|---|---|
-| **Traitement** | Statique (1 forward pass) | Continu (tick-by-tick CTE) |
-| **Mémoire** | Fenêtre de contexte (amnésique) | Base vectorielle persistante |
-| **Apprentissage** | Réentraînement requis | En ligne (chaque conversation) |
-| **Compétences** | Monolithe générique | Plugins hot-swappable (5 modes) |
-| **Autonomie** | Attend des instructions | Décide ses propres actions |
-| **Entraînement** | Datacenter GPU | CPU laptop consumer |
-| **Déploiement** | API cloud (centralisé) | Appareil local (décentralisé) |
-| **Données utilisateur** | Envoyées au serveur | Restent sur l'appareil |
-| **Croissance** | Figé entre versions | Grandit à chaque utilisation |
-| **Coût d'entraînement** | Millions de dollars | $0 (électricité seulement) |
+| **Processing** | Static (1 forward pass) | Continuous (tick-based CTE) |
+| **Memory** | Context window (amnesic) | Persistent vector KB |
+| **Learning** | Retraining required | Online (every conversation) |
+| **Skills** | Generic monolith | Hot-swappable plugins (5 modes) |
+| **Autonomy** | Waits for instructions | Decides actions itself |
+| **Training** | Datacenter GPU cluster | Consumer CPU laptop |
+| **Deployment** | Cloud API (centralized) | Local device (decentralized) |
+| **User data** | Sent to server | Stays on device |
+| **Growth** | Frozen between versions | Grows with every use |
+| **Training cost** | Millions of dollars | $0 (electricity only) |
 
 ---
 
-## Ce qui est prouvé et testé
+## What is proven and tested
 
-| Composant | Status | Test |
+| Component | Status | Evidence |
 |---|---|---|
-| Fractus-1B (88M params, 0.86B capacité) | ✅ Entraîné (epoch 11, loss 4.635, ppl 103) | Convergence mesurée |
-| LazyStructuredSiren | ✅ Fonctionne | 0.4 GB RAM, 21 tok/s |
-| ContinuousThoughtEngine | ✅ Codé + testé | tick(), tick_chunk(), generate() |
-| RAG (KnowledgeBase + retrieval) | ✅ Fonctionne | Apprend, récupère, répond |
-| Apprentissage en ligne | ✅ Testé | Grandit sans réentraînement |
-| Plugins cognitifs | ✅ 5 modes | Hot-swap en 1 appel |
-| MétaCognition | ✅ Codé + testé | 5 actions, autonome |
-| Mémoire persistante | ✅ Sauvegarde/charge | Survit aux redémarrages |
-| MoE sparse (64 experts, top-2) | ✅ Fonctionne | Von Mises/Farey routing |
-| Attention linéaire batchée | ✅ 2.6× speedup | Équivalence vectorisée testée |
+| Fractus-1B (88M params, 0.86B capacity) | Training (epoch 11, loss 4.635, ppl 103) | Convergence measured |
+| LazyStructuredSiren | Working | 0.4 GB RAM, 19 tok/s on CPU |
+| ContinuousThoughtEngine | Tested | tick(), tick_chunk(), generate() |
+| RAG (KnowledgeBase + retrieval) | Working | Learns, retrieves, answers |
+| Online learning (no retraining) | Tested | Grows permanently |
+| Cognitive plugins (5 modes) | Working | Hot-swap in 1 call |
+| MetaCognition (5 actions) | Tested | Autonomous action selection |
+| Persistent memory | Working | Saves to disk, reloads |
+| Sparse MoE (64 experts, top-2) | Working | Von Mises/Farey routing |
+| Batched linear attention | 2.6× speedup | Equivalence tested |
 
-**166+ tests** passent dans la suite de tests.
+**166+ tests pass.**
 
 ---
 
-## Démarrage rapide
+## Quick start
 
 ```bash
 git clone https://github.com/AFKmoney/fractus.git
@@ -172,8 +134,6 @@ pip install -r requirements.txt
 maturin develop --release
 pytest tests/ -q
 ```
-
-### Utiliser le système RAG
 
 ```python
 from fractus.continuous_engine import ContinuousThoughtEngine
@@ -188,91 +148,94 @@ rag = RAGEngine(engine, tok, kb)
 pm = PluginManager(rag)
 meta = MetaCognition(rag, pm)
 
-# Apprendre — sans réentraînement
-rag.learn("Python est un langage de programmation.")
-rag.learn("Les réseaux de neurones apprennent par rétropropagation.")
+# Learn — no retraining needed
+rag.learn("Python is a programming language created by Guido van Rossum.")
+rag.learn("The user prefers concise answers.")
 
-# Demander
-result = rag.query("Qu'est-ce que Python ?", top_k=2, max_tokens=30)
+# Ask
+result = rag.query("Who created Python?", top_k=2, max_tokens=30)
 print(result['answer'])
 
-# Laisser l'IA se gérer elle-même
-result = meta.process("Souviens-toi: mon nom est Philippe")
-print(result['actions'])  # ['LEARN'] — elle a choisi de mémoriser
+# Let the AI manage itself
+result = meta.process("Remember: my name is Philippe")
+print(result['actions'])  # ['LEARN'] — AI chose to memorize
 
-# Changer de personnalité
-pm.load("coder")     # mode développeur
-pm.load("creative")  # mode créatif
+result = meta.process("What is my name?")
+print(result['actions'])  # ['RETRIEVE', 'GENERATE'] — AI searched then answered
+
+# Switch personality
+pm.load("coder")     # now thinks like a developer
+pm.load("creative")  # instant switch to creative mode
 ```
 
 ---
 
-## Architecture du dépôt
+## Training data
 
-```
-Fractus/
-├── crate/fractus-core/           Rust: vortex 2-adique (math exacte, hors-graphe)
-├── crate/fractus-py/             Rust: bindings PyO3
-├── fractus/
-│   ├── continuous_engine.py      Le Continuous Thought Engine (tick-based)
-│   ├── model_1b.py               Fractus-1B (88M params, 0.86B capacité)
-│   ├── rag.py                    RAG + KnowledgeBase + Plugins + MetaCognition
-│   ├── memory.py                 Mémoire persistante cross-session
-│   ├── cognitive_modes.py        Kuramoto → état mental
-│   ├── generative_planner.py     Plan-then-fill generation
-│   ├── specialization.py         Diversité des experts
-│   ├── tokenizer.py              BPE byte-level (GPT-2 compatible)
-│   ├── nn/                       12 modules (attention, Kuramoto, MoE, SIREN variants)
-│   ├── causal/                   NOTEARS, RKHS, Pearl do-calculus
-│   ├── reasoning/                Preuves, conjectures, nombres premiers, ACT
-│   ├── stability/                Lyapunov sur Kuramoto
-│   ├── metrics/                  Mesures honnêtes (compression, SHD, perplexité)
-│   └── train/                    Online, mini-batch, surprise-gated, forward-forward
-├── data/                         Datasets (Alpaca, OASST, Dolly, FineWeb, TinyStories, code)
-├── tests/                        28 fichiers de test, 166+ tests
-├── scripts/                      Training, démos, benchmarks, constructeurs de corpus
-├── docs/                         OVERVIEW, SPEC, plans L0-L9
-└── Fractus_White_Paper.pdf       Document technique (10 pages, signé)
-```
-
----
-
-## Données d'entraînement
-
-Corpus mega de **12.8 millions de tokens** construit à partir de 9 sources :
+12.8M-token mega corpus from 9 sources:
 
 | Source | Type | Tokens |
 |---|---|---|
-| Instructions code Python | Code | 1.5M |
-| CodeAlpaca | Code multi-langage | 2M |
-| FineWeb | Web / connaissance générale | 3M |
-| Alpaca | Questions-réponses | 2M |
-| OpenAssistant | Chat humain | 2M |
-| TinyStories | Écriture créative | 1.5M |
+| Python code instructions | Code | 1.5M |
+| CodeAlpaca | Multi-language code | 2M |
+| FineWeb (sample-10BT) | Web / general knowledge | 3M |
+| Alpaca | Instruction QA | 2M |
+| OpenAssistant | Human chat | 2M |
+| TinyStories | Creative writing | 1.5M |
 | Dolly | Instruction tuning | 1M |
 
-Coverage vocabulaire : 96.8%. Build : `python scripts/build_mega_corpus.py`
+Vocab coverage: 96.8%. Build your own: `python scripts/build_mega_corpus.py`
 
 ---
 
-## Limitations honnêtes
+## Architecture
 
-1. **Qualité de génération** — le modèle à epoch 11 (ppl 103) génère du texte rudimentaire. Plus de training = meilleur.
-2. **CTE needs trained weights** — le CTE fonctionne mais a besoin des poids 1B transférés pour produire du texte cohérent.
-3. **MétaCognition jeune** — le réseau d'action (8.5K params) s'améliore avec l'usage mais est au début.
-4. **Vitesse d'entraînement** — 19 tok/s sur CPU. Un GPU accélère 50-100×.
+```
+Fractus/
+├── crate/fractus-core/           Rust: 2-adic vortex (exact math)
+├── crate/fractus-py/             Rust: PyO3 bindings
+├── fractus/
+│   ├── continuous_engine.py      The Continuous Thought Engine
+│   ├── model_1b.py               Fractus-1B (88M params, 0.86B capacity)
+│   ├── rag.py                    RAG + Plugins + MetaCognition
+│   ├── memory.py                 Persistent cross-session memory
+│   ├── cognitive_modes.py        Kuramoto phase → mental state
+│   ├── generative_planner.py     Plan-then-fill generation
+│   ├── specialization.py         Expert diversity loss
+│   ├── tokenizer.py              GPT-2 byte-level BPE
+│   ├── nn/                       attention, Kuramoto, MoE, SIREN (12 modules)
+│   ├── causal/                   NOTEARS, RKHS, do-calculus
+│   ├── reasoning/                proofs, conjectures, primes, ACT
+│   ├── stability/                Lyapunov on Kuramoto
+│   ├── metrics/                  honest measurements
+│   └── train/                    online, surprise-gated, forward-forward
+├── data/                         Alpaca, OASST, Dolly, FineWeb, TinyStories, code
+├── tests/                        28 test files, 166+ tests
+├── scripts/                      training, demos, corpus builders, white paper
+├── docs/                         OVERVIEW, SPEC, layer plans L0–L9
+└── Fractus_White_Paper.pdf       Technical document (signed)
+```
 
 ---
 
-## Licence
+## Honest limitations
 
-MIT. Ce projet appartient à l'utilisateur, pas à une corporation.
+1. **Generation quality** — the model at epoch 11 (ppl 103) produces rough text. More training needed for coherent generation.
+2. **CTE needs trained weights** — the CTE architecture works but needs the 1B's trained brain transferred into it.
+3. **MetaCognition is early** — the action net is 8.5K params, improves with use.
+4. **CPU training is slow** — 19 tok/s. A GPU would give 50-100× speedup ($37 for full corpus on A100).
 
-## Auteur
+---
+
+## License
+
+MIT. This project belongs to the user, not a corporation.
+
+## Author
 
 **Philippe-Antoine Robert** — 2026
 
-## Liens
+## Links
 
-- **GitHub :** [github.com/AFKmoney/fractus](https://github.com/AFKmoney/fractus)
-- **HuggingFace :** [huggingface.co/thefinalboss/Fractus](https://huggingface.co/thefinalboss/Fractus)
+- **GitHub:** [github.com/AFKmoney/fractus](https://github.com/AFKmoney/fractus)
+- **HuggingFace:** [huggingface.co/thefinalboss/Fractus](https://huggingface.co/thefinalboss/Fractus)
