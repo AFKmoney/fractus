@@ -182,8 +182,10 @@ class FractalBlockSparse(nn.Module):
         self.attn = FractalLinearAttention(d_model, n_heads, d_head, n_levels)
 
         self.norm_kur = nn.LayerNorm(d_model)
+        # n_steps=1 for training (4 was overkill — phases converge in 1 step,
+        # matches the CTE which uses n_steps=1). Measured ~2x faster on Kuramoto.
         self.kuramoto = KuramotoLayer(d_model, n_oscillators=16, rank=8,
-                                      n_steps=4, dt=0.1)
+                                      n_steps=1, dt=0.1)
 
         self.norm_moe = nn.LayerNorm(d_model)
         self.moe = SparseStructuredMoE(
