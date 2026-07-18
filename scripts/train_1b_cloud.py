@@ -16,6 +16,14 @@ import torch, torch.nn as nn, torch.nn.functional as F
 from fractus.model_1b import Fractus1B
 from fractus.tokenizer import FractusTokenizer
 
+# Try to import Triton kernels (will fail silently on CPU / no-triton).
+try:
+    from fractus.nn.triton_kernels import fused_linear_cross_entropy, TRITON_READY, self_test as triton_self_test
+    _HAS_TRITON_IMPORT = True
+except Exception:
+    _HAS_TRITON_IMPORT = False
+    TRITON_READY = False
+
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 HF_REPO = "thefinalboss/Fractus"
 
@@ -119,6 +127,11 @@ def main():
     parser.add_argument("--chunk-ce", type=int, default=0,
                        help="Chunk positions for CE (0=disabled, 8=recommended). "
                             "Avoids materializing full (B,L,vocab) tensor → bigger batch.")
+    parser.add_argument("--triton-ce", dest="triton_ce", action="store_true",
+                       default=True,
+                       help="Use Triton fused linear+CE kernel (default ON on GPU). "
+                            "Auto self-test; falls back if unavailable.")
+    parser.add_argument("--no-triton-ce", dest="triton_ce", action="store_false")
     args = parser.parse_args()
 
     # Detect device.
@@ -191,6 +204,18 @@ def main():
     else:
         print(f"  torch.compile: OFF ({'disabled by --no-compile' if not args.compile else 'CPU device'})", flush=True)
 
+    # Triton fused kernel — runs self-test before use. Falls back to eager/chunk-ce.
+    use_triton_ce = False
+    if device.type == "cuda" and _HAS_TRITON_IMPORT and args.triton_ce:
+        try:
+            ok = triton_self_test()
+            use_triton_ce = bool(ok)
+            print(f"  triton fused-CE: {'ON' if use_triton_ce else 'OFF (self-test failed)'}", flush=True)
+        except Exception as e:
+            print(f"  triton fused-CE: FAILED ({type(e).__name__})", flush=True)
+    else:
+        print(f"  triton fused-CE: OFF (cuda={device.type=='cuda'}, import={_HAS_TRITON_IMPORT})", flush=True)
+
     # Resume if specified.
     start_epoch = 0
     if args.resume:
@@ -248,7 +273,13 @@ def main():
             opt.zero_grad()
             if use_amp:
                 with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-                    if args.chunk_ce > 0:
+                    if use_triton_ce:
+                        # Triton fused path: skip lm_head in model, kernel does it.
+                        model._return_hidden = True
+                        hidden, aux = model(inp)
+                        model._return_hidden = False
+                        ce = fused_linear_cross_entropy(hidden, model.lm_head.weight, tgt)
+                    elif args.chunk_ce > 0:
                         model._return_hidden = True
                         hidden, aux = model(inp)
                         ce = chunked_cross_entropy(model, hidden, tgt, 50257, args.chunk_ce)
@@ -259,7 +290,12 @@ def main():
                     loss = ce + 0.001 * aux
                 loss.backward()
             else:
-                if args.chunk_ce > 0:
+                if use_triton_ce:
+                    model._return_hidden = True
+                    hidden, aux = model(inp)
+                    model._return_hidden = False
+                    ce = fused_linear_cross_entropy(hidden, model.lm_head.weight, tgt)
+                elif args.chunk_ce > 0:
                     model._return_hidden = True
                     hidden, aux = model(inp)
                     ce = chunked_cross_entropy(model, hidden, tgt, 50257, args.chunk_ce)
