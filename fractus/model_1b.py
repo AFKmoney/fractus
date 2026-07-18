@@ -273,6 +273,9 @@ class Fractus1B(nn.Module):
             aux_loss = aux_loss + lb
 
         x = self.norm(x)
+        if getattr(self, "_return_hidden", False):
+            # Chunked-CE mode: skip lm_head here, caller computes it per chunk.
+            return x, aux_loss
         logits = self.lm_head(x)
         return logits, aux_loss
 

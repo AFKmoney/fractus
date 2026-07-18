@@ -61,6 +61,40 @@ def save_and_upload(model, optimizer, epoch, loss, acc, config, ckpt_dir):
             print(f"  [disk] Removed old checkpoint {old}", flush=True)
 
 
+def chunked_cross_entropy(model, hidden, target, vocab, chunk_positions):
+    """Compute lm_head + cross-entropy by chunks of positions to avoid
+    materializing the full (B, L, vocab) tensor.
+
+    hidden:  (B, L, d_model) — the final hidden states (already through all blocks).
+    target:  (B, L) — next-token ids.
+    Returns scalar loss (averaged over all positions).
+
+    Processes positions in chunks of `chunk_positions`. Each chunk materializes
+    only (B, chunk, vocab) — keeping VRAM low so batch can grow 4-8x.
+    """
+    B, L, _ = hidden.shape
+    total_loss = 0.0
+    n = 0
+    # Detach hidden from the chunk loop's graph accumulation — we sum losses
+    # and backward once at the end. Each chunk's logits share the same hidden,
+    # so the gradient flows correctly through hidden to all blocks.
+    losses = []
+    for s in range(0, L, chunk_positions):
+        e = min(s + chunk_positions, L)
+        h_chunk = hidden[:, s:e]                      # (B, C, D)
+        logits_chunk = model.lm_head(h_chunk)         # (B, C, vocab)
+        tgt_chunk = target[:, s:e]                     # (B, C)
+        l = F.cross_entropy(
+            logits_chunk.reshape(-1, vocab),
+            tgt_chunk.reshape(-1),
+            reduction="sum",
+        )
+        losses.append(l)
+        n += (e - s) * B
+    total = torch.stack(losses).sum() / n
+    return total
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fractus-1B Cloud Training")
     parser.add_argument("--epochs", type=int, default=20)
@@ -77,6 +111,14 @@ def main():
                        help="Upload checkpoint every N epochs")
     parser.add_argument("--log-every", type=int, default=500,
                        help="Log every N steps")
+    parser.add_argument("--compile", dest="compile", action="store_true",
+                       default=True,
+                       help="Enable torch.compile (default ON on GPU)")
+    parser.add_argument("--no-compile", dest="compile", action="store_false",
+                       help="Disable torch.compile, use eager")
+    parser.add_argument("--chunk-ce", type=int, default=0,
+                       help="Chunk positions for CE (0=disabled, 8=recommended). "
+                            "Avoids materializing full (B,L,vocab) tensor → bigger batch.")
     args = parser.parse_args()
 
     # Detect device.
@@ -131,6 +173,23 @@ def main():
     print(f"  Params: {n:,} ({n/1e6:.0f}M)", flush=True)
     print(f"  Capacity: {cap:,} ({cap/1e9:.2f}B)", flush=True)
     print(f"  RAM: {n*4/1e9:.1f}GB", flush=True)
+
+    # torch.compile — now that the MoE is vectorized (no dynamic control flow),
+    # compile can fuse kernels. Cache limit raised to handle the 64 expert guards.
+    # GUARD: wrapped in try/except, falls back to eager on any failure.
+    use_compiled = False
+    if args.compile and device.type == "cuda":
+        try:
+            import torch._dynamo as dyn
+            dyn.config.cache_size_limit = 256
+            dyn.config.accumulated_cache_size_limit = 512
+            model = torch.compile(model, mode="reduce-overhead", dynamic=False)
+            use_compiled = True
+            print("  torch.compile: ON (mode=reduce-overhead)", flush=True)
+        except Exception as e:
+            print(f"  torch.compile: FAILED ({type(e).__name__}), using eager", flush=True)
+    else:
+        print(f"  torch.compile: OFF ({'disabled by --no-compile' if not args.compile else 'CPU device'})", flush=True)
 
     # Resume if specified.
     start_epoch = 0
@@ -189,13 +248,25 @@ def main():
             opt.zero_grad()
             if use_amp:
                 with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-                    logits, aux = model(inp)
-                    ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
+                    if args.chunk_ce > 0:
+                        model._return_hidden = True
+                        hidden, aux = model(inp)
+                        ce = chunked_cross_entropy(model, hidden, tgt, 50257, args.chunk_ce)
+                        model._return_hidden = False
+                    else:
+                        logits, aux = model(inp)
+                        ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
                     loss = ce + 0.001 * aux
                 loss.backward()
             else:
-                logits, aux = model(inp)
-                ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
+                if args.chunk_ce > 0:
+                    model._return_hidden = True
+                    hidden, aux = model(inp)
+                    ce = chunked_cross_entropy(model, hidden, tgt, 50257, args.chunk_ce)
+                    model._return_hidden = False
+                else:
+                    logits, aux = model(inp)
+                    ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
                 loss = ce + 0.001 * aux
                 loss.backward()
             opt.step()
