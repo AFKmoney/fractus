@@ -75,6 +75,8 @@ def main():
                        help="Checkpoint to resume from")
     parser.add_argument("--upload-every", type=int, default=1,
                        help="Upload checkpoint every N epochs")
+    parser.add_argument("--log-every", type=int, default=500,
+                       help="Log every N steps")
     args = parser.parse_args()
 
     # Detect device.
@@ -164,7 +166,8 @@ def main():
     print("=" * 70, flush=True)
 
     initial_loss = None
-    
+    step = start_epoch * n_steps
+
     for epoch in range(start_epoch, args.epochs):
         model.train()
         t0 = time.perf_counter()
@@ -194,4 +197,58 @@ def main():
                 logits, aux = model(inp)
                 ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
                 loss = ce + 0.001 * aux
-  
+                loss.backward()
+            opt.step()
+
+            loss_val = loss.item()
+            ep_loss += loss_val
+            ep_n += 1
+            step += 1
+            if initial_loss is None:
+                initial_loss = loss_val
+            if step % args.log_every == 0:
+                elapsed = time.perf_counter() - t0
+                sps = (step - (epoch * n_steps)) / max(elapsed, 1e-6)
+                ppl = math.exp(min(loss_val, 20))
+                print(f"  E{epoch} S{step:>7}/{n_steps*(epoch+1):>7} "
+                      f"loss={loss_val:.4f} ppl={ppl:.1f} aux={aux.item():.4f} "
+                      f"{sps:.1f}step/s", flush=True)
+
+        # End of epoch.
+        avg = ep_loss / max(ep_n, 1)
+        elapsed = time.perf_counter() - t0
+        print(f"\n[EPOCH {epoch}] avg_loss={avg:.4f} ppl={math.exp(min(avg,20)):.1f} "
+              f"time={elapsed/60:.1f}min", flush=True)
+        save_and_upload(model, opt, epoch, avg, initial_loss,
+                        {"seq_len": seq, "batch_size": batch_size,
+                         "lr": args.lr, "corpus": args.corpus}, ckpt_dir)
+        sched.step()
+
+        # Sample generation to monitor quality.
+        try:
+            model.eval()
+            with torch.no_grad():
+                prompt = "def fibonacci"
+                ids = tok.encode(prompt)
+                x = torch.tensor([ids], device=device)
+                out = []
+                for _ in range(60):
+                    lg, _ = model(x)
+                    nxt = lg[0, -1].argmax().unsqueeze(0).unsqueeze(0)
+                    x = torch.cat([x, nxt], dim=1)
+                    out.append(nxt.item())
+                    if nxt.item() == 50256:
+                        break
+                print(f"[SAMPLE] {(prompt + tok.decode(out))[:300]}\n", flush=True)
+            model.train()
+        except Exception as e:
+            print(f"  [sample] failed: {e}", flush=True)
+
+    print("\n" + "=" * 70, flush=True)
+    print(f"TRAINING COMPLETE. Final loss={avg:.4f}", flush=True)
+    print(f"Loss reduction: {initial_loss:.4f} -> {avg:.4f} "
+          f"({(initial_loss-avg)/initial_loss*100:.1f}% improvement)", flush=True)
+
+
+if __name__ == "__main__":
+    main()
