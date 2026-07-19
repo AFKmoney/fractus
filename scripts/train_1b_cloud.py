@@ -59,7 +59,6 @@ def save_and_upload(model, optimizer, epoch, loss, acc, config, ckpt_dir):
     size_mb = os.path.getsize(path) / 1e6
     print(f"  [ckpt] {path} ({size_mb:.0f}MB)", flush=True)
     upload_hf(path, f"checkpoints/fractus_1b_epoch{epoch}.pt")
-    # Also upload as "latest" so it's easy to find.
     upload_hf(path, "checkpoints/fractus_1b_latest.pt")
     # Delete old checkpoint to save disk on cloud.
     if epoch > 1:
@@ -67,6 +66,43 @@ def save_and_upload(model, optimizer, epoch, loss, acc, config, ckpt_dir):
         if os.path.exists(old):
             os.remove(old)
             print(f"  [disk] Removed old checkpoint {old}", flush=True)
+
+
+def save_step_checkpoint(model, optimizer, step, epoch, loss, config, ckpt_dir,
+                          keep_last=2):
+    """Save a mid-epoch checkpoint every N steps + upload to HF.
+
+    Named by global step (e.g. fractus_1b_step10000.pt). Uploads as both the
+    step-named file AND 'fractus_1b_latest.pt' so resume always picks up the
+    newest. Keeps only the last `keep_last` step checkpoints on disk to avoid
+    filling the pod.
+
+    This is the CRASH-RECOVERY path: if the pod dies mid-epoch, you resume
+    from the latest step checkpoint and lose at most save_every steps of work.
+    """
+    os.makedirs(ckpt_dir, exist_ok=True)
+    path = os.path.join(ckpt_dir, f"fractus_1b_step{step}.pt")
+    torch.save({
+        "model_state": model.state_dict(),
+        "optimizer_state": optimizer.state_dict(),
+        "config": config,
+        "step": step,
+        "epoch": epoch,
+        "loss": loss,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }, path)
+    size_mb = os.path.getsize(path) / 1e6
+    print(f"  [ckpt] step{step} ({size_mb:.0f}MB) loss={loss:.4f}", flush=True)
+    upload_hf(path, f"checkpoints/fractus_1b_step{step}.pt")
+    upload_hf(path, "checkpoints/fractus_1b_latest.pt")
+
+    # Garbage-collect old step checkpoints (keep the last `keep_last`).
+    import glob
+    step_ckpts = sorted(glob.glob(os.path.join(ckpt_dir, "fractus_1b_step*.pt")),
+                        key=lambda p: int(p.split("step")[-1].split(".")[0]))
+    for old in step_ckpts[:-keep_last]:
+        os.remove(old)
+        print(f"  [disk] Removed old step ckpt {os.path.basename(old)}", flush=True)
 
 
 def chunked_cross_entropy(model, hidden, target, vocab, chunk_positions):
@@ -132,6 +168,9 @@ def main():
                        help="Use Triton fused linear+CE kernel (default ON on GPU). "
                             "Auto self-test; falls back if unavailable.")
     parser.add_argument("--no-triton-ce", dest="triton_ce", action="store_false")
+    parser.add_argument("--save-every", type=int, default=10000,
+                       help="Save+upload checkpoint every N steps (crash recovery). "
+                            "Default 10000 = ~6%% of a 1.76B-token epoch at batch 512.")
     args = parser.parse_args()
 
     # Detect device.
@@ -320,6 +359,14 @@ def main():
                 print(f"  E{epoch} S{step:>7}/{n_steps*(epoch+1):>7} "
                       f"loss={loss_val:.4f} ppl={ppl:.1f} aux={aux.item():.4f} "
                       f"{sps:.1f}step/s", flush=True)
+            # Mid-epoch checkpoint for crash recovery (every save_every steps).
+            if args.save_every > 0 and step % args.save_every == 0:
+                save_step_checkpoint(
+                    model, opt, step, epoch, loss_val,
+                    {"seq_len": seq, "batch_size": batch_size,
+                     "lr": args.lr, "corpus": args.corpus},
+                    ckpt_dir, keep_last=2,
+                )
 
         # End of epoch.
         avg = ep_loss / max(ep_n, 1)
