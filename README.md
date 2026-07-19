@@ -20,7 +20,24 @@ A proprietary fractal transformer with **0.86 billion effective parameters** com
 - **Low-rank Kuramoto RK4 oscillators**: a coupled dynamical system acting as a "consciousness clock" — phases determine cognitive routing.
 - **2-adic vortex** (Rust core): exact p-adic arithmetic for token conditioning, outside the autodiff graph.
 
-**Training (from scratch, CPU-only):**
+**Training (from scratch, GPU — RTX 6000 Ada, 48GB VRAM):**
+
+| Step | Loss | Perplexity | Tokens/sec | Notes |
+|------|------|------------|------------|-------|
+| 1 | 11.32 | 83k | — | untrained |
+| 500 | 3.10 | 22.1 | ~9.8k | resuming from older 30k ckpt |
+| 5000 | 2.95 | 19.1 | ~9.8k | stable descent |
+| 15000 | 1.78 | 5.9 | ~9.8k | peak low (low-noise batch) |
+| 32500 | 0.88 | 2.4 | ~9.8k | peak low |
+| 50000 | 2.40 | 11.1 | ~9.8k | current, average over batches |
+
+Hardware: NVIDIA RTX 6000 Ada (48GB VRAM, sm_89). Batch 256 × seq 16.
+Corpus: 1.38B-token diversified Chinchilla-optimal corpus (code 41%, instruct 26%, web 20%, creative 8%, wiki 6%). int32 dtype.
+Resume: training was resumed from a step-30000 checkpoint originally produced on an RTX PRO 4000 Blackwell.
+
+(Earlier CPU training table — AMD Ryzen 5 5500U, 19 tok/s — is preserved as historical context. That run reached ppl 103 at epoch 11. The GPU run above is the current authoritative one.)
+
+**Historical CPU training (Ryzen 5 5500U, 6c/12t — original run, 500k tokens):**
 
 | Epoch | Loss | Perplexity | Tokens/sec |
 |-------|------|------------|------------|
@@ -30,7 +47,6 @@ A proprietary fractal transformer with **0.86 billion effective parameters** com
 | 10 | 4.730 | 113 | 19 |
 | 11 | 4.635 | 103 | 18 |
 
-Hardware: AMD Ryzen 5 5500U (6 cores, 12 threads). No GPU.
 Data: 500k tokens from a 12.8M-token mega corpus (26% Python code, web knowledge, instruction QA, human chat, creative writing).
 
 ### Layer 2: The Continuous Thought Engine (CTE)
@@ -108,7 +124,7 @@ The action network trains online from feedback. The AI gets better at self-manag
 
 | Component | Status | Evidence |
 |---|---|---|
-| Fractus-1B (88M params, 0.86B capacity) | Training (epoch 11, loss 4.635, ppl 103) | Convergence measured |
+| Fractus-1B (88M params, 0.86B capacity) | Training (GPU run, step 50000+, loss 2.40, ppl ~11) | Convergence measured |
 | LazyStructuredSiren | Working | 0.4 GB RAM, 19 tok/s on CPU |
 | ContinuousThoughtEngine | Tested | tick(), tick_chunk(), generate() |
 | RAG (KnowledgeBase + retrieval) | Working | Learns, retrieves, answers |
@@ -267,7 +283,7 @@ Fractus/
 
 ## Honest limitations
 
-1. **Generation quality** — the model at epoch 11 (ppl 103) produces rough text. More training needed for coherent generation.
+1. **Generation quality** — the model at step 50000 (ppl ~11) produces rough but coherent text. More training needed for fluent generation.
 2. **CTE needs trained weights** — the CTE architecture works but needs the 1B's trained brain transferred into it.
 3. **MetaCognition is early** — the action net is 8.5K params, improves with use.
 4. **CPU training is slow** — 19 tok/s. A GPU gives 50-100× speedup ($37 for full corpus on A100).
