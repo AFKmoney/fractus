@@ -66,8 +66,12 @@ if _triton is not None:
 
         tgt = tl.load(target_ptr + bl).to(tl.int32)
 
+        # Use a large negative finite number instead of -inf to avoid NaN propagation
+        # through tl.maximum / tl.exp when masked positions are present.
+        NEG = -1e9
+
         # Pass 1: max logit.
-        m = float('-inf')
+        m = NEG
         for v_start in tl.range(0, V, BLOCK_V):
             v_off = tl.arange(0, BLOCK_V)
             v_mask = (v_start + v_off) < V
@@ -75,12 +79,12 @@ if _triton is not None:
                         + d_off[None, :] * stride_wd,
                         mask=v_mask[:, None] & d_mask[None, :], other=0.0).to(tl.float32)
             logits = tl.sum(w * h[None, :], axis=1)
-            logits = tl.where(v_mask, logits, float('-inf'))
+            logits = tl.where(v_mask, logits, NEG)
             m = tl.maximum(m, tl.max(logits))
 
         # Pass 2: sum_exp + target_logit.
         sum_exp = 0.0
-        tgt_logit = float('-inf')
+        tgt_logit = NEG
         for v_start in tl.range(0, V, BLOCK_V):
             v_off = tl.arange(0, BLOCK_V)
             v_mask = (v_start + v_off) < V
@@ -88,13 +92,15 @@ if _triton is not None:
                         + d_off[None, :] * stride_wd,
                         mask=v_mask[:, None] & d_mask[None, :], other=0.0).to(tl.float32)
             logits = tl.sum(w * h[None, :], axis=1)
-            logits = tl.where(v_mask, logits, float('-inf'))
+            logits = tl.where(v_mask, logits, NEG)
             sum_exp += tl.sum(tl.exp(logits - m))
             in_block = (v_start <= tgt) & (tgt < v_start + BLOCK_V)
             tgt_local = tgt - v_start
-            tgt_logit = tl.where(in_block,
-                                 tl.sum(tl.where(v_off == tgt_local, logits, float('-inf'))),
-                                 tgt_logit)
+            # Sum only the matching position (0 elsewhere) — use 0.0 as the
+            # neutral element of sum, NOT NEG, otherwise the masked-out positions
+            # contribute -1e9 each and corrupt the target logit.
+            tgt_contrib = tl.sum(tl.where(v_off == tgt_local, logits, 0.0))
+            tgt_logit = tl.where(in_block, tgt_contrib, tgt_logit)
 
         log_sum_exp = m + tl.log(sum_exp)
         loss = log_sum_exp - tgt_logit  # = -log_softmax[target]
@@ -292,7 +298,8 @@ def self_test():
     dev = torch.device('cuda')
     B, L, D, V = 2, 8, 64, 200
     hidden_ref = torch.randn(B, L, D, device=dev, dtype=torch.float32, requires_grad=True)
-    weight_ref = torch.randn(V, D, device=dev, dtype=torch.float32, requires_grad=True) * 0.05
+    weight_ref = torch.randn(V, D, device=dev, dtype=torch.float32) * 0.05
+    weight_ref.requires_grad_(True)
     target = torch.randint(0, V, (B, L), device=dev)
 
     # Reference forward.
