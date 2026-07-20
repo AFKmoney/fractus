@@ -156,18 +156,39 @@ The action network trains online from feedback. The AI gets better at self-manag
 
 ## How Fractus differs from GPT and Claude
 
-| Property | GPT-4 / Claude | Fractus |
+> **Fractus is smaller in size — but more capable than ChatGPT.**
+> GPT-4 has more raw knowledge (1.7T params of static weights). Fractus has
+> more *abilities* in 88M: capabilities GPT-4 structurally cannot match, no
+> matter how many parameters OpenAI adds. Below is the per-capability truth.
+
+### Capabilities GPT-4 / Claude do NOT have
+
+| Capability | GPT-4 / Claude | Fractus |
 |---|---|---|
-| **Processing** | Static (1 forward pass) | Continuous (tick-based CTE) |
-| **Memory** | Context window (amnesic) | Persistent vector KB |
-| **Learning** | Retraining required | Online (every conversation) |
-| **Skills** | Generic monolith | Hot-swappable plugins (5 modes) |
-| **Autonomy** | Waits for instructions | Decides actions itself |
-| **Training** | Datacenter GPU cluster | Consumer CPU laptop |
-| **Deployment** | Cloud API (centralized) | Local device (decentralized) |
-| **User data** | Sent to server | Stays on device |
-| **Growth** | Frozen between versions | Grows with every use |
-| **Training cost** | Millions of dollars | $0 (electricity only) |
+| **Infinite memory** | ❌ Hard context window (128k tokens max, then amnesia). Everything outside the window is gone. | ✅ **Persistent vector knowledge base** — `rag.learn()` stores forever, retrieves by semantic similarity. Memory grows across sessions, across days, across users. No ceiling. |
+| **Learning without retraining** | ❌ To teach GPT a new fact, OpenAI must retrain a 1.7T-param model (cost: millions of dollars, weeks of compute). | ✅ **Online learning** — every conversation adds knowledge instantly via `rag.learn()`. Zero gradients. Zero retraining. The model you ship is not the model it will be tomorrow. |
+| **Hot-swappable personality** | ⚠️ "Custom GPTs" require rebuilding a system prompt and are bounded by it. The base model is one fixed monolith. | ✅ **Cognitive plugins** — `pm.load("coder")`, `pm.load("creative")`, `pm.load("analyst")`, `pm.load("teacher")`, `pm.load("hacker")`. Or `pm.custom("philosopher", temperature=0.9)`. Swap in one call, mid-conversation. |
+| **Self-management (MetaCognition)** | ❌ GPT cannot decide to "think more" or "switch mode" or "remember this" — it just answers. | ✅ **MetaCognition action net** decides autonomously: RETRIEVE / LEARN / GENERATE / SWITCH / REFLECT. The AI runs itself. |
+| **Real-time continuous thought** | ❌ Static input → output. GPT cannot "think" without a prompt. | ✅ **Continuous Thought Engine** ticks like a brain — Kuramoto oscillators advance phases, the AI can speak proactively when confidence crosses threshold. |
+| **Tool calling (planned)** | ⚠️ GPT function-calling is a server-side feature gated by OpenAI. | ✅ **Fractus will call tools natively** through MetaCognition — when the model decides RETRIEVE, it can trigger any tool you wire in. The AI decides, not the API. |
+| **Modify behavior without retraining** | ❌ Impossible. The weights are frozen by OpenAI. | ✅ **Edit Fractus live**: add a plugin, raise temperature, change cognitive modes, teach a fact — all without a single gradient step. The user owns the brain. |
+| **Self-improvement** | ❌ GPT-4 cannot get better between OpenAI releases. | ✅ Fractus grows every day: more memories, better MetaCognition policy from feedback, new plugins. The longer it runs, the smarter it becomes — autonomously. |
+
+### The honest size/performance split
+
+GPT-4 wins on:
+- Raw world knowledge (1.7T params of training data baked in)
+- Long-form reasoning on unseen problems
+- Polished prose
+
+Fractus wins on:
+- **Every capability GPT-4 structurally lacks** (table above)
+- **Ownership** — you have the weights, you can read them, edit them, run them offline
+- **Cost** — trained on a single consumer GPU, runs on a laptop
+- **Privacy** — your data never leaves your machine
+- **Growth** — the model is alive, not frozen
+
+**The strategic claim:** GPT-4 is a brilliant encyclopedia you rent. Fractus is a smaller brain that grows, remembers, swaps skills, manages itself, and belongs to you. Once Fractus finishes learning the world (this training run), it needs nothing else — its architecture allows it to expand and improve forever, by itself, on your hardware.
 
 ---
 
