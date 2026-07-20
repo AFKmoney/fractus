@@ -190,6 +190,34 @@ Fractus wins on:
 
 **The strategic claim:** GPT-4 is a brilliant encyclopedia you rent. Fractus is a smaller brain that grows, remembers, swaps skills, manages itself, and belongs to you. Once Fractus finishes learning the world (this training run), it needs nothing else — its architecture allows it to expand and improve forever, by itself, on your hardware.
 
+### Scale without retraining — the architectural breakthrough
+
+This is the capability that breaks the LLM scaling paradigm entirely.
+
+**Scaling a classical LLM (GPT, Llama, Claude):**
+- Add parameters → you must **retrain from scratch** (or fine-tune for weeks)
+- Each scaling jump costs millions of dollars in GPU time
+- The model you shipped is permanently frozen until the next training run
+- OpenAI scales GPT-3 → GPT-4 by spending ~$100M on compute. Then it freezes again.
+
+**Scaling Fractus — zero retraining, ever:**
+| Goal | How | Retraining? |
+|------|-----|-------------|
+| Add new knowledge | `rag.learn("new fact")` | ❌ none |
+| Add a new skill/personality | `pm.custom("mathematician", ...)` | ❌ none |
+| Add a new cognitive expert | Register a new MoE expert module | ❌ none (sparse MoE: new experts don't disturb existing ones) |
+| Add a new tool | Wire it into MetaCognition actions | ❌ none |
+| Make Fractus better at a task | Talk to it — the MetaCognition action net trains online from feedback | ❌ none |
+| Specialize Fractus for a domain | Add domain plugins + teach facts | ❌ none |
+
+The trained brain (88M params) is the **last time Fractus ever needs gradient descent**. Every form of "scaling" after that — more knowledge, more skills, more tools, better decision-making — happens through:
+- The **persistent knowledge base** (grows with every conversation)
+- The **plugin system** (new modes added in code, hot-swapped at runtime)
+- The **sparse MoE** (new experts bolted on without retraining existing ones — that's the entire point of mixture-of-experts)
+- The **MetaCognition policy** (an 8.5K-param action net that trains itself online from user feedback, no backprop through the main brain)
+
+This is what "scale without retraining" means in practice: **the model you train today is the same model you'll still be extending in 2030.** No new training run, no cluster, no $100M. Just plugins, knowledge, and live edits.
+
 ---
 
 ## What is proven and tested
