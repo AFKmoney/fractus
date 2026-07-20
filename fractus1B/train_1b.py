@@ -99,6 +99,12 @@ def main():
                        help="Progressive Depth: number of phases to grow the model from shallow "
                             "to full depth. 0=disabled (all layers from step 0). 4=default "
                             "(4 phases: 4→8→12→16 layers). ~2x total speedup.")
+    parser.add_argument("--optim-8bit", dest="optim_8bit", action="store_true",
+                       default=True,
+                       help="Use 8-bit AdamW (bitsandbytes) — saves ~6GB VRAM at 1B params. "
+                            "Default ON. Auto-fallback to 32-bit if bnb not installed.")
+    parser.add_argument("--no-8bit", dest="optim_8bit", action="store_false",
+                       help="Disable 8-bit optimizer, use 32-bit AdamW.")
     args = parser.parse_args()
 
     # Device.
@@ -147,7 +153,27 @@ def main():
         print(f"  Resumed from epoch {start_epoch}, step {start_step}, loss={ckpt.get('loss','?')}", flush=True)
 
     # Optimizer with warmup.
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    # Optimizer — 8-bit AdamW if bitsandbytes available (saves ~8GB VRAM at 1B params),
+    # otherwise standard 32-bit AdamW. The 8-bit version stores optimizer state
+    # (momentum, variance) in 8-bit instead of 32-bit, cutting optimizer memory
+    # from 8GB → 2GB for a 1B model. Quality is preserved (Dettmers et al. 2022).
+    use_8bit = args.optim_8bit and device.type == "cuda"
+    if use_8bit:
+        try:
+            import bitsandbytes as bnb
+            opt = bnb.optim.AdamW8bit(model.parameters(), lr=args.lr, weight_decay=0.01)
+            print(f"  Optimizer: AdamW8bit (bitsandbytes) — ~6GB VRAM saved", flush=True)
+        except ImportError:
+            print(f"  bitsandbytes not installed, falling back to AdamW 32-bit", flush=True)
+            opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+            use_8bit = False
+        except Exception as e:
+            print(f"  AdamW8bit init failed ({e}), falling back to AdamW 32-bit", flush=True)
+            opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+            use_8bit = False
+    else:
+        opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+        print(f"  Optimizer: AdamW 32-bit", flush=True)
 
     if args.resume and "optimizer_state" in ckpt:
         try:
