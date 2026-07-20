@@ -38,8 +38,7 @@ def upload_hf(path, repo_path):
         from huggingface_hub import HfApi
         api = HfApi(token=HF_TOKEN)
         api.upload_file(path_or_fileobj=path, path_in_repo=repo_path,
-                       repo_id=HF_REPO, repo_type="model",
-                       repo_type="model" if False else "model")
+                       repo_id=HF_REPO, repo_type="model")
         print(f"  [HF] Uploaded {repo_path}", flush=True)
     except Exception as e:
         print(f"  [HF] Failed: {type(e).__name__} — training continues.", flush=True)
@@ -92,6 +91,10 @@ def main():
                        help="Save+upload checkpoint every N steps")
     parser.add_argument("--warmup-steps", type=int, default=1000,
                        help="Linear LR warmup over this many steps")
+    parser.add_argument("--pgsu", type=int, default=4,
+                       help="Phase-Gated Sparse Update: number of layers active per step. "
+                            "0=disabled (all layers trained every step). 4=default (4 of 16 "
+                            "active → ~4x faster backward).")
     args = parser.parse_args()
 
     # Device.
@@ -170,12 +173,29 @@ def main():
     n_steps = len(tokens) // (seq * eff_batch)
 
     use_amp = device.type == "cuda"
+
+    # PGSU — Phase-Gated Sparse Update. When enabled, only N layers per step
+    # receive gradients (the rest are frozen this step but rotate in next step).
+    # This makes backward ~n_layers/N times faster while preserving convergence.
+    pgsu = None
+    if args.pgsu > 0 and args.pgsu < len(model.blocks):
+        from fractus1B.pgsu import PGSU
+        pgsu = PGSU(model, n_active=args.pgsu)
+        # Fast-forward the PGSU step counter to match resume point.
+        for _ in range(start_step):
+            pgsu.step_count += 1
+
     print(f"\nTraining {args.epochs} epochs (true 1B params)", flush=True)
     print(f"  seq_len={seq}, batch_size={batch_size}, grad_accum={grad_accum}", flush=True)
     print(f"  effective batch = {eff_batch} (= {eff_batch*seq} tokens/step)", flush=True)
     print(f"  lr={args.lr}, warmup={args.warmup_steps} steps", flush=True)
     print(f"  {n_steps:,} optimizer steps/epoch", flush=True)
     print(f"  AMP (bf16): {'ON' if use_amp else 'OFF'}", flush=True)
+    if pgsu:
+        print(f"  PGSU: {pgsu.n_active}/{pgsu.n_layers} layers active per step "
+              f"(expected ~{pgsu.n_layers/pgsu.n_active:.1f}× backward speedup)", flush=True)
+    else:
+        print(f"  PGSU: OFF (all layers trained every step)", flush=True)
     print(f"  HF upload: every {args.save_every} steps → {HF_REPO}", flush=True)
     print("=" * 70, flush=True)
 
@@ -192,6 +212,9 @@ def main():
         # Iterate over the corpus in effective-batch chunks.
         tokens_per_step = seq * eff_batch
         for batch_start in range(0, len(tokens) - tokens_per_step - 1, tokens_per_step):
+            # PGSU: activate this step's layer subset before forward.
+            if pgsu:
+                pgsu.step_begin()
             # Inside one optimizer step: do grad_accum forward/backward passes.
             opt.zero_grad()
             accum_loss = 0.0
@@ -231,6 +254,9 @@ def main():
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             sched.step()
+            # PGSU: restore requires_grad for next step's forward.
+            if pgsu:
+                pgsu.step_end()
             step += 1
 
             ep_loss += total_loss
