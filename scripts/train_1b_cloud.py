@@ -257,12 +257,25 @@ def main():
 
     # Resume if specified.
     start_epoch = 0
+    start_step = 0
     if args.resume:
         print(f"Resuming from: {args.resume}", flush=True)
         ckpt = torch.load(args.resume, weights_only=False, map_location=device)
         model.load_state_dict(ckpt["model_state"])
         start_epoch = ckpt.get("epoch", 0)
-        print(f"  Resumed from epoch {start_epoch}, loss={ckpt.get('loss','?')}", flush=True)
+        # Restore the global step counter so checkpoint names + logs use the
+        # true global step, not a local counter that restarts at 0 on resume.
+        # This was a bug: resuming from step 140000 reset the counter to 0,
+        # causing new checkpoints to overwrite old ones on HF by name.
+        start_step = ckpt.get("step", start_epoch * n_steps)
+        # Restore optimizer state if present (so Adam moments are preserved).
+        if "optimizer_state" in ckpt:
+            try:
+                opt.load_state_dict(ckpt["optimizer_state"])
+                print(f"  Optimizer state restored", flush=True)
+            except Exception as e:
+                print(f"  Optimizer state load failed: {e}", flush=True)
+        print(f"  Resumed from epoch {start_epoch}, step {start_step}, loss={ckpt.get('loss','?')}", flush=True)
 
     # Optimizer + scheduler.
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
@@ -289,7 +302,7 @@ def main():
     print("=" * 70, flush=True)
 
     initial_loss = None
-    step = start_epoch * n_steps
+    step = start_step  # global step counter (preserved across resumes)
 
     for epoch in range(start_epoch, args.epochs):
         model.train()
@@ -326,14 +339,18 @@ def main():
                     else:
                         logits, aux = model(inp)
                         ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
-                    loss = ce + 0.001 * aux
+                    # Clip aux (load-balance loss) to prevent the divergence seen at step 149000.
+                    # When all tokens route to one expert, lb_loss can spike to 5-15 and kill the
+                    # main CE gradient. Cap its contribution at 0.001.
+                    aux_clamped = torch.clamp(aux, max=1.0)
+                    loss = ce + 0.001 * aux_clamped
                 loss.backward()
             else:
                 if use_triton_ce:
                     model._return_hidden = True
                     hidden, aux = model(inp)
                     model._return_hidden = False
-                    ce = fused_linear_cross_entropy(hidden, model.lm_head.weight, tgt)
+                    ce = fused_linear_cross_entropy(hidden, m.lm_head.weight, tgt)
                 elif args.chunk_ce > 0:
                     model._return_hidden = True
                     hidden, aux = model(inp)
@@ -342,8 +359,14 @@ def main():
                 else:
                     logits, aux = model(inp)
                     ce = F.cross_entropy(logits.reshape(-1, 50257), tgt.reshape(-1))
-                loss = ce + 0.001 * aux
+                aux_clamped = torch.clamp(aux, max=1.0)
+                loss = ce + 0.001 * aux_clamped
                 loss.backward()
+            # Skip the step if loss became NaN/inf (defensive — should not happen post-clamp).
+            if not torch.isfinite(loss):
+                opt.zero_grad()
+                continue
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
 
             loss_val = loss.item()
