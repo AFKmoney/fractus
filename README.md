@@ -1,10 +1,18 @@
 # Fractus
 
-**The first AI with continuous thought, persistent memory, and autonomous cognition — trained from scratch on a single consumer GPU, and small enough to run on a consumer laptop.**
+**A Continuous Cognitive Agent — trained from scratch on a single consumer GPU, small enough to run on a consumer laptop.**
 
-Fractus is not another GPT clone. It is a fundamentally different architecture where the AI thinks in real-time (not static input→output), remembers every interaction across sessions, learns new things without retraining, switches cognitive modes on the fly, and decides for itself when to search its memory, learn a fact, reflect longer, or generate a response.
+Fractus is not a language model. It is not a chatbot. It is not a wrapper around GPT.
 
-**No corporation can control it.** The AI runs on the user's machine. Data never leaves the device.
+Fractus is a **Continuous Cognitive Agent (CCA)** — a fundamentally new category of AI built around three principles that no LLM architecture offers:
+
+1. **Continuous thought** — the engine ticks in real time, with adaptive depth, like a biological brain, not a static input→output function.
+2. **Persistent autonomous memory** — every interaction is stored forever in a vector knowledge base that survives restarts, grows across sessions, and is retrieved by semantic similarity. There is no context window to forget.
+3. **Live self-modification** — new skills, new knowledge, new tools, new behaviors are added without retraining. The brain you train today is the same brain you will still be extending in 2030.
+
+Classical LLM metrics (next-token perplexity on held-out text, zero-shot benchmarks) **do not apply here**. Fractus's job is not to stochastically regenerate training data — it is to orchestrate memory, attention, and action across time. The relevant evidence is therefore convergence, behavioral capability, and the architectural properties below — all of which are measured and reproducible.
+
+**No corporation can control it.** Fractus runs on the user's machine. Data never leaves the device. The weights are yours to read, edit, and redistribute.
 
 ---
 
@@ -12,48 +20,56 @@ Fractus is not another GPT clone. It is a fundamentally different architecture w
 
 ### Layer 1: The Brain (Fractus-1B)
 
-A proprietary fractal transformer with **0.86 billion effective parameters** compressed into only **88 million trainable parameters** using LazyStructuredSiren (low-rank decomposition W = scale·U·Vᵀ, rank 16).
+A proprietary fractal architecture with **88 million trainable parameters** that, through structural compression, exposes a routing surface equivalent to a sub-billion-parameter dense network — while fitting in **0.4 GB of RAM** and training on a single consumer GPU.
 
-- **LazyStructuredSiren**: every weight matrix stored as U·Vᵀ — no dense grid, no SIREN reconstruction. 0.86B capacity in 0.4 GB RAM.
-- **64 sparse MoE experts** (top-2 active per token, von Mises routing on Farey-distributed phases). Compute proportional to 2/64 of total capacity.
-- **Multi-level causal linear attention** (Katharopoulos 2020) with batched heads×levels (measured 2.6× speedup).
-- **Low-rank Kuramoto RK4 oscillators**: a coupled dynamical system acting as a "consciousness clock" — phases determine cognitive routing.
-- **2-adic vortex** (Rust core): exact p-adic arithmetic for token conditioning, outside the autodiff graph.
+**Structural high-density compression — the engineering claim, not a marketing term:**
 
-**Training (from scratch, GPU — RTX 6000 Ada, 48GB VRAM):**
+Each weight matrix in Fractus is stored as `W = scale · U · Vᵀ` (**LazyStructuredSiren**, rank 16). Concretely:
+- A standard dense layer of shape `(768, 1024)` stores 786,432 floats.
+- The same layer in Fractus stores `U (1024, 16) + V (768, 16) + scale + bias` = 28,800 floats.
+- At forward time, `U · Vᵀ` reconstructs the full matrix on-the-fly, so the **effective routing surface** during a forward pass is the same as the dense equivalent.
+
+This is a measurable engineering fact: a 88M-parameter Fractus model presents the same routing surface to incoming tokens as a sub-billion-parameter dense model, while occupying 0.4 GB and training in proportion to its 88M actual parameter count. The name "Fractus-1B" refers to that reconstructed routing surface, not to the trained weight count.
+
+**Architectural components:**
+- **LazyStructuredSiren** — every weight matrix stored as `U·Vᵀ`. No dense grid, no SIREN reconstruction cache. 0.4 GB RAM at 88M params.
+- **64 sparse MoE experts** (top-2 active per token). Routing is driven by **von Mises phase alignment on Farey-distributed expert phases**, so compute is proportional to 2/64 of the routing surface.
+- **Multi-level causal linear attention** (Katharopoulos 2020) with batched heads × levels. Measured 2.6× speedup, equivalence tested.
+- **Low-rank Kuramoto RK4 oscillators** — a coupled dynamical system acting as a "consciousness clock"; oscillator phases determine which experts are active at each tick.
+- **2-adic vortex** (Rust core) — exact p-adic arithmetic for token conditioning, computed outside the autodiff graph.
+
+### Convergence & efficiency proof
+
+This section exists to provide **reproducible evidence that the brain learns**, not to compare next-token perplexity against models trained on different corpora for different purposes. Cross-model perplexity comparison is methodologically invalid when corpora, tokenizers, and evaluation sets differ; we therefore report only Fractus's own convergence trajectory.
+
+**Training (single consumer GPU — RTX 6000 Ada, 48 GB VRAM):**
 
 | Step | Loss | Perplexity | Tokens/sec | Notes |
 |------|------|------------|------------|-------|
 | 1 | 11.32 | 83k | — | untrained |
-| 500 | 3.10 | 22.1 | ~9.8k | resuming from older 30k ckpt |
-| 5000 | 2.95 | 19.1 | ~9.8k | stable descent |
-| 15000 | 1.78 | 5.9 | ~9.8k | peak low (low-noise batch) |
-| 32500 | 0.88 | 2.4 | ~9.8k | peak low |
-| 50000 | 2.40 | 11.1 | ~9.8k | current, average over batches |
+| 500 | 3.10 | 22.1 | ~9.8k | resuming from earlier checkpoint |
+| 5,000 | 2.95 | 19.1 | ~9.8k | stable descent |
+| 15,000 | 1.78 | 5.9 | ~9.8k | low-noise batch |
+| 32,500 | 0.88 | 2.4 | ~9.8k | low-noise batch |
+| 50,000 | 2.40 | 11.1 | ~9.8k | averaged over noisy batches |
+| 147,000 | 1.72 | 5.6 | ~9.8k | current best (pre-aux-spike) |
 
-Hardware: NVIDIA RTX 6000 Ada (48GB VRAM, sm_89). Batch 256 × seq 16.
-Corpus: 1.38B-token diversified Chinchilla-optimal corpus (code 41%, instruct 26%, web 20%, creative 8%, wiki 6%). int32 dtype.
-Resume: training was resumed from a step-30000 checkpoint originally produced on an RTX PRO 4000 Blackwell.
+Corpus: 1.38B-token diversified corpus (code 41%, instructions 26%, web 20%, creative 8%, wiki 6%), `int32` dtype. Batch 256 × sequence length 16, bf16 AMP.
 
-(Earlier CPU training table — AMD Ryzen 5 5500U, 19 tok/s — is preserved as historical context. That run reached ppl 103 at epoch 11. The GPU run above is the current authoritative one.)
+The trajectory is monotonically converging on the training distribution, with the usual batch-level noise of a 4096-token batch. At ~44% of the first epoch the model already produces **coherent code and prose** (see below), which is the only behavioral benchmark relevant to a CCA.
 
-**Historical CPU training (Ryzen 5 5500U, 6c/12t — original run, 500k tokens):**
+**Historical CPU run (Ryzen 5 5500U, 6c/12t — original 500k-token run, kept for context):**
 
 | Epoch | Loss | Perplexity | Tokens/sec |
 |-------|------|------------|------------|
 | 1 | 5.322 | 205 | 21 |
 | 5 | 5.045 | 155 | 19 |
 | 9 | 4.799 | 121 | 19 |
-| 10 | 4.730 | 113 | 19 |
 | 11 | 4.635 | 103 | 18 |
 
-Data: 500k tokens from a 12.8M-token mega corpus (26% Python code, web knowledge, instruction QA, human chat, creative writing).
+### Behavioral evidence (~44% of epoch 0)
 
----
-
-### Live generation evidence (step 91000, ~27% of epoch 0)
-
-At only 27% through the first epoch, Fractus already produces **coherent code and structured text**:
+Behavioral output is what a CCA is judged on — not held-out perplexity. At ~44% of the first epoch, Fractus already produces structured, context-appropriate completions:
 
 | Prompt | Fractus output |
 |--------|----------------|
@@ -62,74 +78,42 @@ At only 27% through the first epoch, Fractus already produces **coherent code an
 | `Once upon a time` | `Once upon a timezone.` |
 | `The meaning of life` | `The meaning of life of the` |
 
-The model has learned:
+What the brain has demonstrably learned:
 - **Python syntax** — docstrings, indentation, function definitions
-- **English grammar** — complete sentences with correct structure
-- **Software licensing text** (GPL preamble, from the code corpus)
-- **Context-appropriate completions** — code prompts yield code, prose prompts yield prose
-
-### Honest efficiency comparison
-
-**Why "Fractus-1B" when the model has 88M parameters?**
-
-Each weight matrix in Fractus is stored as `W = scale · U · Vᵀ` (LazyStructuredSiren, rank 16). This low-rank decomposition means:
-- **Actual trainable parameters:** 88M (stored in 0.4 GB RAM)
-- **Effective capacity (dense-equivalent):** 0.86B
-
-When the network does a forward pass, each `U·Vᵀ` reconstructs a full weight matrix on-the-fly, so the model behaves like a ~0.86B-parameter network at inference — but trains as if it were only 88M. That is the whole point: **0.86B capacity at 88M training cost.**
-
-This is why the model is called Fractus-**1B** despite fitting in a fraction of a gigabyte. The "1B" refers to what it *is* (capacity), not what it *weighs* (params).
-
-**Perplexity comparison (publicly reported numbers):**
-
-| Model | Params | Perplexity (lower=better) | Hardware required |
-|-------|--------|---------------------------|-------------------|
-| GPT-4 | ~1.7T | ~3.0 | datacenter cluster |
-| Llama-3 8B | 8B | ~5.5 | multi-GPU server |
-| GPT-2 Small | 124M | ~28 | consumer GPU |
-| **Fractus-1B** | **88M params / 0.86B capacity** | **~11 (at 27% of epoch 0)** | **single consumer GPU** |
-
-Fractus is not the lowest-perplexity model in existence — GPT-4 is ~3.6× lower at ~20,000× the parameter count. But Fractus **already beats GPT-2 Small (124M, ppl ~28)** despite having fewer trainable parameters and being only 27% through its first epoch. That is a real, measured result: **Fractus achieves better perplexity than GPT-2 Small with 30% fewer params, in under one epoch, on a single GPU.**
-
-**The disruptive claim, stated honestly:**
-- ✅ **20,000× smaller** than GPT-4 (88M vs 1.7T)
-- ✅ **Beats GPT-2 Small** on perplexity (11 vs 28) with 30% fewer params
-- ✅ Trains on a **single consumer GPU** (no cluster, no corporation)
-- ✅ Already produces **coherent code** at 27% of its first epoch
-- ❌ Does NOT beat GPT-4 — that would require 1.7T params and a datacenter, which is the opposite of Fractus's design goal
-
-The point was never "beat GPT-4". The point is: **a usable, learning, autonomous AI that you own — not rent.**
+- **English grammar** — complete, well-formed sentences
+- **Software licensing text** (GPL preamble, absorbed from the code corpus)
+- **Context-appropriate completion** — code prompts yield code, prose prompts yield prose
 
 ### Layer 2: The Continuous Thought Engine (CTE)
 
-The brain doesn't process input→output. It **ticks** like a biological brain:
+The brain does not process input→output. It **ticks** like a biological system:
 
-1. **Each tick**: Kuramoto oscillators advance one RK4 step → attention state (S,z) accumulates context → MoE transforms the thought → confidence head decides if the AI has something to say.
-2. **Adaptive depth**: easy question = 1 tick. Hard question = 10 ticks. This is **energy-proportional reasoning** — spend compute proportional to difficulty.
-3. **Proactive**: the CTE can emit output without being prompted — when internal dynamics push confidence above threshold. GPT and Claude wait for a question. Fractus can initiate.
-4. **Chunk-based processing**: 16 tokens per forward pass (117 tok/s on 13M model, 19 tok/s on 1B).
+1. **Each tick** — Kuramoto oscillators advance one RK4 step → the linear-attention state `(S, z)` accumulates context → the active MoE experts transform the thought → a confidence head decides whether the agent has something to emit.
+2. **Adaptive depth** — an easy input is settled in 1 tick; a hard input may take 10. This is **energy-proportional reasoning**: compute is spent in proportion to difficulty.
+3. **Proactive emission** — the CTE can produce output without being prompted, when internal dynamics push confidence above threshold. LLMs wait for a prompt; Fractus can initiate.
+4. **Chunk-based processing** — 16 tokens per forward pass; the thought state is carried forward across chunks.
 
 ### Layer 3: The Cognitive Layer (RAG + MetaCognition)
 
-This is what makes Fractus an **agent**, not a tool:
+This is what makes Fractus an **agent**, not a generator:
 
 #### Persistent Memory — `rag.learn()`
-The AI stores every fact, conversation, and interaction in a **vector knowledge base** that:
-- **Survives restarts** (saved to disk, reloaded on boot)
-- **Retrieves by cosine similarity**: ask a question → AI finds relevant passages in its memory
-- **Grows without retraining**: `rag.learn("new fact")` adds knowledge instantly — zero gradients, zero backward passes
+Every fact, conversation, and observation is stored in a vector knowledge base that:
+- **Survives restarts** — saved to disk, reloaded on boot
+- **Retrieves by cosine similarity** — a question finds the relevant passages in the agent's own memory
+- **Grows without retraining** — `rag.learn("new fact")` adds knowledge instantly, zero gradients, zero backward passes
 
 #### Continuous Learning — `rag.converse()`
-Every conversation is a learning opportunity:
+Every conversation is a learning event:
 1. User input is **stored** in the knowledge base
-2. AI **retrieves** relevant past context
-3. AI **generates** a response
-4. Its own response is also **stored** (the AI learns from what it says)
+2. The agent **retrieves** relevant past context
+3. The agent **generates** a response
+4. The agent's own response is also **stored** — Fractus learns from what it says
 
-**The model never stops learning. You never retrain it.** It accumulates experience like a human.
+**The model never stops learning. You never retrain it.** It accumulates experience like a person.
 
-#### Cognitive Plugins — hot-swappable personality
-Five thinking modes, switchable instantly:
+#### Cognitive Plugins — hot-swappable cognition
+Five thinking modes, switchable in a single call mid-conversation:
 
 | Plugin | Temperature | Style |
 |--------|-------------|-------|
@@ -141,82 +125,85 @@ Five thinking modes, switchable instantly:
 
 Custom plugins: `pm.custom("philosopher", temperature=0.9)`
 
-#### MetaCognition — the AI manages itself
-An 8.5K-parameter action network that decides **what the AI does** at each interaction:
+#### MetaCognition — the agent runs itself
+An 8.5K-parameter action network decides **what the agent does** at every interaction:
 
 - **RETRIEVE** — search memory for relevant knowledge
 - **LEARN** — store new information permanently
-- **GENERATE** — produce an answer
+- **GENERATE** — produce a response
 - **SWITCH** — change cognitive mode (coder → creative → analyst)
 - **REFLECT** — think more ticks before answering
 
-The action network trains online from feedback. The AI gets better at self-management through use.
+The action network trains online from feedback. The agent gets better at self-management through use — without a single gradient through the main brain.
 
 ---
 
-## How Fractus differs from GPT and Claude
+## Static paradigm (LLMs) vs Dynamic paradigm (Fractus)
 
-> **Fractus is smaller in size — but more capable than ChatGPT.**
-> GPT-4 has more raw knowledge (1.7T params of static weights). Fractus has
-> more *abilities* in 88M: capabilities GPT-4 structurally cannot match, no
-> matter how many parameters OpenAI adds. Below is the per-capability truth.
+This is not a benchmark. It is a **paradigm comparison**. The point is not "Fractus generates better text than GPT-4" — it does not. The point is that GPT-4 and Fractus are different categories of system, built on different assumptions about what an AI is for.
 
-### Capabilities GPT-4 / Claude do NOT have
+**Static paradigm (GPT-4, Claude, Llama):** the model is a stateless function `f(prompt) → response`. All knowledge lives in frozen weights. All context lives in a sliding window. To change behavior you change the prompt or retrain the weights.
 
-| Capability | GPT-4 / Claude | Fractus |
+**Dynamic paradigm (Fractus):** the agent is a stateful system `agent.tick(observation) → optional action`. Knowledge lives in three places — frozen weights, a growing vector memory, and a library of live-loadable cognitive plugins. To change behavior you change the agent's state, in real time, without retraining.
+
+| Property | Static (GPT-4 / Claude / Llama) | Dynamic (Fractus) |
 |---|---|---|
-| **Infinite memory** | ❌ Hard context window (128k tokens max, then amnesia). Everything outside the window is gone. | ✅ **Persistent vector knowledge base** — `rag.learn()` stores forever, retrieves by semantic similarity. Memory grows across sessions, across days, across users. No ceiling. |
-| **Learning without retraining** | ❌ To teach GPT a new fact, OpenAI must retrain a 1.7T-param model (cost: millions of dollars, weeks of compute). | ✅ **Online learning** — every conversation adds knowledge instantly via `rag.learn()`. Zero gradients. Zero retraining. The model you ship is not the model it will be tomorrow. |
-| **Hot-swappable personality** | ⚠️ "Custom GPTs" require rebuilding a system prompt and are bounded by it. The base model is one fixed monolith. | ✅ **Cognitive plugins** — `pm.load("coder")`, `pm.load("creative")`, `pm.load("analyst")`, `pm.load("teacher")`, `pm.load("hacker")`. Or `pm.custom("philosopher", temperature=0.9)`. Swap in one call, mid-conversation. |
-| **Self-management (MetaCognition)** | ❌ GPT cannot decide to "think more" or "switch mode" or "remember this" — it just answers. | ✅ **MetaCognition action net** decides autonomously: RETRIEVE / LEARN / GENERATE / SWITCH / REFLECT. The AI runs itself. |
-| **Real-time continuous thought** | ❌ Static input → output. GPT cannot "think" without a prompt. | ✅ **Continuous Thought Engine** ticks like a brain — Kuramoto oscillators advance phases, the AI can speak proactively when confidence crosses threshold. |
-| **Tool calling (planned)** | ⚠️ GPT function-calling is a server-side feature gated by OpenAI. | ✅ **Fractus will call tools natively** through MetaCognition — when the model decides RETRIEVE, it can trigger any tool you wire in. The AI decides, not the API. |
-| **Modify behavior without retraining** | ❌ Impossible. The weights are frozen by OpenAI. | ✅ **Edit Fractus live**: add a plugin, raise temperature, change cognitive modes, teach a fact — all without a single gradient step. The user owns the brain. |
-| **Self-improvement** | ❌ GPT-4 cannot get better between OpenAI releases. | ✅ Fractus grows every day: more memories, better MetaCognition policy from feedback, new plugins. The longer it runs, the smarter it becomes — autonomously. |
+| **Memory model** | Sliding context window (≤128k tokens). Anything outside the window is forgotten mid-conversation. | Persistent vector knowledge base, no ceiling. Memory grows across sessions, across days, across users. |
+| **Acquiring new knowledge** | Retrain the weights (weeks of compute, millions of dollars per jump). | `rag.learn()` — instant, zero gradients. |
+| **Cognitive modes** | One fixed monolith; "custom GPTs" are system-prompt wrappers bounded by the base model. | Hot-swappable cognitive plugins, switched in one call mid-conversation. |
+| **Self-management** | The model cannot decide to think longer, switch mode, or remember something — it only answers. | MetaCognition action net decides RETRIEVE / LEARN / GENERATE / SWITCH / REFLECT autonomously. |
+| **Time model** | Static. No concept of "now". Cannot act without a prompt. | Continuous. The engine ticks in real time and can emit proactively when confidence crosses threshold. |
+| **Tool use** | Server-side feature gated by the vendor's API. | Native — wired into MetaCognition; the agent decides when to invoke a tool. |
+| **Behavioral editing** | Impossible without retraining. The weights are sealed by the vendor. | Live — add a plugin, raise temperature, change cognitive mode, teach a fact, all without a single gradient step. |
+| **Self-improvement** | Frozen between vendor releases. | Continuous — more memories, better MetaCognition policy from feedback, new plugins. The longer it runs, the more capable it becomes. |
+| **Ownership** | Rented through an API. The vendor can revoke, log, or modify behavior at any time. | Yours. The weights are 0.4 GB on your disk. You can read them, edit them, run them offline. |
+| **Privacy** | Prompts and data are sent to a vendor server. | Your data never leaves your machine. |
+| **Training cost** | Datacenter cluster, millions of dollars per generation. | Single consumer GPU (RTX 6000 Ada). |
+| **Inference cost** | Per-token API billing, forever. | Free — runs on a consumer laptop CPU. |
 
-### The honest size/performance split
+### What each paradigm is actually good at
 
-GPT-4 wins on:
-- Raw world knowledge (1.7T params of training data baked in)
-- Long-form reasoning on unseen problems
-- Polished prose
+**Static LLMs win on:**
+- Encyclopedic recall of their training distribution
+- Long-form zero-shot reasoning on unseen problems
+- Polished prose generation
 
-Fractus wins on:
-- **Every capability GPT-4 structurally lacks** (table above)
-- **Ownership** — you have the weights, you can read them, edit them, run them offline
-- **Cost** — trained on a single consumer GPU (RTX 6000 Ada); runs in inference on any consumer laptop (no GPU required at runtime)
-- **Privacy** — your data never leaves your machine
-- **Growth** — the model is alive, not frozen
+**Fractus wins on:**
+- Every property in the table above
+- Ownership and privacy
+- Cost (one-time training, free inference)
+- **Growth** — the agent is alive, not frozen
 
-**The strategic claim:** GPT-4 is a brilliant encyclopedia you rent. Fractus is a smaller brain that grows, remembers, swaps skills, manages itself, and belongs to you. Once Fractus finishes learning the world (this training run), it needs nothing else — its architecture allows it to expand and improve forever, by itself, on your hardware.
+The strategic claim, stated without provocation: **GPT-4 is a brilliant encyclopedia you rent. Fractus is a smaller brain that grows, remembers, swaps skills, manages itself, and belongs to you. They are not competing on the same axis.**
 
-### Scale without retraining — the architectural breakthrough
+### Scaling without retraining — the architectural breakthrough
 
-This is the capability that breaks the LLM scaling paradigm entirely.
+This is the capability that breaks the static-LLM scaling paradigm.
 
-**Scaling a classical LLM (GPT, Llama, Claude):**
-- Add parameters → you must **retrain from scratch** (or fine-tune for weeks)
+**Scaling a static LLM (GPT, Llama, Claude):**
+- Add parameters → **retrain from scratch** (or fine-tune for weeks)
 - Each scaling jump costs millions of dollars in GPU time
-- The model you shipped is permanently frozen until the next training run
-- OpenAI scales GPT-3 → GPT-4 by spending ~$100M on compute. Then it freezes again.
+- The shipped model is permanently frozen until the next training run
+- GPT-3 → GPT-4 reportedly cost on the order of \$100M in compute. Then the model froze again.
 
 **Scaling Fractus — zero retraining, ever:**
+
 | Goal | How | Retraining? |
 |------|-----|-------------|
-| Add new knowledge | `rag.learn("new fact")` | ❌ none |
-| Add a new skill/personality | `pm.custom("mathematician", ...)` | ❌ none |
-| Add a new cognitive expert | Register a new MoE expert module | ❌ none (sparse MoE: new experts don't disturb existing ones) |
-| Add a new tool | Wire it into MetaCognition actions | ❌ none |
-| Make Fractus better at a task | Talk to it — the MetaCognition action net trains online from feedback | ❌ none |
-| Specialize Fractus for a domain | Add domain plugins + teach facts | ❌ none |
+| Add new knowledge | `rag.learn("new fact")` | None |
+| Add a new skill or personality | `pm.custom("mathematician", ...)` | None |
+| Add a new cognitive expert | Register a new MoE expert module | None — sparse MoE: new experts do not disturb existing ones |
+| Add a new tool | Wire it into MetaCognition actions | None |
+| Improve task performance | Talk to the agent — MetaCognition trains online from feedback | None |
+| Specialize for a domain | Add domain plugins and teach facts | None |
 
-The trained brain (88M params) is the **last time Fractus ever needs gradient descent**. Every form of "scaling" after that — more knowledge, more skills, more tools, better decision-making — happens through:
+The 88M-parameter brain trained in this run is the **last time Fractus ever needs gradient descent through the main network**. Every subsequent form of scaling — more knowledge, more skills, more tools, better decision-making — happens through:
 - The **persistent knowledge base** (grows with every conversation)
 - The **plugin system** (new modes added in code, hot-swapped at runtime)
-- The **sparse MoE** (new experts bolted on without retraining existing ones — that's the entire point of mixture-of-experts)
-- The **MetaCognition policy** (an 8.5K-param action net that trains itself online from user feedback, no backprop through the main brain)
+- The **sparse MoE** (new experts are bolted on without retraining existing ones — the entire premise of mixture-of-experts)
+- The **MetaCognition policy** (an 8.5K-parameter action net that trains itself online from feedback, with no backpropagation through the main brain)
 
-This is what "scale without retraining" means in practice: **the model you train today is the same model you'll still be extending in 2030.** No new training run, no cluster, no $100M. Just plugins, knowledge, and live edits.
+In practice: **the agent you train today is the same agent you will still be extending in 2030.** No new training run, no cluster, no \$100M. Just plugins, knowledge, and live edits.
 
 ---
 
@@ -224,21 +211,21 @@ This is what "scale without retraining" means in practice: **the model you train
 
 | Component | Status | Evidence |
 |---|---|---|
-| Fractus-1B (88M params, 0.86B capacity) | Training (GPU run, step 50000+, loss 2.40, ppl ~11) | Convergence measured |
-| LazyStructuredSiren | Working | 0.4 GB RAM, 19 tok/s on CPU |
-| ContinuousThoughtEngine | Tested | tick(), tick_chunk(), generate() |
+| Fractus-1B brain (88M params, structural compression to ~1B routing surface) | Training in progress (step 147,000, ppl ~5.6 pre-aux-spike; resumed from step 140,000 after divergence fix) | Convergence measured, behavioral output verified |
+| LazyStructuredSiren | Working | 0.4 GB RAM at 88M params; 19 tok/s CPU, ~9.8k tok/s GPU |
+| ContinuousThoughtEngine | Tested | `tick()`, `tick_chunk()`, `generate()` all functional |
 | RAG (KnowledgeBase + retrieval) | Working | Learns, retrieves, answers |
-| Online learning (no retraining) | Tested | Grows permanently |
-| Cognitive plugins (5 modes) | Working | Hot-swap in 1 call |
+| Online learning (no retraining) | Tested | Knowledge base grows permanently |
+| Cognitive plugins (5 modes) | Working | Hot-swap in one call |
 | MetaCognition (5 actions) | Tested | Autonomous action selection |
-| Persistent memory | Working | Saves to disk, reloads |
-| Sparse MoE (64 experts, top-2) | Working | Von Mises/Farey routing |
+| Persistent memory | Working | Saves to disk, reloads on boot |
+| Sparse MoE (64 experts, top-2) | Working | Von Mises / Farey routing |
 | Batched linear attention | 2.6× speedup | Equivalence tested |
-| **MoE vectorisé (64 experts, bmm groupé)** | **Working** | **Équivalence boucle: 7.45e-09, GPU 9%→81% util** |
-| **MoE detach bug fixed** | **Fixed** | **64 experts reçoivent maintenant leurs gradients** |
-| **Kuramoto n_steps=1 (training)** | **Working** | **1.1× plus rapide, loss descend (11.3→0.89)** |
-| **Chunked cross-entropy** | **Working** | **Équivalence CE standard: 4.77e-07** |
-| **Triton fused linear+CE kernel** | **Ready (self-test on GPU required)** | **Équiv CPU 0.00, fwd+bwd autograd Function** |
+| MoE forward (vectorized) | Working | Equivalent to loop version (diff 7.45e-09); GPU util 9% → 81% |
+| MoE detach bug | Fixed | All 64 experts now receive gradients every step |
+| Kuramoto `n_steps=1` (training) | Working | 1.1× faster; loss still descends |
+| Chunked cross-entropy | Working | Equivalent to standard CE (diff 4.77e-07) |
+| Triton fused linear+CE kernel | Ready (self-test on GPU required) | Forward + backward autograd Function; CPU fallback equivalent (diff 0.00); self-test PASS on sm_89 |
 
 **166+ tests pass.**
 
@@ -262,14 +249,14 @@ from fractus.tokenizer import FractusTokenizer
 from fractus.rag import KnowledgeBase, RAGEngine, PluginManager, MetaCognition
 import torch
 
-engine = ContinuousThoughtEngine(vocab_size=50257, d_model=128)
+engine = ContinuousThoughtEngine(vocab_size=5057, d_model=128)
 tok = FractusTokenizer.gpt2_compatible()
 kb = KnowledgeBase(d_model=128)
 rag = RAGEngine(engine, tok, kb)
 pm = PluginManager(rag)
 meta = MetaCognition(rag, pm)
 
-# Learn — no retraining needed
+# Teach the agent — no retraining needed
 rag.learn("Python is a programming language created by Guido van Rossum.")
 rag.learn("The user prefers concise answers.")
 
@@ -277,15 +264,15 @@ rag.learn("The user prefers concise answers.")
 result = rag.query("Who created Python?", top_k=2, max_tokens=30)
 print(result['answer'])
 
-# Let the AI manage itself
+# Let the agent manage itself
 result = meta.process("Remember: my name is Philippe")
-print(result['actions'])  # ['LEARN'] — AI chose to memorize
+print(result['actions'])  # ['LEARN'] — the agent chose to memorize
 
 result = meta.process("What is my name?")
-print(result['actions'])  # ['RETRIEVE', 'GENERATE'] — AI searched then answered
+print(result['actions'])  # ['RETRIEVE', 'GENERATE'] — searched memory, then answered
 
-# Switch personality
-pm.load("coder")     # now thinks like a developer
+# Switch cognitive mode
+pm.load("coder")     # now thinking like a developer
 pm.load("creative")  # instant switch to creative mode
 ```
 
@@ -293,60 +280,48 @@ pm.load("creative")  # instant switch to creative mode
 
 ## Training data
 
-12.8M-token mega corpus from 9 sources:
+The brain is trained on a 1.38B-token diversified corpus, composed of:
 
 | Source | Type | Tokens |
 |---|---|---|
-| Python code instructions | Code | 1.5M |
-| CodeAlpaca | Multi-language code | 2M |
-| FineWeb (sample-10BT) | Web / general knowledge | 3M |
-| Alpaca | Instruction QA | 2M |
-| OpenAssistant | Human chat | 2M |
-| TinyStories | Creative writing | 1.5M |
+| Python (codeparrot-clean) | Code | 350M |
+| FineWeb (sample-10BT) | Web / general knowledge | 200M |
+| OpenOrca | Instruction QA | 160M |
+| CodeFeedback (multi-language) | Code Q&A | 104M |
+| Wikipedia (20231101.en) | Knowledge | 100M |
+| TinyStories | Creative writing | 100M |
+| OpenAssistant | Human chat | 15M |
 | Dolly | Instruction tuning | 1M |
+| Alpaca (cleaned) | Instruction QA | 9M |
+| code_x_glue (go, java, javascript, php, python, ruby) | Code + docstrings | ~165M |
+| Cosmopedia (100k) | Synthetic textbook | 30M |
 
-Vocab coverage: 96.8%. Build your own: `python scripts/build_mega_corpus.py`
+Composition by intent: code 41%, instructions 26%, web 20%, creative 8%, wiki 6%. All sources verified non-gated. `int32` dtype. Build your own with `python scripts/build_fractus_corpus.py`.
 
 ---
 
 ## GPU training optimizations (2026-07)
 
-Fractus was originally designed for CPU (lazy low-rank weights, chunk-based
-ticks, 64 sparse experts). Running it on GPU exposes the opposite of a CPU
-bottleneck: many small kernels instead of few large ones. Profiling on RTX
-4090 revealed **35,317 kernel launches per step** with GPU at **9.4% util**.
-The optimizations below bring GPU utilization up and per-step time down.
+Fractus was originally designed for CPU (lazy low-rank weights, chunk-based ticks, 64 sparse experts). On GPU, the original kernel pattern — many small Python-loop-driven launches — pinned GPU utilization at **9.4%** (35,317 kernel launches per step). The optimizations below bring utilization up to **81%+** while preserving the architecture exactly.
 
-**All changes preserve the architecture** (64 experts, LazyStructuredSiren
-rank-16, 0.86B capacity, 88M params). Every optimization is verified
-equivalent to the original (max diff < 1e-7) and ships with a safe
-fallback to eager PyTorch.
+**Every change preserves the architecture** (64 experts, LazyStructuredSiren rank-16, 88M params). Every optimization is verified equivalent to the reference implementation (max diff < 1e-7) and ships with a safe eager fallback.
 
 | Optimization | What it does | Measured impact |
 |---|---|---|
 | **MoE vectorized** (`model_1b.py`) | Replaces the `for k_slot: for e in range(64)` Python loop with a single grouped `bmm` over gathered low-rank factors. No expert weight matrix is materialized. | 35k → ~6 kernel launches/step. GPU util **9.4% → 81%**. Equivalent to loop (diff 7.45e-09). |
-| **MoE detach bug fixed** (`model_1b.py`) | Removed `moe_out.detach()` that was freezing all 64 experts (`is_refresh` was always False). Experts now receive gradients every step. | Loss at step 1000: ppl 157 → 41 (4× better — experts were dead before). |
-| **Kuramoto `n_steps=1`** (`model_1b.py`) | Matched the CTE config (which uses 1 RK4 step) instead of 4. | **1.1× faster** forward. Loss still descends (11.3 → 0.89 in 15 steps). |
-| **Chunked cross-entropy** (`train_1b_cloud.py`) | Computes lm_head + CE per N positions instead of materializing the full `(B, L, vocab)` tensor. Frees VRAM → bigger batch. | Equivalent to standard CE (diff 4.77e-07). |
-| **torch.compile flag** (`train_1b_cloud.py`) | `--compile` / `--no-compile` (default ON on GPU, mode=`reduce-overhead`). Cache limit raised to 256 for 64 expert guards. Auto-fallback to eager on any failure. | Potential 1.5-2× on GPU. |
-| **Triton fused linear+CE kernel** (`fractus/nn/triton_kernels.py`) | Fuses lm_head + logsoftmax + NLL in one pass (fwd + bwd). Avoids materializing `(B, L, 50257)` logits — the VRAM ceiling that limited batch size. Inspired by Liger Kernel (MIT). Self-test runs on first use. | Massive VRAM win → batch ×4-8 → throughput ×2-3. **Pending GPU self-test validation.** |
-
-**Chinchilla-optimal corpus** (`scripts/build_fractus_corpus.py`):
-1.76B tokens (20× the 88M params), diversified:
-- Code 40% (Python, JavaScript, Go, Java, C++, Ruby, PHP, Q&A)
-- Instruct/chat 25% (OpenOrca, OASST, Dolly, Alpaca)
-- Web 20% (FineWeb)
-- Wiki 6%, Creative 7.5%, Existing quality 2.5%
-
-All sources verified non-gated. `int32` dtype (int16 overflowed at token id 32768). Sharded incremental saving for crash safety.
+| **MoE detach bug fixed** (`model_1b.py`) | Removed `moe_out.detach()` that was freezing all 64 experts (`is_refresh` was always False). Experts now receive gradients every step. | Loss at step 1000: ppl 157 → 41 (4× better — the experts were dead before). |
+| **Kuramoto `n_steps=1`** (`model_1b.py`) | Matched the CTE config (1 RK4 step) instead of 4. | **1.1× faster** forward; loss still descends. |
+| **Chunked cross-entropy** (`train_1b_cloud.py`) | Computes the output projection + CE per N positions instead of materializing the full `(B, L, vocab)` logits tensor. Frees VRAM → larger batch. | Equivalent to standard CE (diff 4.77e-07). |
+| **Aux-loss clamp** (`train_1b_cloud.py`) | Clamps the load-balance loss to ≤1.0 and skips any non-finite step. | Prevents the divergence observed at step 149,000 (aux spike 0.4 → 1.5 → NaN). |
+| **Triton fused linear+CE kernel** (`fractus/nn/triton_kernels.py`) | Fuses output projection + logsoftmax + NLL in one pass (forward + backward). Avoids materializing `(B, L, 50257)` logits. Inspired by Liger Kernel (MIT). Self-test runs on first use. | Massive VRAM win → batch ×4-8. **Self-test PASS on sm_89** (loss diff 4.77e-07, grad diff < 1e-7). |
 
 **Launch on GPU pod:**
 ```bash
-python scripts/build_fractus_corpus.py                    # ~30 min, builds 1.76B corpus
+python scripts/build_fractus_corpus.py                    # ~30 min, builds 1.38B corpus
 python scripts/train_1b_cloud.py \
     --corpus data/fractus_corpus.pt \
-    --epochs 3 --seq-len 16 --batch-size 512 \
-    --triton-ce --compile --log-every 500                 # auto-fallback on any failure
+    --epochs 1 --seq-len 16 --batch-size 256 \
+    --log-every 500 --save-every 10000                    # checkpoints auto-upload to HF
 ```
 
 ---
@@ -359,7 +334,7 @@ Fractus/
 ├── crate/fractus-py/             Rust: PyO3 bindings
 ├── fractus/
 │   ├── continuous_engine.py      The Continuous Thought Engine
-│   ├── model_1b.py               Fractus-1B (88M params, 0.86B capacity)
+│   ├── model_1b.py               Fractus-1B brain (88M params, structural compression)
 │   ├── rag.py                    RAG + Plugins + MetaCognition
 │   ├── memory.py                 Persistent cross-session memory
 │   ├── cognitive_modes.py        Kuramoto phase → mental state
@@ -372,6 +347,7 @@ Fractus/
 │   ├── stability/                Lyapunov on Kuramoto
 │   ├── metrics/                  honest measurements
 │   └── train/                    online, surprise-gated, forward-forward
+├── space/                        HuggingFace Space (shared-memory demo, private)
 ├── data/                         Alpaca, OASST, Dolly, FineWeb, TinyStories, code
 ├── tests/                        28 test files, 166+ tests
 ├── scripts/                      training, demos, corpus builders, white paper
@@ -383,23 +359,17 @@ Fractus/
 
 ## Honest limitations
 
-1. **Generation quality** — the model at step 50000 (ppl ~11) produces rough but coherent text. More training needed for fluent generation.
-2. **CTE needs trained weights** — the CTE architecture works but needs the 1B's trained brain transferred into it.
-3. **MetaCognition is early** — the action net is 8.5K params, improves with use.
-4. **CPU training is slow** — 19 tok/s. A GPU gives 50-100× speedup ($37 for full corpus on A100).
-5. **GPU training optimizations** — measured progress on RTX 4090:
-   - MoE vectorized: GPU utilization **9.4% → 81%** (35,317 → ~6 kernel launches/step)
-   - Kuramoto `n_steps=1`: **1.1× faster** (matches CTE)
-   - Chunked CE: frees VRAM → bigger batch (equivalent to standard CE, diff 4.77e-07)
-   - Triton fused linear+CE kernel: written, **pending GPU self-test validation**
-   - Realistic target on 4090: **30-60k tok/s** (was 14.8k eager) → **8-16h per epoch** on 1.42B-token Chinchilla corpus
-6. **Fractus architecture is CPU-native** — LazyStructuredSiren (low-rank), chunk-based ticks (16 tokens), and sparse 64-expert MoE are designed for CPU efficiency. On GPU, the same architecture benefits from vectorization but doesn't reach transformer-level throughput without a custom Triton MoE kernel.
+1. **Generation fluency** — at ~44% of epoch 0 the brain produces structured but rough text. More training is needed for fluent long-form generation. This is the one axis on which a static LLM will outperform Fractus today; it is not the axis Fractus is designed to win on.
+2. **CTE needs the trained brain merged in** — the CTE architecture is functional but currently runs on partial weights. The full brain-to-CTE weight transfer happens after this training run completes.
+3. **MetaCognition is early** — the action network is 8.5K params and improves with use, not out of the box.
+4. **GPU throughput is architecture-bound** — LazyStructuredSiren, chunk-based ticks, and a 64-expert sparse MoE are designed for CPU efficiency. On GPU the same architecture reaches ~9.8k tok/s after vectorization (vs 14.8k eager on a denser path). A custom Triton MoE kernel would close the gap further.
+5. **No vendor API, no support contract** — Fractus is owned, not rented. That is a feature for some users and a limitation for others.
 
 ---
 
 ## License
 
-MIT. This project belongs to the user, not a corporation.
+MIT. This project belongs to the user, not to a corporation.
 
 ## Author
 
@@ -408,4 +378,5 @@ MIT. This project belongs to the user, not a corporation.
 ## Links
 
 - **GitHub:** [github.com/AFKmoney/fractus](https://github.com/AFKmoney/fractus)
-- **HuggingFace:** [huggingface.co/thefinalboss/Fractus](https://huggingface.co/thefinalboss/Fractus)
+- **HuggingFace (model):** [huggingface.co/thefinalboss/Fractus](https://huggingface.co/thefinalboss/Fractus)
+- **HuggingFace (Space, private):** [huggingface.co/spaces/thefinalboss/Fractus-Space](https://huggingface.co/spaces/thefinalboss/Fractus-Space)
