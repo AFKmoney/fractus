@@ -1,6 +1,6 @@
 # Fractus
 
-**The first AI with continuous thought, persistent memory, and autonomous cognition — trained from scratch on a consumer laptop.**
+**The first AI with continuous thought, persistent memory, and autonomous cognition — trained from scratch on a single consumer GPU, and small enough to run on a consumer laptop.**
 
 Fractus is not another GPT clone. It is a fundamentally different architecture where the AI thinks in real-time (not static input→output), remembers every interaction across sessions, learns new things without retraining, switches cognitive modes on the fly, and decides for itself when to search its memory, learn a fact, reflect longer, or generate a response.
 
@@ -184,7 +184,7 @@ GPT-4 wins on:
 Fractus wins on:
 - **Every capability GPT-4 structurally lacks** (table above)
 - **Ownership** — you have the weights, you can read them, edit them, run them offline
-- **Cost** — trained on a single consumer GPU, runs on a laptop
+- **Cost** — trained on a single consumer GPU (RTX 6000 Ada); runs in inference on any consumer laptop (no GPU required at runtime)
 - **Privacy** — your data never leaves your machine
 - **Growth** — the model is alive, not frozen
 
