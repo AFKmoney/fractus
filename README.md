@@ -18,22 +18,22 @@ Classical LLM metrics (next-token perplexity on held-out text, zero-shot benchma
 
 ## The Three Layers
 
-### Layer 1: The Brain (Fractus-1B)
+### Layer 1: The Brain (Fractus, 88M params)
 
-A proprietary fractal architecture with **88 million trainable parameters** that, through structural compression, exposes a routing surface equivalent to a sub-billion-parameter dense network — while fitting in **0.4 GB of RAM** and training on a single consumer GPU.
+A proprietary fractal architecture with **88 million trainable parameters**, fitting in **0.4 GB of RAM** and trainable on a single consumer GPU.
 
-**Structural high-density compression — the engineering claim, not a marketing term:**
+**Low-rank weight decomposition (LazyStructuredSiren, rank 16):**
 
-Each weight matrix in Fractus is stored as `W = scale · U · Vᵀ` (**LazyStructuredSiren**, rank 16). Concretely:
+Each weight matrix in Fractus is stored as `W = scale · U · Vᵀ` instead of a dense matrix. Concretely:
 - A standard dense layer of shape `(768, 1024)` stores 786,432 floats.
 - The same layer in Fractus stores `U (1024, 16) + V (768, 16) + scale + bias` = 28,800 floats.
-- At forward time, `U · Vᵀ` reconstructs the full matrix on-the-fly, so the **effective routing surface** during a forward pass is the same as the dense equivalent.
+- At forward time, `U · Vᵀ` reconstructs the full matrix on-the-fly.
 
-This is a measurable engineering fact: a 88M-parameter Fractus model presents the same routing surface to incoming tokens as a sub-billion-parameter dense model, while occupying 0.4 GB and training in proportion to its 88M actual parameter count. The name "Fractus-1B" refers to that reconstructed routing surface, not to the trained weight count.
+This trades extra compute at inference for a dramatically smaller parameter count. Fractus is an 88M-parameter model — small, trainable on one GPU, runnable on a laptop. The low-rank decomposition is what makes that possible. The rank is a tunable parameter: increasing it scales the model up without changing the architecture.
 
 **Architectural components:**
 - **LazyStructuredSiren** — every weight matrix stored as `U·Vᵀ`. No dense grid, no SIREN reconstruction cache. 0.4 GB RAM at 88M params.
-- **64 sparse MoE experts** (top-2 active per token). Routing is driven by **von Mises phase alignment on Farey-distributed expert phases**, so compute is proportional to 2/64 of the routing surface.
+- **64 sparse MoE experts** (top-2 active per token). Routing is driven by **von Mises phase alignment on Farey-distributed expert phases**.
 - **Multi-level causal linear attention** (Katharopoulos 2020) with batched heads × levels. Measured 2.6× speedup, equivalence tested.
 - **Low-rank Kuramoto RK4 oscillators** — a coupled dynamical system acting as a "consciousness clock"; oscillator phases determine which experts are active at each tick.
 - **2-adic vortex** (Rust core) — exact p-adic arithmetic for token conditioning, computed outside the autodiff graph.
@@ -211,7 +211,7 @@ In practice: **the agent you train today is the same agent you will still be ext
 
 | Component | Status | Evidence |
 |---|---|---|
-| Fractus-1B brain (88M params, structural compression to ~1B routing surface) | Training in progress (step 147,000, ppl ~5.6 pre-aux-spike; resumed from step 140,000 after divergence fix) | Convergence measured, behavioral output verified |
+| Fractus brain (88M params, LazyStructuredSiren rank 16) | Training in progress (step ~260,000, ppl ~5; resumed from step 140,000 after divergence fix) | Convergence measured, behavioral output verified |
 | LazyStructuredSiren | Working | 0.4 GB RAM at 88M params; 19 tok/s CPU, ~9.8k tok/s GPU |
 | ContinuousThoughtEngine | Tested | `tick()`, `tick_chunk()`, `generate()` all functional |
 | RAG (KnowledgeBase + retrieval) | Working | Learns, retrieves, answers |
@@ -334,7 +334,7 @@ Fractus/
 ├── crate/fractus-py/             Rust: PyO3 bindings
 ├── fractus/
 │   ├── continuous_engine.py      The Continuous Thought Engine
-│   ├── model_1b.py               Fractus-1B brain (88M params, structural compression)
+│   ├── model_1b.py               Fractus brain (88M params, LazyStructuredSiren rank 16)
 │   ├── rag.py                    RAG + Plugins + MetaCognition
 │   ├── memory.py                 Persistent cross-session memory
 │   ├── cognitive_modes.py        Kuramoto phase → mental state
