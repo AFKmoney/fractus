@@ -95,6 +95,10 @@ def main():
                        help="Phase-Gated Sparse Update: number of layers active per step. "
                             "0=disabled (all layers trained every step). 4=default (4 of 16 "
                             "active → ~4x faster backward).")
+    parser.add_argument("--progressive-depth", type=int, default=4,
+                       help="Progressive Depth: number of phases to grow the model from shallow "
+                            "to full depth. 0=disabled (all layers from step 0). 4=default "
+                            "(4 phases: 4→8→12→16 layers). ~2x total speedup.")
     args = parser.parse_args()
 
     # Device.
@@ -185,6 +189,19 @@ def main():
         for _ in range(start_step):
             pgsu.step_count += 1
 
+    # Progressive Depth — grow the model from shallow to full depth.
+    # Compatible with PGSU: ProgressiveDepth freezes deep layers entirely
+    # (they never activate), while PGSU rotates among the unfrozen ones.
+    progressive = None
+    if args.progressive_depth > 0:
+        from fractus1B.progressive_depth import ProgressiveDepth
+        progressive = ProgressiveDepth(
+            model, total_steps=n_steps * args.epochs,
+            n_phases=args.progressive_depth,
+        )
+        # Apply the initial phase immediately (freezes deep layers).
+        progressive.update(start_step)
+
     print(f"\nTraining {args.epochs} epochs (true 1B params)", flush=True)
     print(f"  seq_len={seq}, batch_size={batch_size}, grad_accum={grad_accum}", flush=True)
     print(f"  effective batch = {eff_batch} (= {eff_batch*seq} tokens/step)", flush=True)
@@ -196,6 +213,12 @@ def main():
               f"(expected ~{pgsu.n_layers/pgsu.n_active:.1f}× backward speedup)", flush=True)
     else:
         print(f"  PGSU: OFF (all layers trained every step)", flush=True)
+    if progressive:
+        print(f"  ProgressiveDepth: {progressive.n_phases} phases "
+              f"(layers {progressive.phase_n_active[0]}→{progressive.phase_n_active[-1]}, "
+              f"~2× total speedup)", flush=True)
+    else:
+        print(f"  ProgressiveDepth: OFF", flush=True)
     print(f"  HF upload: every {args.save_every} steps → {HF_REPO}", flush=True)
     print("=" * 70, flush=True)
 
@@ -212,6 +235,9 @@ def main():
         # Iterate over the corpus in effective-batch chunks.
         tokens_per_step = seq * eff_batch
         for batch_start in range(0, len(tokens) - tokens_per_step - 1, tokens_per_step):
+            # Progressive Depth: update which layers are unfrozen for this phase.
+            if progressive:
+                progressive.update(step)
             # PGSU: activate this step's layer subset before forward.
             if pgsu:
                 pgsu.step_begin()
