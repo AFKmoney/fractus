@@ -312,19 +312,19 @@ class ContinuousThoughtEngine(nn.Module):
         topk_vals, topk_idx = gates.topk(self.top_k, dim=-1)
         topk_norm = topk_vals / topk_vals.sum(-1, keepdim=True).clamp(min=1e-10)
 
-        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, D, d_ff)
-        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, d_ff, D)
+        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, d_ff, D)
+        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, D, d_ff)
         moe_out = torch.zeros_like(h_moe)
         for k_slot in range(self.top_k):
             idx_k = topk_idx[:, k_slot]  # (B,)
             w_k = topk_norm[:, k_slot]  # (B,)
             # Gather weights for each batch element, apply to all C positions.
             for b in range(B):
-                w1 = w1_stack[idx_k[b]]  # (D, d_ff)
-                w2 = w2_stack[idx_k[b]]  # (d_ff, D)
-                h1 = h_moe[b] @ w1  # (C, d_ff)
+                w1 = w1_stack[idx_k[b]]  # (d_ff, D) → transpose for matmul
+                w2 = w2_stack[idx_k[b]]  # (D, d_ff) → transpose for matmul
+                h1 = h_moe[b] @ w1.T  # (C, D) @ (D, d_ff) → (C, d_ff)
                 h1_act = F.gelu(h1)
-                out_k = h1_act @ w2  # (C, D)
+                out_k = h1_act @ w2.T  # (C, d_ff) @ (d_ff, D) → (C, D)
                 moe_out[b] += w_k[b] * out_k
         h = h + moe_out
 
