@@ -158,9 +158,9 @@ class Retriever:
         ids_tensor = torch.tensor([ids[:32]], dtype=torch.long)  # (1, up to 32)
         # Use the engine's embedding layer.
         emb = self.engine.observe(ids_tensor)  # (1, L, d_model)
-        # Average over the sequence dimension.
-        emb = emb.mean(dim=1).squeeze(0)  # (d_model,)
-        return emb.cpu().numpy()
+        # Average over the sequence dimension + detach for numpy.
+        emb = emb.mean(dim=1).squeeze(0).detach()  # (d_model,)
+        return emb.cpu().numpy().astype(np.float32)
 
     def retrieve(self, query: str, tokenizer, top_k: int = 5) -> List[Tuple[str, float, str]]:
         """Retrieve relevant knowledge for a query string."""

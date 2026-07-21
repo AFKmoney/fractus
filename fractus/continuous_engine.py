@@ -217,16 +217,16 @@ class ContinuousThoughtEngine(nn.Module):
         topk_norm = topk_vals / topk_vals.sum(dim=-1, keepdim=True).clamp(min=1e-10)
 
         moe_out = torch.zeros_like(h_moe)
-        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, D, d_ff)
-        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, d_ff, D)
+        w1_stack = torch.stack([e._cached_W for e in self.experts_w1])  # (E, d_ff, D)
+        w2_stack = torch.stack([e._cached_W for e in self.experts_w2])  # (E, D, d_ff)
         for k_slot in range(self.top_k):
             idx_k = topk_idx[:, k_slot]  # (B,)
             w_k = topk_norm[:, k_slot]  # (B,)
-            w1_sel = w1_stack[idx_k]  # (B, D, d_ff)
-            w2_sel = w2_stack[idx_k]  # (B, d_ff, D)
-            h1 = torch.bmm(h_moe.unsqueeze(1), w1_sel).squeeze(1)  # (B, d_ff)
+            w1_sel = w1_stack[idx_k]  # (B, d_ff, D) → transpose for matmul
+            w2_sel = w2_stack[idx_k]  # (B, D, d_ff) → transpose for matmul
+            h1 = torch.bmm(h_moe.unsqueeze(1), w1_sel.transpose(1,2)).squeeze(1)  # (B, d_ff)
             h1_act = F.gelu(h1)
-            out_k = torch.bmm(h1_act.unsqueeze(1), w2_sel).squeeze(1)  # (B, D)
+            out_k = torch.bmm(h1_act.unsqueeze(1), w2_sel.transpose(1,2)).squeeze(1)  # (B, D)
             moe_out += w_k.unsqueeze(-1) * out_k
         h = h + moe_out.unsqueeze(1)  # add back the L dim
 
