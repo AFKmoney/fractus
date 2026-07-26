@@ -2,7 +2,7 @@
 
 **A Continuous Cognitive Agent — assembled, tested, and running with trained weights.**
 
-Fractus is not a language model. It is not a chatbot. It is not a wrapper around GPT.
+Fractus is not a language model. It is not a chatbot. It is a fundamentally new category of AI.
 
 Fractus is a **Continuous Cognitive Agent (CCA)** — a fundamentally new category of AI built around three principles that no LLM architecture offers:
 
@@ -84,6 +84,80 @@ Five modes, switchable mid-conversation: `analyst`, `creative`, `coder`, `teache
 
 #### MetaCognition — the agent runs itself
 An 8.5K-param action network decides at every interaction: RETRIEVE / LEARN / GENERATE / SWITCH / REFLECT. The agent manages itself.
+
+---
+
+## Continuous Growth — the living brain
+
+Fractus is never frozen. The checkpoint grows through three mechanisms:
+
+### Expert Addition (the brain grows wider)
+When Fractus encounters a domain it can't handle, it adds new MoE experts specialized in that domain. Each expert is pre-trained independently via EDT Phase 1 in seconds. Old experts stay intact — no catastrophic forgetting.
+
+```python
+from fractus.growth import FractusGrowth
+growth = FractusGrowth(model, tok, device)
+growth.add_experts(n_new=128, data=rust_tokens, domain="rust")  # +128 Rust experts
+```
+
+### Rank Expansion (the brain grows deeper)
+When existing experts plateau, expand the Siren rank for more expressive capacity. Old rank columns preserved — knowledge is kept.
+
+```python
+growth.expand_rank(target_rank=128)  # rank 64 → 128, deeper reasoning
+growth.save("checkpoints/fractus_grown.pt")
+```
+
+### Memory Management (forget, correct, consolidate)
+Fractus manages its own memory: forget irrelevant entries, correct mistakes, merge duplicates, and prioritize important memories.
+
+```python
+from fractus.auto_growth import FractusSelfGrowth
+sg = FractusSelfGrowth(model, tok, kb, device)
+
+# Fractus decides itself when to grow
+decision = sg.evaluate({"loss_trend": 0.5, "domain_coverage": 0.4})
+if decision:
+    sg.execute(decision, data=new_corpus)
+
+# User-requested forgetting
+sg.user_forget(pattern="old phone number")
+
+# User-requested correction
+sg.user_correct("Earth is flat", "Earth is approximately spherical")
+```
+
+### Self-Awareness
+Fractus is trained on a self-awareness dataset that teaches it about its own architecture, capabilities, and API. It knows:
+- It has persistent memory and how to use `rag.learn()` / `rag.query()`
+- It has 5 cognitive modes and how to switch between them
+- It has MetaCognition and when to RETRIEVE vs LEARN vs GENERATE
+- It can grow (add experts, expand rank) and when to do so
+- It can forget and correct its own memories
+- It is Fractus — a unique architecture, not compared to anything else
+
+---
+
+## Expert Decoupled Training (EDT) — 189× faster
+
+The training paradigm that makes a 1B-parameter model trainable in 2 days on a single consumer GPU.
+
+### The insight
+Fractus has 128 experts per layer but only top_k=2 are active per token. Each expert is an independent 2-layer MLP. There is no mathematical reason to train them all simultaneously through end-to-end backpropagation.
+
+### The three phases
+
+| Phase | What | Time |
+|-------|------|------|
+| 1 (experts) | Train 2048 experts independently | 1.2h |
+| 2a (attention) | Train 16 layers independently | <1s |
+| 2b (embedding) | Train on 500M tokens (no layers) | 3.2h |
+| 3 (joint) | Brief alignment fine-tune | 41h |
+| **Total** | | **~2 days** |
+
+Standard backpropagation: 358 days. EDT: **2 days. 189× faster.**
+
+Full guide: [docs/EDT.md](docs/EDT.md) · Paper: [docs/Fractus_EDT_Paper.md](docs/Fractus_EDT_Paper.md)
 
 ---
 
