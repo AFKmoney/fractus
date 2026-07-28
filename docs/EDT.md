@@ -31,20 +31,33 @@ principle, not a 1B-scale result):
 - 3 arms, equal 400 000-token budget, 30 000-token hold-out, single seed.
 - **EDT accelerated learning vs from-scratch: NOT SUPPORTED at this scale.**
   EDT vanilla reached *worse* hold-out perplexity than plain online training
-  (1504.80 vs 1310.25, ~15% worse), against a pre-registered 5% threshold.
+  (1321.22 vs 1149.79, ~15% worse), against a pre-registered 5% threshold.
 - **Per-expert specialization (disjoint data) vs shared-bank EDT: the diversity
-  mechanism works** (inter-expert cosine dropped from 0.944 to 0.428 — experts
-  became markedly more distinct, confirming the design gap in the original
-  code where all experts saw identical data), **but it did not improve final
-  perplexity** (1539.07 vs 1504.80).
+  mechanism works** (inter-expert cosine dropped from 0.216 to 0.095 — experts
+  became more distinct, confirming the design gap in the original code where
+  all experts saw identical data), **but it did not improve final perplexity**
+  (1325.42 vs 1321.22).
+
+The first run of this experiment (2026-07-27) was confounded by a frozen-expert
+defect: the engine read a detached buffer, so Phase 3 could not fine-tune the
+experts EDT had pre-trained — the headline "pre-train then jointly fine-tune"
+claim was never actually exercised. The engine was fixed (the CTE's MoE now
+routes through the differentiable `PhaseRoutedMoE`), and the experiment was
+re-run with experts now trainable in Phase 3. **The corrected re-run confirms
+the original negative verdict:** the A-vs-B gap stayed at ~15% (pre-correction
+1504.80 vs 1310.25; corrected 1321.22 vs 1149.79). The frozen-expert defect was
+not the cause of EDT underperforming — the negative result is robust. (One real
+signal: Arm A's final Phase-3 training loss is *higher* than B/C's, yet A has
+*lower* hold-out perplexity — EDT pre-training fits the training stream better
+but generalizes worse on this small corpus.)
 
 Full numbers and pre-registered verdicts: `experiments/edt_ab/REPORT.md` (in the
 `fractus-test` repo). Design spec: `docs/superpowers/specs/2026-07-27-edt-ab-test-design.md`.
 
 A negative result here does **not** refute EDT-1B (4 experts, single MoE, no
 16-layer stack is a very different regime from 128 experts × 16 layers); it
-says the acceleration claim is **unproven at small scale**. The 1B run remains
-the decisive test.
+says the acceleration claim is **not supported at small scale**. The 1B run
+remains the decisive test.
 
 ---
 
