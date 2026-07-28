@@ -22,6 +22,32 @@
 
 ---
 
+## First Measurement: 13M Model (2026-07-27)
+
+The 189× figure above is an estimate. The first controlled measurement of EDT
+was run on the 13M ContinuousThoughtEngine (4 experts, single MoE — a test of
+principle, not a 1B-scale result):
+
+- 3 arms, equal 400 000-token budget, 30 000-token hold-out, single seed.
+- **EDT accelerated learning vs from-scratch: NOT SUPPORTED at this scale.**
+  EDT vanilla reached *worse* hold-out perplexity than plain online training
+  (1504.80 vs 1310.25, ~15% worse), against a pre-registered 5% threshold.
+- **Per-expert specialization (disjoint data) vs shared-bank EDT: the diversity
+  mechanism works** (inter-expert cosine dropped from 0.944 to 0.428 — experts
+  became markedly more distinct, confirming the design gap in the original
+  code where all experts saw identical data), **but it did not improve final
+  perplexity** (1539.07 vs 1504.80).
+
+Full numbers and pre-registered verdicts: `experiments/edt_ab/REPORT.md` (in the
+`fractus-test` repo). Design spec: `docs/superpowers/specs/2026-07-27-edt-ab-test-design.md`.
+
+A negative result here does **not** refute EDT-1B (4 experts, single MoE, no
+16-layer stack is a very different regime from 128 experts × 16 layers); it
+says the acceleration claim is **unproven at small scale**. The 1B run remains
+the decisive test.
+
+---
+
 ## What is EDT?
 
 Standard MoE training backpropagates through the **entire model** on every step — all layers, all routing, all active experts simultaneously. This creates a massive computational graph that is slow to compute and memory-hungry.
